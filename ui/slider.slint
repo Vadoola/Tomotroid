@@ -1,0 +1,88 @@
+import {Theme} from "theme.slint";
+export component Slider {
+    callback value_changed(int);
+
+    in-out property <int> value: 0;
+
+    in property<int> minimum: 0;
+    in property<int> maximum: 100;
+    in property<int> step: 1;
+    in property<color> color: red;
+
+    min-width: 16px;
+    min-height: grabber.height  ;
+    horizontal-stretch: 1;
+    vertical-stretch: 0;
+
+    main_track := Rectangle {
+        y: (parent.height - self.height) / 2;
+        width: 100%;
+        height: 3px;
+        background: Theme.background;
+
+        animate background { duration: 150ms; }
+    }
+
+    filled_track := Rectangle {
+        x:0;
+        y: (parent.height - self.height) / 2;
+        width: parent.width * ((root.value - (root.minimum/2))/root.maximum);
+        height: main_track.height;
+        background: parent.color;
+
+        animate background { duration: 150ms; }
+    }
+
+    grabber := Rectangle {
+        x:  (root.width - self.width) * (root.value - slider_ta.minimum) / (slider_ta.maximum - slider_ta.minimum);
+        y: (parent.height - self.height) / 2;
+        width: 18px;
+        height: self.width;
+        border_radius: self.width / 2;
+        background: parent.color;
+        animate background { duration: 150ms; }
+    }
+
+    slider_ta := TouchArea {
+        property <int> pressed_value;
+        property <int> minimum: parent.minimum;
+        property <int> maximum: parent.maximum;
+        property <int> step_size: (self.maximum - self.minimum) / parent.step;
+
+        width: parent.width;
+        height: parent.height;
+
+        pointer-event(event) => {
+            if(event.button == PointerEventButton.left && event.kind == PointerEventKind.down) {
+                self.pressed_value = root.value;
+            }
+        }
+
+        moved => {
+            if(self.enabled && self.pressed) {
+                root.value = max(slider_ta.minimum, min(slider_ta.maximum,
+                    self.pressed_value + (slider_ta.mouse_x - slider_ta.pressed_x) * (self.maximum - self.minimum) / (root.width - grabber.width)));
+                root.value_changed(root.value);
+            }
+        }
+    }
+
+    i_focus_scope := FocusScope {
+        x: 0px;
+        width: 0px;
+
+        key-pressed(event) => {
+            if(self.enabled && event.text == Key.RightArrow) {
+                root.value = Math.min(root.value + slider_ta.step_size, slider_ta.maximum);
+                root.value_changed(root.value);
+                accept
+            } else if(self.enabled && event.text == Key.LeftArrow) {
+                root.value = Math.max(root.value - slider_ta.step_size, slider_ta.minimum);
+                root.value_changed(root.value);
+                accept
+            } else {
+                reject
+            }
+        }
+    }
+}

@@ -1,0 +1,25 @@
+<svg
+  version="1.2"
+  baseProfile="tiny"
+  id="Layer_1"
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  x="0px"
+  y="0px"
+  viewBox="0 0 8 12"
+  xml:space="preserve"
+  height="15px"
+  class="Icon--skip"
+>
+  <polygon
+    fill="black"
+    points="0,0 0,12 6.1,5.9"
+  />
+  <rect
+    x="6.9"
+    y="0"
+    fill="black"
+    width="1.1"
+    height="12"
+  />
+</svg>

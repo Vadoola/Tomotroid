@@ -1,0 +1,237 @@
+//TODO List
+// - My main window looks slightly bigger (I think that's from when I removed the resize borders)
+// - My 1/4 on the main page looks a bit lower...although this is because I actually lined up the 1/4 with the skip and volument buttons which looks better frankly
+// - My Reset on the main page looks a bit lower 
+// - My Reset on the main page looks like the shade is slightly wrong
+// - The border on the play button looks like the wrong shade
+// - Need to add in the volume slider. I just currently have the volume icon
+// - My slide over screen is too tall
+// - The spacing on the Timer Config screen is wrong...but no point in trying to fix this untili I fix the slide over sizing
+// - The labels on the Focus / Short Break / Long Break etc, on the Timer Config screen are the wrong shade. Looking at the Dracula theme this doesn't even appear to be a color in the Theme...I'll need to look in the code to figure out how this is being generated
+// - Need an animation on the hover effect for the Reset Defaults "Button"
+// - The config label colors don't always match the Theme
+// - Config and Theme screen scrollbars don't match the thin style on Pomotroid, not sure how to fix this...also there is padding around the ScrollView that doens't exist in Pomotroid
+// - The Pomotroid Logo on the about screen appears to change it's colors with the theme....not sure if I can easily mimic that with an SVG unless I'm embedding the SVG paths directly into a Slint path...Well I could probably read the svg logo in as a string, and then update it and reapply it to the image object?
+// - Need to figure out why my ciruclar progress bar dissapears at 100%
+// - My circular progress bar isn't quite right. I clearly need to tweak the math somewhere.
+// - The track on the circular progress bar should be centered in the progress bar circle, not on the outside edge
+// - I don't think the color on the circular progress track is correct
+
+
+import { VerticalBox , HorizontalBox, Button, ListView } from "std-widgets.slint";
+import { BorderlessWindow } from "borderless-window.slint";
+import { Theme } from "theme.slint";
+import { SlideOver } from "slidover.slint";
+import { CircularProgressBar } from "circularprogress.slint";
+
+export component Main inherits BorderlessWindow {
+    title: "Tomotroid";
+    width: 360px;
+    height: 480px;
+
+    callback close-window();
+    callback move-window(length, length);
+
+
+    close => {
+        close-window();
+    }
+
+    move(offset-x, offset-y) => {
+        move-window(offset-x, offset-y);
+    }
+
+    menu_toggled => {
+        slideover.expanded = self.menu_open;
+    }
+
+    VerticalLayout {
+        HorizontalLayout {
+            padding-top: 60px;
+            padding-left: 50px;
+            padding-right: 50px;
+
+            alignment: center;
+            Rectangle {
+                height: 230px;
+                width: 230px;
+                CircularProgressBar {
+                    thickness: 2px;
+                    prog-color: Theme.background_lightest;
+                    value: 99;
+                    width: parent.width * 0.95;
+                    height: parent.height * 0.95;
+                    x: parent.width * 0.025;
+                    y: parent.height * 0.025;
+                }
+                CircularProgressBar {
+                    thickness: 10px;
+                    prog-color: Theme.focus_round;
+                    value: 75;
+                    width: parent.width * 0.95;
+                    height: parent.height * 0.95;
+                    x: parent.width * 0.025;
+                    y: parent.height * 0.025;
+                }
+                    Timer := Text {
+                        font-family: "Roboto Mono";
+                        text: "25:00";
+                        color: Theme.foreground;
+                        font-size: 46px;
+                    }
+                    task_label := Text {
+                        text: "FOCUS";
+                        font-family: "Lato";
+                        y: parent.height * 0.70;
+                        color: Theme.foreground;
+                        font-size: 12pt;
+                    }
+            }
+        }
+
+        HorizontalLayout {
+            alignment: center;
+            padding: 20px;
+            Rectangle {
+                border-color: Theme.foreground-darkest;
+                border-width: 2px;
+                border-radius: self.height*0.5;
+                height: 50px;
+                width: 50px;
+
+                animate background {
+                    duration: 200ms;
+                    easing: ease-in-out;
+                }
+
+                StartBtn_ta := TouchArea {
+
+                }
+
+                Image {
+                    source: @image-url("../assets/icons/start.svg");
+                    animate colorize {
+                        duration: 200ms;
+                        easing: ease-in-out;
+                    }
+
+                    states [
+                        hvr when StartBtn_ta.has-hover : {
+                            colorize: Theme.accent;
+                        }
+
+                        nthvr when !StartBtn_ta.has-hover : {
+                            colorize: Theme.foreground;
+                        }
+                    ]
+                }
+
+                states [
+                    hvr when StartBtn_ta.has-hover : {
+                        background: Theme.background.brighter(0.2);
+                    }
+                    nthvr when !StartBtn_ta.has-hover : {
+                        background: Theme.background;
+                    }
+                ]
+            }
+        }
+        HorizontalLayout {
+            alignment: space-between;
+            padding-top: -10px;
+            padding-left: 20px;
+            padding-right: 15px;
+            padding-bottom: -10px;
+            Text {
+                font-family: "Lato";
+                font-weight: 900;
+                text: "1/4";
+                font-size: 16px;
+                //font-size: 0.7rem;
+                color: Theme.foreground-darker;
+                vertical-alignment: center;
+            }
+            HorizontalBox {
+                min-width: 80px;
+                Rectangle {
+                    y: parent.height/2 - self.height/2;
+                    SkipBtn_ta := TouchArea {
+                    }
+                    Image {
+                        source: @image-url("../assets/icons/skip.svg");
+                        height: 20px;
+                        animate colorize {
+                            duration: 250ms;
+                            easing: ease-in-out;
+                        }
+
+                        states [
+                            hvr when SkipBtn_ta.has-hover : {
+                                colorize: Theme.accent;
+                            }
+
+                            nthvr when !SkipBtn_ta.has-hover : {
+                                colorize: Theme.background_lightest;
+                            }
+                        ]
+                    }
+                }
+                Rectangle {
+                    y: parent.height/2 - self.height/2;
+                    MuteBtn_ta := TouchArea {
+                    }
+                    Image {
+                        source: @image-url("../assets/icons/mute.svg");
+                        height: 20px;
+                        animate colorize {
+                            duration: 250ms;
+                            easing: ease-in-out;
+                        }
+
+                        states [
+                            hvr when MuteBtn_ta.has-hover : {
+                                colorize: Theme.accent;
+                            }
+
+                            nthvr when !MuteBtn_ta.has-hover : {
+                                colorize: Theme.background_lightest;
+                            }
+                        ]
+                    }
+
+                }
+            }
+        }
+
+        HorizontalLayout {
+            padding-top: 5px;
+            padding-left: 15px;
+            padding-right: 15px;
+            alignment: start;
+            Text {
+                ResetBtn_ta := TouchArea {}
+                font-weight: 900;
+                text: "Reset";
+                font-size: 14px;
+
+                states [
+                    hvr when ResetBtn_ta.has-hover : {
+                        color: Theme.accent;
+                    }
+
+                    nthvr when !ResetBtn_ta.has-hover : {
+                        color: Theme.foreground-darker;
+                    }
+                ]
+            }
+        }
+    }
+
+    slideover := SlideOver {
+        x: 0px;
+        y: 30px;
+        width: root.width;
+        height: parent.height - 68px;
+        expanded: false;
+    }
+}

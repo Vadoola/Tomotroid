@@ -1,0 +1,155 @@
+import { Theme } from "theme.slint";
+import { TimerConfig } from "timerconfig.slint";
+import { AboutPage } from "about.slint";
+import { ThemePage } from "themeconfig.slint";
+import { ConfigPage } from "config.slint";
+
+component BottomBarIcon inherits Rectangle {
+    in-out property <bool> active;
+    callback activate;
+
+    Rectangle {
+        padding: 0px;
+        slct := Rectangle {
+            height: 1px;
+            width: parent.width;
+            y: parent.height - 1px;
+            background: Theme.accent;
+
+            animate width, x {
+                duration: 150ms;
+            }
+        }
+        @children
+
+    }
+
+    bbi_ta := TouchArea {
+        clicked => { root.activate();}
+    }
+
+    animate background {
+        duration: 150ms;
+    }
+
+    states [
+        hvr_act when bbi_ta.has-hover && active: {
+            background: Theme.background.brighter(0.3);
+            slct.width: self.width * 0.333;
+            slct.x: 0px + (self.width * 0.333);
+        }
+        hvr_nt_act when bbi_ta.has-hover && !active: {
+            background: Theme.background.brighter(0.3);
+            slct.width: 0px;
+            slct.x: self.width / 2;
+        }
+        nt_hvr_act when !bbi_ta.has-hover && active: {
+            background: Theme.background;
+            slct.width: self.width * 0.333;
+            slct.x: 0px + (self.width * 0.333);
+        }
+        nt_hvr_nt_act when !bbi_ta.has-hover && !active: {
+            background: Theme.background;
+            slct.width: 0px;
+            slct.x: self.width / 2;
+        }
+    ]
+}
+
+component BottomBar inherits Rectangle {
+    width: 100%;
+    height: 35px;
+    background: Theme.background;
+    out property<int> active-page: 0;
+
+    Rectangle {
+        for page-icon[idx] in [
+            @image-url("../assets/icons/clock.svg"),
+            @image-url("../assets/icons/gear.svg"),
+            @image-url("../assets/icons/pallette.svg"),
+            @image-url("../assets/icons/info.svg"),
+        ] : BottomBarIcon {
+            y: 0px;
+            x: self.width * idx;
+            height: 35px;
+            width: parent.width / 4;
+            active: active-page == idx;
+    
+            icon := Image {
+                colorize: Theme.background_lightest;
+                animate colorize {
+                    duration: 125ms;
+                }
+                source: page-icon;
+                image-fit: contain;
+                width: 60%;
+                height: 60%;
+            }
+
+            activate => {
+                active-page = idx;
+            }
+        }
+    }
+}
+
+export component TabContainer inherits VerticalLayout {
+    Rectangle {
+        clock := TimerConfig {
+            animate opacity, x {
+                duration: 150ms;
+                easing: ease-in-out;
+            }
+            visible: self.opacity > 0%;
+        }
+        gear := ConfigPage {
+            animate opacity, x {
+                duration: 150ms;
+                easing: ease-in-out;
+            }
+            visible: self.opacity > 0%;
+        }
+        pall := ThemePage {
+            animate opacity, x {
+                duration: 150ms;
+                easing: ease-in-out;
+            }
+            visible: self.opacity > 0%;
+        }
+        info := AboutPage {
+            animate opacity, x {
+                duration: 150ms;
+                easing: ease-in-out;
+            }
+            visible: self.opacity > 0%;
+        }
+
+        states [
+            tab0 when bb.active-page == 0 : {
+                clock.opacity: 100%;
+                gear.opacity: 0%;
+                pall.opacity: 0%;
+                info.opacity: 0%;
+            }
+            tab1 when bb.active-page == 1 : {
+                clock.opacity: 0%;
+                gear.opacity: 100%;
+                pall.opacity: 0%;
+                info.opacity: 0%;
+            }
+            tab2 when bb.active-page == 2 : {
+                clock.opacity: 0%;
+                gear.opacity: 0%;
+                pall.opacity: 100%;
+                info.opacity: 0%;
+            }
+            tab3 when bb.active-page == 3 : {
+                clock.opacity: 0%;
+                gear.opacity: 0%;
+                pall.opacity: 0%;
+                info.opacity: 100%;
+            }
+        ]
+    }
+    bb := BottomBar {}
+}

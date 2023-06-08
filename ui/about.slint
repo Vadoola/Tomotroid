@@ -1,0 +1,82 @@
+import { VerticalBox, HorizontalBox } from "std-widgets.slint";
+import { Theme } from "theme.slint";
+
+export component AboutPage inherits Rectangle {
+    background: Theme.background_light;
+    VerticalBox {
+        Text {
+            text: "About";
+            font-size: 11pt;
+            //font-weight: 500;
+            horizontal-alignment: center;
+        }
+        HorizontalLayout {
+            alignment: center;
+            Image {
+                source: @image-url("../assets/logo.svg");
+                height: 75px;
+                width: 75px;
+            }
+        }
+        
+
+        Text {
+            text: "Tomotroid";
+            font-size: 16pt;
+            color: Theme.accent;
+            horizontal-alignment: center;
+        }
+
+        Text {
+            //Once I figure out how to do links, put a link to the Pomotroid github
+            //probably need to create a link type, with a callback and the rust code would
+            //need to open the URL would be my guess.
+            text: "A shameless rip off of Pomotroid\nI created to learn Slint UI";
+            //font-size: 16pt;
+            //color: Theme.accent;
+            horizontal-alignment: center;
+        }
+
+        HorizontalBox {
+            alignment: center;
+            Text {
+                text: "Version 0.1.0";
+                font-size: 11pt;
+                color: Theme.background_lightest;
+            }
+            Text {
+                //need to figure out how to make this a hyperlink
+                text: "(release notes)";
+                font-size: 11pt;
+                rn_ta := TouchArea {}
+
+                states [
+                    on_hvr when rn_ta.has-hover: {
+                        color: Theme.accent;
+                    }
+                    off_hvr when !rn_ta.has-hover: {
+                        color: Theme.background-lightest;
+                    }
+                ]
+            }
+        }
+        Text {
+            //need to figure out how to make this a hyperlink
+            text: "License and Documentation";
+            font-size: 11pt;
+            horizontal-alignment: center;
+            ld_ta := TouchArea {}
+
+            states [
+                on_hvr when ld_ta.has-hover: {
+                    color: Theme.accent;
+                }
+                off_hvr when !ld_ta.has-hover: {
+                    color: Theme.background-lightest;
+                }
+            ]
+        }
+
+        
+    }
+}

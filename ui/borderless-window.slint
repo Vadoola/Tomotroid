@@ -1,0 +1,221 @@
+import "../assets/fonts/RobotoMono-Light.ttf";
+import "../assets/fonts/Lato-Regular.ttf";
+import {Theme} from "theme.slint";
+
+export component BorderlessWindow inherits Window{
+    no-frame: true;
+
+    //this transparency doesn't work causing a black box instead of the rounded corners to match Pomodoro:
+    //This is apparently fixed in Master: https://github.com/slint-ui/slint/issues/722
+    background: transparent;
+    default-font-family: "Lato";
+    min-width: 200px;
+    min-height: 200px;
+
+    in property <string> parent;
+    out property<bool> menu_open <=> menu_btn.toggled;
+
+    property <bool> title-bar-pressed: false;
+    property <length> title-bar-down-x: 0;
+    property <length> title-bar-down-y: 0;
+
+    callback close();
+    callback move(length, length);
+    callback menu_toggled();
+
+    function title-bar-mouse-move(x: length, y: length) {
+            move(x - title-bar-down-x, y - title-bar-down-y);
+    }
+
+    function title-bar-mouse-event(ev: PointerEvent, x: length, y: length) {
+        title-bar-pressed = ev.kind == PointerEventKind.down;
+        title-bar-down-x = x;
+        title-bar-down-y = y;
+    }
+
+    VerticalLayout {
+        padding: 0;
+
+        // Title Bar
+        Rectangle {
+            height: 38px;
+
+            //Since slint doesn't support individual corner radii (https://github.com/slint-ui/slint/issues/157)
+            //This won't actually work correctly. As the Title Bar and Main Area are different rectangles.
+            //I would need to possibly curve this the main one, and then curve a third backing rectangle behind
+            //both? Or the other options, is replace the Rectangles with a Path that draws a rectangle with only
+            //the correct corners curved. Apparently this is a bug they plan to correct at some point. Right now
+            //I'm leaving this in because it allows to determine if the transparency is working
+            border-radius: 10px;
+            //height: 65px;
+            background: Theme.background;
+            HorizontalLayout {
+                padding-right: 7px;
+                padding-left: 7px;
+
+                //Below is the Menu button that opens the sliding popover.
+                //And has the animation to conver the menu bars to a back arrow
+                menu_btn := Rectangle {
+                    property<bool> toggled: false;
+
+                    property<int> mt_1_x: menu_btn.width * 0.2/1px;
+                    property<int> mt_1_y: menu_btn.height * 0.5/1px;
+
+                    property<int> lt_1_x: menu_btn.width * 0.2/1px;
+                    property<int> lt_1_y: menu_btn.height * 0.15/1px;
+
+                    property<int> mt_2_x: menu_btn.width * 0.2/1px;
+                    property<int> mt_2_y: menu_btn.height * 0.5/1px;
+
+                    property<int> lt_2_x: menu_btn.width * 0.60/1px;
+                    property<int> lt_2_y: menu_btn.height * 0.85/1px;
+
+                    animate mt_1_x, mt_1_y, lt_1_x, lt_1_y, mt_2_x, mt_2_y, lt_2_x, lt_2_y {
+                        duration: 200ms;
+                        easing: ease-in-out;
+                    }
+
+                    y: parent.height/2 - self.height/2;
+                    width: parent.height * 0.75;
+                    height: parent.height * 0.75;
+                    menuBtn_ta := TouchArea {
+                        clicked => {
+                            toggled = !toggled;
+                            root.menu-toggled();
+                        }
+                    }
+                    Path {
+                        stroke: menuBtn_ta.has-hover? closeBtn_ta.pressed? Theme.background_lightest: Theme.accent : Theme.background_lightest;
+                        stroke-width: 2px;
+                        viewbox-height: parent.height/1px;
+                        viewbox-width: parent.width/1px;
+
+                        MoveTo {
+                            x: mt_1_x;
+                            y: mt_1_y;
+                        }
+
+                        LineTo {
+                            x: lt_1_x;
+                            y: lt_1_y;
+                        }
+
+                        MoveTo {
+                            x: mt_2_x;
+                            y: mt_2_y;
+                        }
+
+                        LineTo {
+                            x: lt_2_x;
+                            y: lt_2_y;
+                        }
+                    }
+                    states [
+                        open when toggled: {
+                            mt_1_x: menu_btn.width * 0.2/1px;//top left
+                            mt_1_y: menu_btn.height * 0.5/1px;
+
+                            lt_1_x: menu_btn.width * 0.60/1px;//top right
+                            lt_1_y: menu_btn.height * 0.15/1px;
+
+                            mt_2_x: menu_btn.width * 0.2/1px;//bottom left
+                            mt_2_y: menu_btn.height * 0.5/1px;
+
+                            lt_2_x: menu_btn.width * 0.6/1px;//bottom right
+                            lt_2_y: menu_btn.height * 0.85/1px;
+                        }
+
+                        closed when !toggled: {
+                            mt_1_x: menu_btn.width * 0.1/1px;
+                            mt_1_y: menu_btn.height * 0.333/1px;
+
+                            lt_1_x: menu_btn.width * 0.90/1px;
+                            lt_1_y: menu_btn.height * 0.333/1px;
+
+                            mt_2_x: menu_btn.width * 0.1/1px;
+                            mt_2_y: menu_btn.height * 0.667/1px;
+
+                            lt_2_x: menu_btn.width * 0.50/1px;
+                            lt_2_y: menu_btn.height * 0.667/1px;
+                        }
+                    ]
+                }
+                //this below rectangle is just to create an even amount of objects
+                //in the horizontal layout so the title text ends up in the middle
+                //this is a bit hacky, but a quick way to get it centered while I
+                //work on other stuff...need to come back to this.
+                Rectangle {
+                    y: parent.height/2 - self.height/2;
+                    visible: false;
+                    width: parent.height * 0.75;
+                    height: parent.height * 0.75;
+                    background: red;
+                }
+
+                Text {
+                    text: root.title;
+                    font-size: 13pt;
+                    color: Theme.short-round;
+                    vertical-alignment: center;
+                    horizontal-alignment: center;
+                    TouchArea {
+                        moved => {
+                            title-bar-mouse-move(self.mouse-x, self.mouse-y);
+                        }
+                        pointer-event(ev) => {
+                            title-bar-mouse-event(ev, self.mouse-x, self.mouse-y);
+                        }
+                    }
+                }
+
+                Rectangle {
+                    y: parent.height/2 - self.height/2;
+                    width: parent.height * 0.75;
+                    height: parent.height * 0.75;
+
+                    minBtn_ta := TouchArea {
+                        //clicked => { minimize() }
+                    }
+                    Image {
+                        source: @image-url("../assets/icons/minimize.svg");
+                        animate colorize {
+                            duration: 250ms;
+                            easing: ease-in-out;
+                        }
+
+                        states [
+                            hvr when minBtn_ta.has-hover : {
+                                colorize: Theme.accent;
+                            }
+
+                            nthvr when !minBtn_ta.has-hover : {
+                                colorize: Theme.background_lightest;
+                            }
+                        ]
+                    }
+
+                }
+
+                Rectangle {
+                    y: parent.height/2 - self.height/2;
+                    width: parent.height * 0.75;
+                    height: parent.height * 0.75;
+                    closeBtn_ta := TouchArea {
+                        clicked => { close() }
+                    }
+                    Image {
+                        source: @image-url("../assets/icons/close.svg");
+                        colorize: closeBtn_ta.has-hover? closeBtn_ta.pressed? Theme.background_light: Theme.focus_round : Theme.background_lightest;
+                        animate colorize {
+                            duration: 250ms;
+                        }
+                    }
+                }
+            }
+        }
+        Rectangle {
+            background: Theme.background;
+            @children
+        }
+    }
+}

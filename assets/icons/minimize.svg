@@ -1,0 +1,26 @@
+<svg
+  version="1.2"
+  baseProfile="tiny"
+  id="Layer_1"
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  x="0px"
+  y="0px"
+  viewBox="0 0 14 2"
+  xml:space="preserve"
+  width="15px"
+  height="20px"
+  class="Icon Icon--minimize"
+>
+  <line
+	fill="none"
+	stroke="#F6F2EB"
+	stroke-width="2"
+	stroke-linecap="round"
+	stroke-miterlimit="10"
+	x1="1"
+	y1="1"
+	x2="13"
+	y2="1"
+  />
+</svg>

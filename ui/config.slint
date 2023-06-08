@@ -1,0 +1,162 @@
+import { Theme } from "theme.slint";
+import { VerticalBox, HorizontalBox, ScrollView, TextEdit } from "std-widgets.slint";
+
+export component CheckBox {
+    callback clicked <=> ta.clicked;
+    in-out property <bool> checked;
+
+    width: self.height;
+
+    checkbox := Rectangle {
+        width: 18px;
+        height: 18px;
+        border-color: Theme.background-lightest;
+        border-width: 2px;
+        border-radius: self.width * 50%;
+
+        animate background { duration: 150ms; }
+    }
+
+    ta := TouchArea {
+        clicked => {
+            checked = !checked;
+        }
+    }
+
+    states [
+        checked_no_hv when checked && !ta.has-hover : {
+            checkbox.border-width: 0;
+            checkbox.background: Theme.accent;
+        }
+
+        checked_hv when checked && ta.has-hover : {
+            checkbox.border-width: 2px;
+            checkbox.background: Theme.accent;
+            checkbox.border-color: Theme.background-lightest;
+        }
+
+        unchecked_no_hv when !checked && !ta.has-hover : {
+            checkbox.border-color: Theme.background-lightest;
+        }
+        
+        unchecked_hv when !checked && ta.has-hover : {
+            checkbox.border-color: Theme.accent;
+        }
+    ]
+}
+
+
+component ShortCutTag inherits HorizontalLayout {
+    in property<string> label;
+    property<bool> editing;
+
+    Rectangle {
+        height: 20px;
+        y: (parent.height - self.height)/2;
+        width: 100px;
+        border-width: editing ? 2px : 0px;
+        border-color: Theme.background-lightest;
+        border-radius: 3px;
+        background: editing ? Theme.background : Theme.background-light;
+
+
+        /*if !editing: */Text {
+            text: label;
+            font-family: "Roboto Mono";
+            color: Theme.accent;
+            
+            ta := TouchArea {
+                mouse-cursor: self.has-hover ? text : default;
+                clicked => {
+                    editing = ! editing;
+                }
+            }
+        }
+        
+        /*if editing: edt := TextEdit {
+            //this isn't really a text edit though...it just kind of looks like one
+            //I think when I manually create this I'm not going to worry about
+            //the cursor or copying text....I'm not really sure why you would want
+            //to...honestly this seems like a strange design in Pomotroid
+            //you can't really "type" into it, as your keys suddenly get chosen
+            //as your shortcut, so really the cursor would only be to
+            //A. Show a change to prove you are editing it
+            //B. Allow you to copy and paste the text for your shortcut
+        }*/
+
+    }
+}
+
+component ConfigBar inherits Rectangle {
+    in property<string> label;
+    in-out property<bool> hidden: false;
+
+    height: 44px;
+    width: 321px;
+    background: Theme.background;
+    border-radius: 5px;
+
+    HorizontalBox {
+        Text {
+            vertical-alignment: center;
+            text: root.label;
+            font-size: 11pt;
+            color: Theme.background-lightest;
+        }
+
+        @children
+     }
+}
+
+export component ConfigPage inherits Rectangle {
+    background: Theme.background_light;
+    out property<int> active-theme: 0;
+    VerticalBox {
+        ScrollView {
+            VerticalBox {
+                Text {
+                    text: "Settings";
+                    horizontal-alignment: center;
+                    font-size: 11pt;
+                    color: Theme.foreground;
+                }
+
+                for setting[idx] in [
+                    "Always On Top",
+                    "Deactivate Always On Top on Breaks",//only shown when "Always On Top" is selected
+                    "Auto-start Work Timer",
+                    "Auto-start Break Timer",
+                    "Tick Sounds - Work",
+                    "Tick Sounds - Break",
+                    "Desktop Notifications",
+                    "Minimize to Tray",
+                    "Minimize to Tray on Close"
+                ] : ConfigBar {
+                    label: setting;
+                    hidden: false;
+                    CheckBox {
+                        //if setting == "Always On Top"
+                    }
+                }
+
+                Text {
+                    text: "Global Shortcuts";
+                    horizontal-alignment: center;
+                    font-size: 11pt;
+                    color: Theme.foreground;
+                }
+
+                for setting[idx] in [
+                    {lbl: "Toggle Timer", shortcut: "Control+F1"},
+                    {lbl: "Reset Timer", shortcut: "Control+F2"},
+                    {lbl: "Skip Round", shortcut: "Control+F3"}
+                ] : ConfigBar {
+                    label: setting.lbl;
+                    ShortCutTag {
+                        label: setting.shortcut;
+                    }
+                }
+            }
+        }
+    }
+}

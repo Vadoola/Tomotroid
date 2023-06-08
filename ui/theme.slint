@@ -1,0 +1,22 @@
+export struct TextStyle {
+    letter-spacing: length
+}
+
+//default color theme is "Pomotroid" from Pomotroid software I'm mimicking.
+export global Theme {
+    in-out property <brush> long_round: #0bbddb;
+    in-out property <brush> short_round: #05ec8c;
+    in-out property <brush> focus_round: #ff4e4d;
+    in-out property <brush> background: #2f384b;
+    in-out property <brush> background_light: #3d4457;
+    in-out property <brush> background_lightest: #9ca5b5;
+    in-out property <brush> foreground: #f6f2eb;
+    in-out property <brush> foreground-darker: #c0c9da;
+    in-out property <brush> foreground-darkest: #dbe1ef;
+    in-out property <brush> accent: #05ec8c;
+
+
+    in property <TextStyle> textStyle: {
+        letter-spacing: 3px
+    };
+}

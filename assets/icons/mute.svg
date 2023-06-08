@@ -1,0 +1,20 @@
+ <svg
+  version="1.2"
+  baseProfile="tiny"
+  id="Layer_1"
+  xmlns="http://www.w3.org/2000/svg"
+  xmlns:xlink="http://www.w3.org/1999/xlink"
+  x="0px"
+  y="0px"
+  viewBox="0 0 12.3 12"
+  xml:space="preserve"
+  height="15px"
+  class="Icon--mute"
+  v-if="localVolume > 0"
+>
+  <path
+    fill="black"
+    d="M0,3.9v4.1h2.7l3.4,3.4V0.5L2.7,3.9H0z M9.2,6c0-1.2-0.7-2.3-1.7-2.8v5.5C8.5,8.3,9.2,7.2,9.2,6z M7.5,0v1.4
+c2,0.6,3.4,2.4,3.4,4.6s-1.4,4-3.4,4.6V12c2.7-0.6,4.8-3.1,4.8-6S10.3,0.6,7.5,0z"
+  />
+</svg>

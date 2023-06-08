@@ -1,0 +1,1 @@
+# A Shameless ripoff of [Pomotroid](https://github.com/Splode/pomotroid). That I am creating to practice my Rust skills and to try and learn [Slint](https://github.com/slint-ui/slint)
