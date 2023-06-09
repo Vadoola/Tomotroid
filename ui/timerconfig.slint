@@ -23,7 +23,6 @@ component ValueTag inherits HorizontalLayout {
     }
 }
 
-//need to fix the padding on all this
 component TimerSlider inherits VerticalLayout {
     in property<string> label;
     in property<int> min;
@@ -40,7 +39,7 @@ component TimerSlider inherits VerticalLayout {
         text: label;
         horizontal-alignment: center;
         font-size: 11pt;
-        color: Theme.foreground-darker;//need to figure out what color this is actually supposed to be
+        color: Theme.foreground-darker;
     }
     ValueTag {
         label: "\{sldr.value}\{tail}";
@@ -99,7 +98,6 @@ export component TimerConfig inherits Rectangle {
             sl-color: Theme.background_lightest;
         }
         Text {
-            //need to figure out how to make this a hyperlink
             text: "Reset Defaults";
             font-size: 11pt;
             horizontal-alignment: center;

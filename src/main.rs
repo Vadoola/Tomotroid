@@ -3,15 +3,6 @@ use slint::LogicalPosition;
 
 slint::include_modules!();
 
-//At some point I will need a tray icon
-//https://github.com/slint-ui/slint/discussions/1368
-//https://github.com/slint-ui/slint/discussions/933
-
-//would also need notification support
-//https://crates.io/crates/notify-rust
-//https://crates.io/crates/alert
-
-
 fn main() -> Result<()> {
     let main = Main::new()?;
 

@@ -2,14 +2,6 @@ import { VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
 import {Theme} from "theme.slint";
 
 component ThemeBar inherits Rectangle {
-    //initially the theme bar had a HorizontalLayout with the accent rectangle and the main rectangle
-    //instead of overlapping the accent on the main rectangle as it is being done now. The problem was
-    //in Pomotroid, the right side of the bar had rounded corners and the left did not.
-    //I think what would be cleaner would be switching back to a HorizontalLayout once
-    //Issue 157 is resolved: https://github.com/slint-ui/slint/issues/157
-    //Or as mentioned in that issue, I could also just draw the main rectangle with a path, to round only
-    //the right side.
-
     in property<color> acc_color: Theme.accent;
     in property<color> bg_color: Theme.background;
     in property<color> txt_color: Theme.foreground;
@@ -52,9 +44,6 @@ export component ThemePage inherits Rectangle {
     out property<int> active-theme: 0;
     VerticalBox {
         ScrollView {
-            //need to figure out how to hid the border on the scrollview
-            //need to figure out how to hide the horizontal scroll-bar
-            //need to figure out how to change the style of the veritcal scroll bar to match the thin one on pomotroid
             VerticalBox {
                 Text {
                     text: "Themes";

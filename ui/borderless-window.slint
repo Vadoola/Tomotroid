@@ -4,10 +4,6 @@ import {Theme} from "theme.slint";
 
 export component BorderlessWindow inherits Window{
     no-frame: true;
-
-    //this transparency doesn't work causing a black box instead of the rounded corners to match Pomodoro:
-    //This is apparently fixed in Master: https://github.com/slint-ui/slint/issues/722
-    background: transparent;
     default-font-family: "Lato";
     min-width: 200px;
     min-height: 200px;
@@ -39,15 +35,6 @@ export component BorderlessWindow inherits Window{
         // Title Bar
         Rectangle {
             height: 38px;
-
-            //Since slint doesn't support individual corner radii (https://github.com/slint-ui/slint/issues/157)
-            //This won't actually work correctly. As the Title Bar and Main Area are different rectangles.
-            //I would need to possibly curve this the main one, and then curve a third backing rectangle behind
-            //both? Or the other options, is replace the Rectangles with a Path that draws a rectangle with only
-            //the correct corners curved. Apparently this is a bug they plan to correct at some point. Right now
-            //I'm leaving this in because it allows to determine if the transparency is working
-            border-radius: 10px;
-            //height: 65px;
             background: Theme.background;
             HorizontalLayout {
                 padding-right: 7px;
