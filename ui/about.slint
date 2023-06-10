@@ -1,5 +1,6 @@
 import { VerticalBox, HorizontalBox } from "std-widgets.slint";
 import { Theme } from "theme.slint";
+import { HyperLink } from "hyperlink.slint";
 
 export component AboutPage inherits Rectangle {
     background: Theme.background_light;
@@ -41,39 +42,21 @@ export component AboutPage inherits Rectangle {
                 font-size: 11pt;
                 color: Theme.background_lightest;
             }
-            Text {
-                //need to figure out how to make this a hyperlink
+            HyperLink {
                 text: "(release notes)";
+                url: "Get a link for release notes";
+                link-color: Theme.background-lightest;
+                hvr-color: Theme.accent;
                 font-size: 11pt;
-                rn_ta := TouchArea {}
-
-                states [
-                    on_hvr when rn_ta.has-hover: {
-                        color: Theme.accent;
-                    }
-                    off_hvr when !rn_ta.has-hover: {
-                        color: Theme.background-lightest;
-                    }
-                ]
             }
         }
-        Text {
-            //need to figure out how to make this a hyperlink
+        HyperLink {
             text: "License and Documentation";
+            url: "https://github.com/Vadoola/Tomotroid/blob/main/LICENSE";
+            link-color: Theme.background-lightest;
+            hvr-color: Theme.accent;
             font-size: 11pt;
             horizontal-alignment: center;
-            ld_ta := TouchArea {}
-
-            states [
-                on_hvr when ld_ta.has-hover: {
-                    color: Theme.accent;
-                }
-                off_hvr when !ld_ta.has-hover: {
-                    color: Theme.background-lightest;
-                }
-            ]
         }
-
-        
     }
 }
