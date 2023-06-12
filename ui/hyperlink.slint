@@ -1,0 +1,25 @@
+export component HyperLink inherits Text {
+    in property<string> link_text;
+    in property<string> url;
+    in property<color> link-color;
+    in property<color> hvr-color;
+
+    callback clicked(string);
+
+    text: link_text;
+
+    hl_ta := TouchArea {
+        //in the rust crate for this callback use the open crate 'open::that("https://rust-lang.org");'
+        clicked => { root.clicked(url)}
+    }
+
+    states [
+        has_hvr when hl_ta.has-hover: {
+            color: hvr-color;
+        }
+        has_hvr when !hl_ta.has-hover: {
+            color: link-color;
+        }
+    ]
+
+}
