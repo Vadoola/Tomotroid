@@ -16,6 +16,7 @@ export component BorderlessWindow inherits Window{
     property <length> title-bar-down-y: 0;
 
     callback close();
+    callback minimize();
     callback move(length, length);
     callback menu_toggled();
 
@@ -161,7 +162,7 @@ export component BorderlessWindow inherits Window{
                     height: parent.height * 0.75;
 
                     minBtn_ta := TouchArea {
-                        //clicked => { minimize() }
+                        clicked => { minimize() }
                     }
                     Image {
                         source: @image-url("../assets/icons/minimize.svg");

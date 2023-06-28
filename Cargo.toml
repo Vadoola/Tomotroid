@@ -10,8 +10,8 @@ license = "MIT"
 [dependencies]
 anyhow = "1.0.71"
 open = "4.1.0"
-slint = "1.0.2"
-
+slint = "1.1"
+i-slint-backend-winit = "=1.1.0"
 
 [build-dependencies]
-slint-build = "1.0.2"
+slint-build = "1.1"

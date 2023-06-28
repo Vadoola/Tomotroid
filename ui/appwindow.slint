@@ -13,10 +13,15 @@ export component Main inherits BorderlessWindow {
     height: 480px;
 
     callback close-window();
+    callback minimize-window();
     callback move-window(length, length);
 
     close => {
         close-window();
+    }
+
+    minimize => {
+        minimize-window();
     }
 
     move(offset-x, offset-y) => {
