@@ -1,3 +1,6 @@
+#[cfg(unix)]
+use std::io::Cursor;
+
 use anyhow::Result;
 use slint::LogicalPosition;
 use std::sync::mpsc;
@@ -16,12 +19,29 @@ fn main() -> Result<()> {
     //because I don't see any way to capture when the tray icon is clicked
     //I'll need to dig into this more. For now I'll just add some menu items
     //to get some basic functionality and test minimzing to the tray etc
-    
-    //TODO: Also This RC file is Windows specific...need to figure out best way to make this
-    //cross platform, probably using some config guards
+    #[cfg(unix)]
+    let mut tray = {
+        let logo_cursor = Cursor::new(include_bytes!("../assets/icons/logo.png"));
+        let logo_decoder = png::Decoder::new(logo_cursor);
+        let mut logo_reader = logo_decoder.read_info().unwrap();
+        let mut logo_buff = vec![0; logo_reader.output_buffer_size()];
+        logo_reader.next_frame(&mut logo_buff).unwrap();
+
+        let logo_icon = IconSource::Data {
+            data: logo_buff,
+            height: 32,
+            width: 32,
+        };
+        TrayItem::new(
+            "Tomotroid\nClick to Restore",
+            logo_icon
+        ).unwrap()
+    };
+
+    #[cfg(windows)]
     let mut tray = TrayItem::new(
         "Tomotroid\nClick to Restore",
-        IconSource::Resource("green-icon"),
+        IconSource::Resource("logo-icon"),
     ).unwrap();
     
     //Hmm need to figure out the best way to handle listening on the channel
