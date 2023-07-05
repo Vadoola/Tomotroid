@@ -1,6 +1,11 @@
 import { VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
 import {Theme} from "theme.slint";
 
+export global ThemeChanged {
+    //String = Theme name to look for the Json file
+    pure callback theme_changed(string);
+}
+
 component ThemeBar inherits Rectangle {
     in property<color> acc_color: Theme.accent;
     in property<color> bg_color: Theme.background;
@@ -89,6 +94,7 @@ export component ThemePage inherits Rectangle {
                         Theme.foreground-darker = disp_theme.foreground ;
                         Theme.foreground-darkest = disp_theme.foreground ;
                         Theme.accent = disp_theme.accent;
+                        ThemeChanged.theme-changed(self.name);
                     }
                 }
             }

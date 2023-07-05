@@ -94,6 +94,10 @@ component BottomBar inherits Rectangle {
 }
 
 export component TabContainer inherits VerticalLayout {
+    //my initial attempts to add the logo to the theme weren't working. Passing it all the way through
+    //from multiple components feels a bit hacky, but it was a quick way to test the rest of my logic
+    //in regartds to updating the SVG and re-applying the logo
+    in-out property<image> logo <=> info.logo;
     Rectangle {
         clock := TimerConfig {
             animate opacity, x {

@@ -4,13 +4,16 @@ import { Theme } from "theme.slint";
 import { SlideOver } from "slidover.slint";
 import { CircularProgressBar } from "circularprogress.slint";
 import { HLClick } from "hyperlink.slint";
+import { ThemeChanged } from "themeconfig.slint";
 
-export { HLClick }
+export { HLClick, Theme, ThemeChanged }
 
 export component Main inherits BorderlessWindow {
     title: "Tomotroid";
     width: 360px;
     height: 480px;
+
+    in-out property<image> logo <=> slideover.logo;
 
     callback close-window();
     callback minimize-window();
@@ -33,6 +36,29 @@ export component Main inherits BorderlessWindow {
     }
 
     VerticalLayout {
+        states [
+            vis when root.menu_open : {
+                opacity: 0;
+                in {
+                    animate opacity {
+                        duration: 100ms;
+                        delay: 0ms;
+                        easing: ease-in-out;
+                    }
+                }
+            }
+            not_vis when !root.menu_open: {
+                opacity: 1;
+                in {
+                    animate opacity {
+                        duration: 100ms;
+                        delay: 250ms;
+                        easing: ease-in-out;
+                    }
+                }
+            }
+        ]
+        
         HorizontalLayout {
             padding-top: 60px;
             padding-left: 50px;

@@ -7,6 +7,8 @@ use tray_item::{IconSource, TrayItem};
 
 slint::include_modules!();
 
+pub const LOGO_BYTES: &str = include_str!("../assets/logo.svg");
+
 enum TrayMsg {
     MinRes,
     Quit,
@@ -112,6 +114,14 @@ fn main() -> Result<()> {
 
     main.global::<HLClick>().on_hl_clicked(|url| {
         open::that(url.as_str()).unwrap();
+    });
+
+    let thm_handle = main.as_weak();
+    main.global::<ThemeChanged>().on_theme_changed(move |theme| {
+        println!("New Theme: {theme}");
+        let thm_handle = thm_handle.upgrade().unwrap();
+        //just testing that this works...later will need to replace the logo colors with ones from the theme.
+        thm_handle.set_logo(slint::Image::load_from_svg_data(LOGO_BYTES.replace("fill:#f6f2eb", "file:#000000").as_bytes()).unwrap());
     });
 
     main.run()?;

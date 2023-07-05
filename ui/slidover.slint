@@ -4,54 +4,37 @@ import { Theme } from "theme.slint";
 
 export component SlideOver {
     in-out property <bool> expanded;
+    in-out property<image> logo <=> tc.logo;
 
     property<length> cont_x;
-    property<length> cont_w;
 
-    animate cont_x, cont_w {
-        duration: 1000ms;
+    animate cont_x {
+        duration: 250ms;
+        easing: ease-in-out;
     }
 
-    //Ok I'm having 0 luck getting these slide in animations to work but the windows pops up properly
-    // so for now maybe I skip the animations, and just get the rest of the content for the slide over to work
     states [
         vis when root.expanded : {
             cont_x: 0px;
-            cont_w: self.width;
-            in {
-                animate * { duration: 1000ms;}
-            }
-            out {
-                animate * { duration: 1000ms;}
-            }
         }
         not_vis when !root.expanded: {
-            cont_x: 0px;
-            cont_w: 0px;
-            in {
-                animate * { duration: 1000ms;}
-            }
-            out {
-                animate * { duration: 1000ms;}
-            }
+            cont_x: self.width * -1;
         }
     ]
 
     horizontal_stretch: 0;
-    if (root.expanded) : Rectangle {
+    Rectangle {
         y: 0px;
-        x: 0px;
+        x: cont_x;
         height: 100%;
         width: 100%;
 
 
         i_content := Rectangle {
-            x: cont_x;
-            width: cont_w;
             background: Theme.background_light;
             clip: true;
 
-            TabContainer {}
+            tc := TabContainer {}
         }
 
     }
