@@ -12,23 +12,11 @@ export component BorderlessWindow inherits Window{
     out property<bool> menu_open <=> menu_btn.toggled;
 
     property <bool> title-bar-pressed: false;
-    property <length> title-bar-down-x: 0;
-    property <length> title-bar-down-y: 0;
 
     callback close();
     callback minimize();
-    callback move(length, length);
+    callback move();
     callback menu_toggled();
-
-    function title-bar-mouse-move(x: length, y: length) {
-            move(x - title-bar-down-x, y - title-bar-down-y);
-    }
-
-    function title-bar-mouse-event(ev: PointerEvent, x: length, y: length) {
-        title-bar-pressed = ev.kind == PointerEventKind.down;
-        title-bar-down-x = x;
-        title-bar-down-y = y;
-    }
 
     VerticalLayout {
         padding: 0;
@@ -148,10 +136,12 @@ export component BorderlessWindow inherits Window{
                     horizontal-alignment: center;
                     TouchArea {
                         moved => {
-                            title-bar-mouse-move(self.mouse-x, self.mouse-y);
+                            if (root.title-bar-pressed) {
+                                move();
+                            }
                         }
                         pointer-event(ev) => {
-                            title-bar-mouse-event(ev, self.mouse-x, self.mouse-y);
+                            title-bar-pressed = (ev.kind == PointerEventKind.down) && (ev.button == PointerEventButton.left);
                         }
                     }
                 }

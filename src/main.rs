@@ -2,7 +2,6 @@
 use std::io::Cursor;
 
 use anyhow::Result;
-use slint::LogicalPosition;
 use std::sync::mpsc;
 use tray_item::{IconSource, TrayItem};
 
@@ -43,11 +42,9 @@ fn main() -> Result<()> {
         "Tomotroid\nClick to Restore",
         IconSource::Resource("logo-icon"),
     ).unwrap();
-    
-    //Hmm need to figure out the best way to handle listening on the channel
-    //with the Slint event loop.
+
     let (tray_tx, tray_rx) = mpsc::sync_channel(1);
-    
+
     let minres_tx = tray_tx.clone();
     tray.add_menu_item("Minimize / Restore", move || {
         minres_tx.send(TrayMsg::MinRes).unwrap();
@@ -57,9 +54,9 @@ fn main() -> Result<()> {
     tray.add_menu_item("Quit", move || {
         quit_tx.send(TrayMsg::Quit).unwrap();
     }).unwrap();
-    
+
     slint::platform::set_platform(Box::new(i_slint_backend_winit::Backend::new())).unwrap();
-    
+
     let main = Main::new()?;
 
     let close_handle = main.as_weak();
@@ -75,14 +72,15 @@ fn main() -> Result<()> {
     let min_handle = main.as_weak();
     main.on_minimize_window(move ||{
         let min_handle = min_handle.upgrade().unwrap();
-        i_slint_backend_winit::WinitWindowAccessor::with_winit_window(min_handle.window(), |win| win.set_minimized(true));
+        i_slint_backend_winit::WinitWindowAccessor::with_winit_window(min_handle.window(), |win| {
+            win.set_minimized(true);
+        });
     });
 
     let move_handle = main.as_weak();
-    main.on_move_window(move |offset_x, offset_y|{
+    main.on_move_window(move ||{
         let move_handle = move_handle.upgrade().unwrap();
-        let logical_pos = move_handle.window().position().to_logical(move_handle.window().scale_factor());
-        move_handle.window().set_position(LogicalPosition::new(logical_pos.x + offset_x, logical_pos.y + offset_y));
+        i_slint_backend_winit::WinitWindowAccessor::with_winit_window(move_handle.window(), |win| win.drag_window());
     });
 
     let tray_handle = main.as_weak();

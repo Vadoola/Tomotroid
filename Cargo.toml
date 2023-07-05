@@ -24,4 +24,4 @@ png = "0.17"
 slint-build = "1.1"
 
 [target.'cfg(windows)'.build-dependencies]
-windres = "*"
+windres = "0.2.2"

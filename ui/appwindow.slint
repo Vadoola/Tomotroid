@@ -14,7 +14,7 @@ export component Main inherits BorderlessWindow {
 
     callback close-window();
     callback minimize-window();
-    callback move-window(length, length);
+    callback move-window();
 
     close => {
         close-window();
@@ -24,8 +24,8 @@ export component Main inherits BorderlessWindow {
         minimize-window();
     }
 
-    move(offset-x, offset-y) => {
-        move-window(offset-x, offset-y);
+    move() => {
+        move-window();
     }
 
     menu_toggled => {
