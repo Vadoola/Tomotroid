@@ -1,7 +1,3 @@
-export struct TextStyle {
-    letter-spacing: length
-}
-
 //default color theme is "Pomotroid" from Pomotroid software I'm mimicking.
 export global Theme {
     in-out property <brush> long_round: #0bbddb;
@@ -14,9 +10,21 @@ export global Theme {
     in-out property <brush> foreground-darker: #c0c9da;
     in-out property <brush> foreground-darkest: #dbe1ef;
     in-out property <brush> accent: #05ec8c;
+    in-out property<length> letter-spacing: 3px;
+    in-out property<image> logo: @image-url("../assets/logo.svg");
+}
 
-
-    in property <TextStyle> textStyle: {
-        letter-spacing: 3px
-    };
+//@rust-attr(derive(serde::Deserialize))
+export struct JsonTheme {
+    name: string,
+    long_round: brush,
+    short_round: brush,
+    focus_round: brush,
+    background: brush,
+    background_light: brush,
+    background_lightest: brush,
+    foreground: brush,
+    foreground_darker: brush,
+    foreground_darkest: brush,
+    accent: brush,
 }

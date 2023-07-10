@@ -1,12 +1,12 @@
 import { VerticalBox , HorizontalBox, Button, ListView } from "std-widgets.slint";
 import { BorderlessWindow } from "borderless-window.slint";
-import { Theme } from "theme.slint";
+import { Theme, JsonTheme } from "theme.slint";
 import { SlideOver } from "slidover.slint";
 import { CircularProgressBar } from "circularprogress.slint";
 import { HLClick } from "hyperlink.slint";
-import { ThemeChanged } from "themeconfig.slint";
+import { ThemeCallbacks } from "themeconfig.slint";
 
-export { HLClick, Theme, ThemeChanged }
+export { HLClick, Theme, JsonTheme, ThemeCallbacks }
 
 export component Main inherits BorderlessWindow {
     title: "Tomotroid";
@@ -14,6 +14,7 @@ export component Main inherits BorderlessWindow {
     height: 480px;
 
     in-out property<image> logo <=> slideover.logo;
+    in property<[JsonTheme]> themes;
 
     callback close-window();
     callback minimize-window();

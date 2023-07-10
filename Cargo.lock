@@ -1511,6 +1511,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
+name = "hex_color"
+version = "2.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ff917051cbc87800de93ddcf39b59c9f2a0a4d809411a341c0ac422771219808"
+dependencies = [
+ "arrayvec",
+ "rand",
+ "serde",
+]
+
+[[package]]
 name = "i-slint-backend-qt"
 version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3433,9 +3444,12 @@ name = "tomotroid"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "hex_color",
  "i-slint-backend-winit",
  "open",
  "png",
+ "serde",
+ "serde_json",
  "slint",
  "slint-build",
  "tray-item",

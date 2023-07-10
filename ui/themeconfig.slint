@@ -1,9 +1,11 @@
 import { VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
-import {Theme} from "theme.slint";
+import {Theme, JsonTheme} from "theme.slint";
 
-export global ThemeChanged {
+export global ThemeCallbacks {
     //String = Theme name to look for the Json file
     pure callback theme_changed(string);
+
+    pure callback load_themes() -> [JsonTheme];
 }
 
 component ThemeBar inherits Rectangle {
@@ -47,6 +49,8 @@ component ThemeBar inherits Rectangle {
 export component ThemePage inherits Rectangle {
     background: Theme.background_light;
     out property<int> active-theme: 0;
+    in property<[JsonTheme]> themes: ThemeCallbacks.load-themes();
+
     VerticalBox {
         ScrollView {
             VerticalBox {
@@ -56,7 +60,7 @@ export component ThemePage inherits Rectangle {
                     horizontal-alignment: center;
                 }
                 //eventually I need to read these in from the json files at startup instead of having them statically here.
-                for disp_theme[idx] in [
+                /*for disp_theme[idx] in [
                     {name: "Andromeda",long-round: #C74DED,short-round: #00E8C6,focus-round: #EE5D43,background: #23262E,background-light: #2e323d,background-lightest: #746f77,foreground: #d5ced9,foreground-darker: #746f77,foreground-darkest: #CD9731,accent: #FFE66D},
                     {name: "Ayu",long-round: #5CCFE6,short-round: #BAE67E,focus-round: #F28779,background: #1F2430,background-light: #2a3546,background-lightest: #707a8c,foreground: #CBCCC6,foreground-darker: #CBCCC6,foreground-darkest: #5ccfe6,accent: #FFCC66},
                     {name: "City Lights",long-round: #6796E6,short-round: #33CED8,focus-round: #E27E8D,background: #1d252c,background-light: #28313a,background-lightest: #718CA1,foreground: #b7c5d3,foreground-darker: #718CA1,foreground-darkest: #718CA1,accent: #EBBF83},
@@ -75,7 +79,8 @@ export component ThemePage inherits Rectangle {
                     {name: "Synthwave",long-round: #36F9F6,short-round: #72F1B8,focus-round: #FF7EDB,background: #262335,background-light: #372d4b,background-lightest: #495495,foreground: #e0e3e6,foreground-darker: #b893ce,foreground-darkest: #DD5500,accent: #CD9731},
                     {name: "Tokyo Night Storm",long-round: #7AA2F7,short-round: #73DACA,focus-round: #F7768E,background: #24283b,background-light: #1b1e2e,background-lightest: #9AA5CE,foreground: #c0caf5,foreground-darker: #9AA5CE,foreground-darkest: #89DDFF,accent: #9D7CD8},
 
-                ] : ThemeBar {
+                ]*/
+                for disp_theme[idx] in themes : ThemeBar {
                     acc_color: disp_theme.accent;
                     bg_color: disp_theme.background;
                     txt_color: disp_theme.foreground;
@@ -94,7 +99,7 @@ export component ThemePage inherits Rectangle {
                         Theme.foreground-darker = disp_theme.foreground ;
                         Theme.foreground-darkest = disp_theme.foreground ;
                         Theme.accent = disp_theme.accent;
-                        ThemeChanged.theme-changed(self.name);
+                        ThemeCallbacks.theme-changed(self.name);
                     }
                 }
             }
