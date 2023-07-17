@@ -15,6 +15,7 @@ serde_json = "1.0"
 slint = "1.1"
 i-slint-backend-winit = "=1.1.0"
 hex_color = { version = "2.0.0", features = [ "serde" ] }
+walkdir = "2.3"
 
 
 [target.'cfg(windows)'.dependencies]
