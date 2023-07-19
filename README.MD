@@ -3,7 +3,7 @@
 ### Reasons I started this project
 - Wanted to practice rust
 - Wanted to try a GUI and picked Slint
-- There are ahandful of things I haven't tried doing before
+- There are a handful of things I haven't tried doing before
     - Tray Icon
     - Cross platform conditional logic (such as handling the tray icons on Windows and Linux)
     - Doing some unusual stuff with Slint, like manually re-creating the window frame

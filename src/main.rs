@@ -143,6 +143,10 @@ enum TrayMsg {
     Quit,
 }
 
+fn color_to_hex_string(color: slint::Color) -> String {
+    format!("#{:02X}{:02X}{:02X}",color.red(), color.green(), color.blue())
+}
+
 fn main() -> Result<()> {
     //TODO: I'm not seeing an obvious way to mimic the Pomotroid behavoir
     //where it just minimizes or restores by clicking the tray icon
@@ -250,12 +254,29 @@ fn main() -> Result<()> {
     let thm_handle = main.as_weak();
     main.global::<ThemeCallbacks>()
         .on_theme_changed(move |theme| {
-            let thm_handle = thm_handle.upgrade().unwrap();
-            //just testing that this works...later will need to replace the logo colors with ones from the theme.
             thm_handle.set_logo(
                 slint::Image::load_from_svg_data(
                     LOGO_BYTES
-                        .replace("fill:#f6f2eb", "file:#000000")
+                        .replace(
+                            "stroke:#2f384b",
+                            &format!("stroke:{}", color_to_hex_string(theme.background.color()))
+                        )
+                        .replace(
+                            "fill:#ff4e4d",
+                            &format!("fill:{}", color_to_hex_string(theme.focus_round.color()))
+                        )
+                        .replace(
+                            "fill:#992e2e",
+                            &format!("fill:{}", color_to_hex_string(theme.focus_round.color().darker(0.4)))
+                        )
+                        .replace(
+                            "fill:#f6f2eb",
+                            &format!("fill:{}", color_to_hex_string(theme.foreground.color()))
+                        )
+                        .replace(
+                            "fill:#05ec8c",
+                            &format!("fill:{}", color_to_hex_string(theme.accent.color()))
+                        )
                         .as_bytes(),
                 )
                 .unwrap(),
@@ -269,7 +290,6 @@ fn main() -> Result<()> {
             let mut themes: Vec<JsonTheme> = WalkDir::new(theme_dir)
                 .into_iter()
                 .filter(|e| {
-                    println!("{:#?}", e.as_ref().unwrap().path());
                     return e.as_ref().map_or(false, |f| {
                         f.file_name()
                             .to_str()
