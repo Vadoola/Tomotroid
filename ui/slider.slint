@@ -8,38 +8,49 @@ export component Slider {
     in property<int> maximum: 100;
     in property<int> step: 1;
     in property<color> color: red;
+    in property<color> mt_color: black;
+    in property<color> ft_color: red;
+    in property<color> ghv_color: red;
+    in property<bool> vertical: false;
 
     min-width: 16px;
-    min-height: grabber.height  ;
-    horizontal-stretch: 1;
-    vertical-stretch: 0;
+    min-height: grabber.height;
+    horizontal-stretch: vertical ? 0 : 1;
+    vertical-stretch: vertical ? 1 :0;
 
     main_track := Rectangle {
         y: (parent.height - self.height) / 2;
-        width: 100%;
-        height: 3px;
-        background: Theme.background;
+        //width: 100%;
+        width: vertical ? 3px : parent.width;
+        //height: 3px;
+        height: vertical ? parent.width : 3px;
+        background: mt_color;
 
         animate background { duration: 150ms; }
     }
 
     filled_track := Rectangle {
-        x:0;
-        y: (parent.height - self.height) / 2;
-        width: parent.width * ((root.value - (root.minimum/2))/root.maximum);
-        height: main_track.height;
+        //x:0;
+        x: vertical ? main_track.x : 0;
+        y: vertical ? main_track.y + main_track.height - self.height : (parent.height - self.height) / 2;
+        //width: parent.width * ((root.value - (root.minimum/2))/root.maximum);
+        width: vertical ? main-track.width : parent.width * ((root.value - (root.minimum/2))/root.maximum);
+        height: vertical ? parent.height * ((root.value - (root.minimum/2))/root.maximum): main_track.height;
         background: parent.color;
 
         animate background { duration: 150ms; }
     }
 
     grabber := Rectangle {
-        x:  (root.width - self.width) * (root.value - slider_ta.minimum) / (slider_ta.maximum - slider_ta.minimum);
-        y: (parent.height - self.height) / 2;
+        //x: (root.width - self.width) * (root.value - slider_ta.minimum) / (slider_ta.maximum - slider_ta.minimum);
+        x: vertical ? (parent.width - self.width) / 2 : (root.width - self.width) * (root.value - slider_ta.minimum) / (slider_ta.maximum - slider_ta.minimum);
+        //y: (parent.height - self.height) / 2;
+        y: vertical ? ((root.height - self.height) * (root.value - slider_ta.minimum) / (slider_ta.maximum - slider_ta.minimum)) : (parent.height - self.height) / 2;
         width: 18px;
         height: self.width;
         border_radius: self.width / 2;
-        background: parent.color;
+        //background: parent.color;
+        background: slider-ta.has-hover ? parent.ghv-color : parent.color;
         animate background { duration: 150ms; }
     }
 
@@ -60,8 +71,13 @@ export component Slider {
 
         moved => {
             if(self.enabled && self.pressed) {
-                root.value = max(slider_ta.minimum, min(slider_ta.maximum,
-                    self.pressed_value + (slider_ta.mouse_x - slider_ta.pressed_x) * (self.maximum - self.minimum) / (root.width - grabber.width)));
+                if (vertical) {
+                    root.value = max(slider_ta.minimum, min(slider_ta.maximum,
+                        self.pressed_value + (slider_ta.mouse_y - slider_ta.pressed_y) * (self.maximum - self.minimum) / (root.height - grabber.height)));
+                } else {
+                    root.value = max(slider_ta.minimum, min(slider_ta.maximum,
+                        self.pressed_value + (slider_ta.mouse_x - slider_ta.pressed_x) * (self.maximum - self.minimum) / (root.width - grabber.width)));
+                }
                 root.value_changed(root.value);
             }
         }

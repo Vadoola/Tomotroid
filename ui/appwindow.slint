@@ -5,6 +5,7 @@ import { SlideOver } from "slidover.slint";
 import { CircularProgressBar } from "circularprogress.slint";
 import { HLClick } from "hyperlink.slint";
 import { ThemeCallbacks } from "themeconfig.slint";
+import { Slider } from "slider.slint";
 
 export { HLClick, Theme, JsonTheme, ThemeCallbacks }
 
@@ -34,6 +35,28 @@ export component Main inherits BorderlessWindow {
 
     menu_toggled => {
         slideover.expanded = self.menu_open;
+    }
+
+    vol_popup := PopupWindow {
+        sldr := Slider {
+            width: parent.width;
+            height: 100%;
+            value: 1;
+            minimum: 0;
+            maximum: 100;
+            color: Theme.background-lightest;
+            ft_color: Theme.background-lightest;
+            ghv-color: Theme.accent;
+            mt_color: Theme.background-lightest;
+            vertical: true;
+        }
+        /*Rectangle {
+            background: red;
+        }*/
+        x: 310px;
+        y: 270px;
+        height: 100px;
+        width: 20px;
     }
 
     VerticalLayout {
@@ -192,6 +215,9 @@ export component Main inherits BorderlessWindow {
                 Rectangle {
                     y: parent.height/2 - self.height/2;
                     MuteBtn_ta := TouchArea {
+                        clicked => {
+                            vol_popup.show();
+                        }
                     }
                     Image {
                         source: @image-url("../assets/icons/mute.svg");

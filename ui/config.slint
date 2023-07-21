@@ -64,7 +64,7 @@ component ShortCutTag inherits HorizontalLayout {
             text: label;
             font-family: "Roboto Mono";
             color: Theme.accent;
-            
+
             ta := TouchArea {
                 mouse-cursor: self.has-hover ? text : default;
                 clicked => {
@@ -72,7 +72,7 @@ component ShortCutTag inherits HorizontalLayout {
                 }
             }
         }
-        
+
         /*if editing: edt := TextEdit {
             //this isn't really a text edit though...it just kind of looks like one
             //I think when I manually create this I'm not going to worry about
