@@ -30,3 +30,4 @@ slint-build = "1.1"
 
 [target.'cfg(windows)'.build-dependencies]
 windres = "0.2.2"
+#https://github.com/tauri-apps/winrt-notification for notifications on Windows?

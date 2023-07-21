@@ -254,6 +254,7 @@ fn main() -> Result<()> {
     let thm_handle = main.as_weak();
     main.global::<ThemeCallbacks>()
         .on_theme_changed(move |theme| {
+            let thm_handle = thm_handle.upgrade().unwrap();
             thm_handle.set_logo(
                 slint::Image::load_from_svg_data(
                     LOGO_BYTES
