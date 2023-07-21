@@ -294,7 +294,7 @@ fn main() -> Result<()> {
                     return e.as_ref().map_or(false, |f| {
                         f.file_name()
                             .to_str()
-                            .map(|s| s.ends_with(".json"))
+                            .map(|s| s.to_lowercase().ends_with(".json"))
                             .unwrap_or(false)
                     });
                 })
