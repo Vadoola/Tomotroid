@@ -1,20 +1,21 @@
- <svg
-  version="1.2"
-  baseProfile="tiny"
-  id="Layer_1"
-  xmlns="http://www.w3.org/2000/svg"
-  xmlns:xlink="http://www.w3.org/1999/xlink"
-  x="0px"
-  y="0px"
-  viewBox="0 0 12.3 12"
-  xml:space="preserve"
-  height="15px"
-  class="Icon--mute"
-  v-if="localVolume > 0"
->
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   version="1.2"
+   id="Layer_1"
+   x="0px"
+   y="0px"
+   viewBox="0 0 15 12"
+   xml:space="preserve"
+   height="15"
+   class="Icon--mute"
+   v-if="localVolume &gt; 0"
+   width="15"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><defs
+   id="defs139" />
   <path
-    fill="black"
-    d="M0,3.9v4.1h2.7l3.4,3.4V0.5L2.7,3.9H0z M9.2,6c0-1.2-0.7-2.3-1.7-2.8v5.5C8.5,8.3,9.2,7.2,9.2,6z M7.5,0v1.4
-c2,0.6,3.4,2.4,3.4,4.6s-1.4,4-3.4,4.6V12c2.7-0.6,4.8-3.1,4.8-6S10.3,0.6,7.5,0z"
-  />
+   fill="#000000"
+   d="m 0,3.4390246 v 5 H 3.2926829 L 7.4390244,12.585366 V -0.7073169 L 3.2926829,3.4390246 Z m 11.219512,2.5609756 c 0,-1.4634146 -0.853658,-2.8048781 -2.0731705,-3.4146342 V 9.292683 C 10.365854,8.804878 11.219512,7.4634148 11.219512,6.0000002 Z M 9.1463415,-1.317073 v 1.7073171 c 2.4390245,0.7317073 4.1463415,2.9268293 4.1463415,5.6097561 0,2.6829268 -1.707317,4.8780488 -4.1463415,5.6097558 v 1.707317 C 12.439024,12.585366 15,9.536586 15,6.0000002 15,2.4634148 12.560976,-0.58536568 9.1463415,-1.317073 Z"
+   id="path134"
+   style="stroke-width:1" />
 </svg>

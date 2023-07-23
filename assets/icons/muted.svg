@@ -1,21 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg
-	version="1.1"
-	id="Layer_1"
-	xmlns="http://www.w3.org/2000/svg"
-	xmlns:xlink="http://www.w3.org/1999/xlink"
-	x="0px"
-	y="0px"
-	viewBox="-467 269 24 24"
-	style="enable-background:new -467 269 24 24;"
-	xml:space="preserve"
-	height="20px"
-	class="Icon--muted"
-	>
+   version="1.1"
+   id="Layer_1"
+   x="0px"
+   y="0px"
+   viewBox="-467 269 15 18"
+   xml:space="preserve"
+   height="15"
+   class="Icon--muted"
+   width="15"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"><defs
+   id="defs9" />
 	<path
-	  fill="var(--color-background-lightest)"
-	  d="M-450.5,281c0-1.8-1-3.3-2.5-4v2.2l2.5,2.5C-450.5,281.4-450.5,281.2-450.5,281z M-448,281c0,0.9-0.2,1.8-0.5,2.6l1.5,1.5
-	  c0.7-1.2,1-2.6,1-4.1c0-4.3-3-7.9-7-8.8v2.1C-450.1,275.1-448,277.8-448,281z M-462.7,272l-1.3,1.3l4.7,4.7h-4.7v6h4l5,5v-6.7
-	  l4.3,4.3c-0.7,0.5-1.4,0.9-2.3,1.2v2.1c1.4-0.3,2.6-1,3.7-1.8l2,2l1.3-1.3l-9-9L-462.7,272z M-455,273l-2.1,2.1l2.1,2.1V273z"
-	/>
-	<path fill="none" d="M-467,269h24v24h-24V269z" />
+   fill="var(--color-background-lightest)"
+   d="m -455,277.95 c 0,-1.8 -1,-3.3 -2.5,-4 v 2.2 l 2.5,2.5 c 0,-0.3 0,-0.5 0,-0.7 z m 2.5,0 c 0,0.9 -0.2,1.8 -0.5,2.6 l 1.5,1.5 c 0.7,-1.2 1,-2.6 1,-4.1 0,-4.3 -3,-7.9 -7,-8.8 v 2.1 c 2.9,0.8 5,3.5 5,6.7 z m -14.7,-9 -1.3,1.3 4.7,4.7 h -4.7 v 6 h 4 l 5,5 v -6.7 l 4.3,4.3 c -0.7,0.5 -1.4,0.9 -2.3,1.2 v 2.1 c 1.4,-0.3 2.6,-1 3.7,-1.8 l 2,2 1.3,-1.3 -9,-9 z m 7.7,1 -2.1,2.1 2.1,2.1 z"
+   id="path2" />
+	
 </svg>
