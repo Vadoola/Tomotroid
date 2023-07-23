@@ -9,7 +9,7 @@ use std::io::Cursor;
 
 use anyhow::Result;
 use hex_color::HexColor;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use slint::{Color, ModelRc, VecModel};
 use std::{
@@ -136,6 +136,38 @@ impl Into<JsonTheme> for JsonThemeTemp {
             .into(),
         }
     }
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Root {
+    pub always_on_top: bool,
+    pub auto_start_break_timer: bool,
+    pub auto_start_work_timer: bool,
+    pub break_always_on_top: bool,
+    pub global_shortcuts: GlobalShortcuts,
+    pub min_to_tray: bool,
+    pub min_to_tray_on_close: bool,
+    pub notifications: bool,
+    pub theme: String,
+    pub tick_sounds: bool,
+    pub tick_sounds_during_break: bool,
+    pub time_long_break: i64,
+    pub time_short_break: i64,
+    pub time_work: i64,
+    pub volume: i64,
+    pub work_rounds: i64,
+}
+
+#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GlobalShortcuts {
+    #[serde(rename = "call-timer-reset")]
+    pub call_timer_reset: String,
+    #[serde(rename = "call-timer-skip")]
+    pub call_timer_skip: String,
+    #[serde(rename = "call-timer-toggle")]
+    pub call_timer_toggle: String,
 }
 
 enum TrayMsg {
