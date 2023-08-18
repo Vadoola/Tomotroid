@@ -15,6 +15,7 @@ export component Main inherits BorderlessWindow {
     height: 480px;
 
     in-out property<image> logo <=> slideover.logo;
+    in property<image> circ-progress: @image-url("../assets/ProgressCircle.svg");
     in property<[JsonTheme]> themes;
     property<int> volume: 100;
 
@@ -93,7 +94,7 @@ export component Main inherits BorderlessWindow {
             Rectangle {
                 height: 230px;
                 width: 230px;
-                CircularProgressBar {
+                /*CircularProgressBar {
                     thickness: 2px;
                     prog-color: Theme.background_lightest;
                     value: 99;
@@ -110,20 +111,26 @@ export component Main inherits BorderlessWindow {
                     height: parent.height * 0.95;
                     x: parent.width * 0.025;
                     y: parent.height * 0.025;
+                }*/
+                circ-prog := Image {
+                    //source: @image-url("../assets/ProgressCircle.svg");
+                    source: circ-progress;
+                    width: parent.width * 0.95;
+                    height: parent.height * 0.95;
                 }
-                    Timer := Text {
-                        font-family: "Roboto Mono";
-                        text: "25:00";
-                        color: Theme.foreground;
-                        font-size: 46px;
-                    }
-                    task_label := Text {
-                        text: "FOCUS";
-                        font-family: "Lato";
-                        y: parent.height * 0.70;
-                        color: Theme.foreground;
-                        font-size: 12pt;
-                    }
+                Timer := Text {
+                    font-family: "Roboto Mono";
+                    text: "25:00";
+                    color: Theme.foreground;
+                    font-size: 46px;
+                }
+                task_label := Text {
+                    text: "FOCUS";
+                    font-family: "Lato";
+                    y: parent.height * 0.70;
+                    color: Theme.foreground;
+                    font-size: 12pt;
+                }
             }
         }
 

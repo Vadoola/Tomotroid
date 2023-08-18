@@ -24,6 +24,7 @@ use walkdir::WalkDir;
 slint::include_modules!();
 
 pub const LOGO_BYTES: &str = include_str!("../assets/logo.svg");
+pub const PROG_BYTES: &str = include_str!("../assets/ProgressCircle.svg");
 
 //Right now serde support in Slint is new and crude, some of the types in the Slint version
 //of this struct like Brush don't support serde yet. So for now I'm creating 2 versions
@@ -138,6 +139,7 @@ impl Into<JsonTheme> for JsonThemeTemp {
     }
 }
 
+//using etceter for config file location: https://crates.io/crates/etcetera
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Root {
@@ -314,6 +316,22 @@ fn main() -> Result<()> {
                 )
                 .unwrap(),
             );
+
+            thm_handle.set_circ_progress(
+                slint::Image::load_from_svg_data(
+                    PROG_BYTES
+                        .replace(
+                            "stroke:#9ca5b5",
+                            &format!("stroke:{}", color_to_hex_string(theme.background_lightest.color()))
+                        )
+                        //for now I'll just set this to the focus round, but it actually depends on what timer is active
+                        .replace(
+                            "stroke:#ff4e4d",
+                            &format!("stroke:{}", color_to_hex_string(theme.focus_round.color()))
+                        )
+                        .as_bytes(),
+                    ).unwrap(),
+                );
         });
 
     main.global::<ThemeCallbacks>().on_load_themes(move || {
