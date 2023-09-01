@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   class="circle-chart"
+   viewbox="0 0 33.83098862 33.83098862"
+   width="33.331032"
+   height="33.331089"
+   version="1.1"
+   id="svg6"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs10" />
+  <circle
+     class="progress-background"
+     stroke-width="0.3125"
+     fill="none"
+     cx="16.665438"
+     cy="16.665495"
+     id="background"
+     style="stroke:#9ca5b5;stroke-opacity:1"
+     r="15.915494" />
+  <circle
+     class="progress"
+     stroke-width="1.5"
+     stroke-dasharray="75, 100"
+     stroke-linecap="round"
+     fill="none"
+     cx="-16.665495"
+     cy="16.665438"
+     id="progress"
+     style="stroke:#ff4e4d;stroke-opacity:1"
+     r="15.915494"
+     transform="rotate(-90)" />
+</svg>
