@@ -11,7 +11,7 @@ use anyhow::Result;
 use hex_color::HexColor;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use slint::{Color, ModelRc, VecModel};
+use slint::{Color, ModelRc, Timer, TimerMode, VecModel};
 use std::{
     fs::File,
     io::{BufReader, Read},
@@ -181,6 +181,27 @@ fn color_to_hex_string(color: slint::Color) -> String {
     format!("#{:02X}{:02X}{:02X}",color.red(), color.green(), color.blue())
 }
 
+fn update_prg_svg(bg_clr: slint::Color, fg_clr: slint::Color, rem_per: f32) -> slint::Image {
+    //     stroke-dasharray="100, 100"
+    slint::Image::load_from_svg_data(
+        PROG_BYTES
+            .replace(
+                "stroke:#9ca5b5",
+                &format!("stroke:{}", color_to_hex_string(bg_clr))
+            )
+            //for now I'll just set this to the focus round, but it actually depends on what timer is active
+            .replace(
+                "stroke:#ff4e4d",
+                &format!("stroke:{}", color_to_hex_string(fg_clr))
+            )
+            .replace(
+                "stroke-dasharray=\"100, 100\"",
+                &format!("stroke-dasharray=\"{}, 100\"", rem_per)
+            )
+            .as_bytes(),
+        ).unwrap()
+}
+
 fn main() -> Result<()> {
     //TODO: I'm not seeing an obvious way to mimic the Pomotroid behavoir
     //where it just minimizes or restores by clicking the tray icon
@@ -318,20 +339,8 @@ fn main() -> Result<()> {
             );
 
             thm_handle.set_circ_progress(
-                slint::Image::load_from_svg_data(
-                    PROG_BYTES
-                        .replace(
-                            "stroke:#9ca5b5",
-                            &format!("stroke:{}", color_to_hex_string(theme.background_lightest.color()))
-                        )
-                        //for now I'll just set this to the focus round, but it actually depends on what timer is active
-                        .replace(
-                            "stroke:#ff4e4d",
-                            &format!("stroke:{}", color_to_hex_string(theme.focus_round.color()))
-                        )
-                        .as_bytes(),
-                    ).unwrap(),
-                );
+                update_prg_svg(theme.background_lightest.color(), theme.focus_round.color(), 75.0)
+            );
         });
 
     main.global::<ThemeCallbacks>().on_load_themes(move || {
@@ -370,6 +379,48 @@ fn main() -> Result<()> {
     });
 
     main.global::<ThemeCallbacks>().invoke_load_themes();
+
+    let timer = Timer::default();
+    let timer_handle = main.as_weak();
+    //I need to move this into a thread that then ticks up on the main thread
+    //but the Slint timer runs on the slint event loop doesn't it?
+    //which means it needs to run in the main thread?...but it's only firing once
+    //even though it's set to repeat....
+    //yeah so the timer has to run on the main thread...unless I set up Tokio, and use some sort of Tokio timer
+    //So why is this ticking, once...and then never again?
+    //ok so this actually is repeating....but right now set to repeated every 1 ms...it actually seems to repeat roughly every 10 s?
+    //so set to repeat eveyr 1 ms...and tick over a value of ten (which should be 10s) it seems to tick over once per second
+    //if I set it to repeate ever 1ms, and tick over a value of 1 (which should be 1s) it seems to tick over once every 10s...WTF?
+    //ok so 1ms timeout and tick of 500 ticks over rapidly...which based off rough calculations...would tick over 50s per second?
+    //yeah so setting the tick to 50 and 1ms timeout...looks (based on my crude timing) to be ticking over 5s per second
+    //so what ever is happening it's consistent...I just don't quite get it.
+    //so if my math is right...arguably putting a timeout of 1000ms and a tick of 10_000 should tick over 1 per second?...but will it only update once per min?
+    //ok so my math must be wrong...this appears to be ticking over 10s per 1s...so I need to remove a 0 from the tick?
+    //so timeout and tick are both 1000
+    //ok so this seems to be ticking over at once per second....this seems like a horrible way to do it though
+    //I think I either need some sort of tokio timer (or async-std or smol timer...tokio might be pretty big for just a timer)
+    //...or maybe have the timer, check some sort of system time.
+    //basically every time the timer ticks over check the system time see where I'm at, and calculate how much to tick over.
+    //but I would need to handle this correctly for pausing etc.
+    //Duh...I'm an idiot. I'm thinking the invoke tick is in seconds because I use a 's' for duration in the .slint file
+    //but the duration values in Rust are always in ms...so when I was doing invoke_tick(1) I was telling it to tick up 1ms per second
+    //no wonder the timeout of 1s and a tick of 1000 works....
+    main.on_start_timer(move || {
+        let timer_handle = timer_handle.clone();
+        timer.start(TimerMode::Repeated, std::time::Duration::from_millis(1000), move || {
+            let timer_handle = timer_handle.unwrap();
+            timer_handle.invoke_tick(1000);
+            //remaining-time: current-timer;
+            //let thm = timer_handle.get_themes()
+            //how do I get the current theme?
+            //for now I just want to know if the ticking over of the progress is working so I'll just grab a couple of random colors
+            let perc = timer_handle.get_remaining_time() as f32 / timer_handle.get_current_timer() as f32 * 100.0;
+
+            timer_handle.set_circ_progress(
+                update_prg_svg(slint::Color::from_rgb_u8(20, 20, 20), slint::Color::from_rgb_u8(255, 200, 20), perc)
+            );
+        })
+    });
     main.run()?;
     Ok(())
 }

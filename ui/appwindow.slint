@@ -15,13 +15,23 @@ export component Main inherits BorderlessWindow {
     height: 480px;
 
     in-out property<image> logo <=> slideover.logo;
+    
+    //this needs to get set to the active timer...for now I'll just force it to a value while I work on the
+    //rest of the logic
+    in-out property<duration> current-timer: 1500s;
+    in-out property<duration> remaining-time: current-timer;
+
     in property<image> circ-progress: @image-url("../assets/ProgressCircle.svg");
     in property<[JsonTheme]> themes;
+
     property<int> volume: 100;
 
     callback close-window();
     callback minimize-window();
     callback move-window();
+
+    callback start-timer();
+    callback tick(duration);
 
     close => {
         close-window();
@@ -39,6 +49,15 @@ export component Main inherits BorderlessWindow {
         slideover.expanded = self.menu_open;
     }
 
+    tick(passed-time) => {
+        remaining-time -= passed-time;
+        remaining-time = max(remaining-time, 0);
+    }
+
+    function time-remaining() -> string {
+        floor(remaining-time / 60s) + ":" + (mod(remaining-time, 60s)/1s < 10 ? "0" : "") + floor(mod(remaining-time, 60s)/1s)
+    }
+
     vol_popup := PopupWindow {
         sldr := Slider {
             width: parent.width;
@@ -52,9 +71,6 @@ export component Main inherits BorderlessWindow {
             mt_color: Theme.background-lightest;
             vertical: true;
         }
-        /*Rectangle {
-            background: red;
-        }*/
         x: 310px;
         y: 270px;
         height: 100px;
@@ -84,7 +100,7 @@ export component Main inherits BorderlessWindow {
                 }
             }
         ]
-        
+
         HorizontalLayout {
             padding-top: 60px;
             padding-left: 50px;
@@ -113,14 +129,14 @@ export component Main inherits BorderlessWindow {
                     y: parent.height * 0.025;
                 }*/
                 circ-prog := Image {
-                    //source: @image-url("../assets/ProgressCircle.svg");
                     source: circ-progress;
                     width: parent.width * 0.95;
                     height: parent.height * 0.95;
                 }
                 Timer := Text {
                     font-family: "Roboto Mono";
-                    text: "25:00";
+                    //text: "25:00";
+                    text: time-remaining();
                     color: Theme.foreground;
                     font-size: 46px;
                 }
@@ -150,7 +166,7 @@ export component Main inherits BorderlessWindow {
                 }
 
                 StartBtn_ta := TouchArea {
-
+                    clicked => { start-timer() }
                 }
 
                 Image {

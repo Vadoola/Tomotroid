@@ -22,7 +22,7 @@
   <circle
      class="progress"
      stroke-width="1.5"
-     stroke-dasharray="75, 100"
+     stroke-dasharray="100, 100"
      stroke-linecap="round"
      fill="none"
      cx="-16.665495"
