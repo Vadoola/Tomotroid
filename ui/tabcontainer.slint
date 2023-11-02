@@ -1,5 +1,5 @@
 import { Theme } from "theme.slint";
-import { TimerConfig } from "timerconfig.slint";
+import { TimerConfig, TimerConfigPage } from "timerconfig.slint";
 import { AboutPage } from "about.slint";
 import { ThemePage } from "themeconfig.slint";
 import { ConfigPage } from "config.slint";
@@ -74,7 +74,7 @@ component BottomBar inherits Rectangle {
             height: 35px;
             width: parent.width / 4;
             active: active-page == idx;
-    
+
             icon := Image {
                 colorize: Theme.background_lightest;
                 animate colorize {
@@ -98,8 +98,11 @@ export component TabContainer inherits VerticalLayout {
     //from multiple components feels a bit hacky, but it was a quick way to test the rest of my logic
     //in regartds to updating the SVG and re-applying the logo
     in-out property<image> logo <=> info.logo;
+
+    out property <TimerConfig> tmr_config: clock.config;
+
     Rectangle {
-        clock := TimerConfig {
+        clock := TimerConfigPage {
             animate opacity, x {
                 duration: 150ms;
                 easing: ease-in-out;

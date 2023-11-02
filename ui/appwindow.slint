@@ -6,6 +6,7 @@ import { CircularProgressBar } from "circularprogress.slint";
 import { HLClick } from "hyperlink.slint";
 import { ThemeCallbacks } from "themeconfig.slint";
 import { Slider } from "slider.slint";
+import { TimerConfig } from "timerconfig.slint";
 
 export { HLClick, Theme, JsonTheme, ThemeCallbacks }
 
@@ -18,13 +19,15 @@ export component Main inherits BorderlessWindow {
     
     //this needs to get set to the active timer...for now I'll just force it to a value while I work on the
     //rest of the logic
-    in-out property<duration> current-timer: 1500s;
+    in-out property<duration> current-timer: tmr-config.focus-time;
     in-out property<duration> remaining-time: current-timer;
 
     in property<image> circ-progress: @image-url("../assets/ProgressCircle.svg");
     in property<[JsonTheme]> themes;
 
     property<int> volume: 100;
+    property<TimerConfig> tmr-config: slideover.tmr-config;
+
 
     callback close-window();
     callback minimize-window();

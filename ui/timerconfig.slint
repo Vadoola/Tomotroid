@@ -4,6 +4,13 @@ import { VerticalBox, HorizontalBox } from "std-widgets.slint";
 import { Slider } from "slider.slint";
 import { Theme } from "theme.slint";
 
+export struct TimerConfig {
+    focus-time: duration,
+    shbrk-time: duration,
+    lgbrk-time: duration,
+    rounds: int,
+}
+
 component ValueTag inherits HorizontalLayout {
     in property<string> label;
 
@@ -59,7 +66,14 @@ component TimerSlider inherits VerticalLayout {
     }
 }
 
-export component TimerConfig inherits Rectangle {
+export component TimerConfigPage inherits Rectangle {
+    out property <TimerConfig> config: {
+        focus-time: focus-slider.value * 60s,
+        shbrk-time: shbrk-slider.value * 60s,
+        lgbrk-time: lngbrk-slider.value * 60s,
+        rounds: round-slider.value,
+    };
+
     background: Theme.background_light;
     VerticalBox {
         Text {
@@ -68,7 +82,7 @@ export component TimerConfig inherits Rectangle {
             font-size: 11pt;
             color: Theme.foreground;
         }
-        TimerSlider {
+        focus-slider := TimerSlider {
             label: "Focus";
             min: 1;
             max: 90;
@@ -76,7 +90,7 @@ export component TimerConfig inherits Rectangle {
             tail: ":00";
             sl-color: Theme.focus_round;
         }
-        TimerSlider {
+        shbrk-slider := TimerSlider {
             label: "Short Break";
             min: 1;
             max: 90;
@@ -84,7 +98,7 @@ export component TimerConfig inherits Rectangle {
             tail: ":00";
             sl-color: Theme.short_round;
         }
-        TimerSlider {
+        lngbrk-slider := TimerSlider {
             label: "Long Break";
             min: 1;
             max: 90;
@@ -92,7 +106,7 @@ export component TimerConfig inherits Rectangle {
             tail: ":00";
             sl-color: Theme.long_round;
         }
-        TimerSlider {
+        round-slider := TimerSlider {
             label: "Round";
             min: 1;
             max: 12;
