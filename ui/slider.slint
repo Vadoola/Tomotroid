@@ -15,12 +15,12 @@ export component Slider {
 
     min-width: 16px;
     min-height: grabber.height;
-    horizontal-stretch: vertical ? 0 : 1;
-    vertical-stretch: vertical ? 1 :0;
+    horizontal-stretch: root.vertical ? 0 : 1;
+    vertical-stretch: root.vertical ? 1 :0;
 
     main_track := Rectangle {
         y: (parent.height - self.height) / 2;
-        background: mt_color;
+        background: root.mt_color;
 
         animate background { duration: 150ms; }
     }
@@ -56,7 +56,7 @@ export component Slider {
 
         moved => {
             if(self.enabled && self.pressed) {
-                if (vertical) {
+                if (root.vertical) {
                     root.value = max(slider_ta.minimum, min(slider_ta.maximum,
                         self.pressed_value - (slider_ta.mouse_y - slider_ta.pressed_y) * (self.maximum - self.minimum) / (root.height - grabber.height)));
                 } else {
@@ -88,7 +88,7 @@ export component Slider {
     }
 
     states [
-        vert when vertical : {
+        vert when root.vertical : {
             main-track.width: 3px;
             main-track.height: self.height;
 
@@ -101,7 +101,7 @@ export component Slider {
             grabber.y: (self.height - grabber.height) - ((self.height - grabber.height) * (self.value - slider_ta.minimum) / (slider_ta.maximum - slider_ta.minimum));
         }
 
-        horiz when !vertical : {
+        horiz when !root.vertical : {
             main-track.width: self.width;
             main-track.height: 3px;
 

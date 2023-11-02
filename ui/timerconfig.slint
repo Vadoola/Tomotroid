@@ -22,7 +22,7 @@ component ValueTag inherits HorizontalLayout {
         background: Theme.background;
 
         lbl := Text {
-            text: label;
+            text: root.label;
             font-family: "Roboto Mono";
             font-weight: 800;
             color: Theme.foreground;
@@ -43,21 +43,21 @@ component TimerSlider inherits VerticalLayout {
 
 
     Text {
-        text: label;
+        text: root.label;
         horizontal-alignment: center;
         font-size: 11pt;
         color: Theme.foreground-darker;
     }
     ValueTag {
-        label: "\{sldr.value}\{tail}";
+        label: "\{sldr.value}\{root.tail}";
     }
     Rectangle {
         sldr := Slider {
             width: parent.width;
             height: 20px;
             value: 1;
-            minimum: min;
-            maximum: max;
+            minimum: root.min;
+            maximum: root.max;
             color: root.sl_color;
             ft-color: root.sl_color;
             ghv-color: root.sl_color;

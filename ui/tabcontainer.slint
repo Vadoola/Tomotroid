@@ -33,22 +33,22 @@ component BottomBarIcon inherits Rectangle {
     }
 
     states [
-        hvr_act when bbi_ta.has-hover && active: {
+        hvr_act when bbi_ta.has-hover && root.active: {
             background: Theme.background.brighter(0.3);
             slct.width: self.width * 0.333;
             slct.x: 0px + (self.width * 0.333);
         }
-        hvr_nt_act when bbi_ta.has-hover && !active: {
+        hvr_nt_act when bbi_ta.has-hover && !root.active: {
             background: Theme.background.brighter(0.3);
             slct.width: 0px;
             slct.x: self.width / 2;
         }
-        nt_hvr_act when !bbi_ta.has-hover && active: {
+        nt_hvr_act when !bbi_ta.has-hover && root.active: {
             background: Theme.background;
             slct.width: self.width * 0.333;
             slct.x: 0px + (self.width * 0.333);
         }
-        nt_hvr_nt_act when !bbi_ta.has-hover && !active: {
+        nt_hvr_nt_act when !bbi_ta.has-hover && !root.active: {
             background: Theme.background;
             slct.width: 0px;
             slct.x: self.width / 2;
@@ -73,7 +73,7 @@ component BottomBar inherits Rectangle {
             x: self.width * idx;
             height: 35px;
             width: parent.width / 4;
-            active: active-page == idx;
+            active: root.active-page == idx;
 
             icon := Image {
                 colorize: Theme.background_lightest;
@@ -87,7 +87,7 @@ component BottomBar inherits Rectangle {
             }
 
             activate => {
-                active-page = idx;
+                root.active-page = idx;
             }
         }
     }
@@ -99,7 +99,7 @@ export component TabContainer inherits VerticalLayout {
     //in regartds to updating the SVG and re-applying the logo
     in-out property<image> logo <=> info.logo;
 
-    out property <TimerConfig> tmr_config: clock.config;
+    out property <TimerConfig> tmr-config: clock.config;
 
     Rectangle {
         clock := TimerConfigPage {

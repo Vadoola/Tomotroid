@@ -3,7 +3,7 @@ import { VerticalBox, HorizontalBox, ScrollView, TextEdit } from "std-widgets.sl
 
 export component CheckBox {
     callback clicked <=> ta.clicked;
-    in-out property <bool> checked;
+    out property <bool> checked;
 
     width: self.height;
 
@@ -19,27 +19,27 @@ export component CheckBox {
 
     ta := TouchArea {
         clicked => {
-            checked = !checked;
+            root.checked = !root.checked;
         }
     }
 
     states [
-        checked_no_hv when checked && !ta.has-hover : {
+        checked_no_hv when root.checked && !ta.has-hover : {
             checkbox.border-width: 0;
             checkbox.background: Theme.accent;
         }
 
-        checked_hv when checked && ta.has-hover : {
+        checked_hv when root.checked && ta.has-hover : {
             checkbox.border-width: 2px;
             checkbox.background: Theme.accent;
             checkbox.border-color: Theme.background-lightest;
         }
 
-        unchecked_no_hv when !checked && !ta.has-hover : {
+        unchecked_no_hv when !root.checked && !ta.has-hover : {
             checkbox.border-color: Theme.background-lightest;
         }
-        
-        unchecked_hv when !checked && ta.has-hover : {
+
+        unchecked_hv when !root.checked && ta.has-hover : {
             checkbox.border-color: Theme.accent;
         }
     ]
@@ -48,27 +48,27 @@ export component CheckBox {
 
 component ShortCutTag inherits HorizontalLayout {
     in property<string> label;
-    property<bool> editing;
+    out property<bool> editing;
 
     Rectangle {
         height: 20px;
         y: (parent.height - self.height)/2;
         width: 100px;
-        border-width: editing ? 2px : 0px;
+        border-width: root.editing ? 2px : 0px;
         border-color: Theme.background-lightest;
         border-radius: 3px;
-        background: editing ? Theme.background : Theme.background-light;
+        background: root.editing ? Theme.background : Theme.background-light;
 
 
         /*if !editing: */Text {
-            text: label;
+            text: root.label;
             font-family: "Roboto Mono";
             color: Theme.accent;
 
             ta := TouchArea {
                 mouse-cursor: self.has-hover ? text : default;
                 clicked => {
-                    editing = ! editing;
+                    root.editing = ! root.editing;
                 }
             }
         }

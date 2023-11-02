@@ -11,7 +11,7 @@ export component BorderlessWindow inherits Window{
     in property <string> parent;
     out property<bool> menu_open <=> menu_btn.toggled;
 
-    property <bool> title-bar-pressed: false;
+    out property <bool> title-bar-pressed: false;
 
     callback close();
     callback minimize();
@@ -87,7 +87,7 @@ export component BorderlessWindow inherits Window{
                         }
                     }
                     states [
-                        open when toggled: {
+                        open when self.toggled: {
                             mt_1_x: menu_btn.width * 0.2/1px;//top left
                             mt_1_y: menu_btn.height * 0.5/1px;
 
@@ -101,7 +101,7 @@ export component BorderlessWindow inherits Window{
                             lt_2_y: menu_btn.height * 0.85/1px;
                         }
 
-                        closed when !toggled: {
+                        closed when !self.toggled: {
                             mt_1_x: menu_btn.width * 0.1/1px;
                             mt_1_y: menu_btn.height * 0.333/1px;
 
@@ -137,11 +137,11 @@ export component BorderlessWindow inherits Window{
                     TouchArea {
                         moved => {
                             if (root.title-bar-pressed) {
-                                move();
+                                root.move();
                             }
                         }
                         pointer-event(ev) => {
-                            title-bar-pressed = (ev.kind == PointerEventKind.down) && (ev.button == PointerEventButton.left);
+                            root.title-bar-pressed = (ev.kind == PointerEventKind.down) && (ev.button == PointerEventButton.left);
                         }
                     }
                 }
@@ -152,7 +152,7 @@ export component BorderlessWindow inherits Window{
                     height: parent.height * 0.75;
 
                     minBtn_ta := TouchArea {
-                        clicked => { minimize() }
+                        clicked => { root.minimize() }
                     }
                     Image {
                         source: @image-url("../assets/icons/minimize.svg");
@@ -179,7 +179,7 @@ export component BorderlessWindow inherits Window{
                     width: parent.height * 0.75;
                     height: parent.height * 0.75;
                     closeBtn_ta := TouchArea {
-                        clicked => { close() }
+                        clicked => { root.close() }
                     }
                     Image {
                         source: @image-url("../assets/icons/close.svg");

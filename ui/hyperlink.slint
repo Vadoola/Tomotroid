@@ -8,18 +8,18 @@ export component HyperLink inherits Text {
     in property<color> link-color;
     in property<color> hvr-color;
 
-    text: link_text;
+    text: root.link_text;
 
     hl_ta := TouchArea {
-        clicked => { HLClick.hl_clicked(url)}
+        clicked => { HLClick.hl_clicked(root.url)}
     }
 
     states [
         has_hvr when hl_ta.has-hover: {
-            color: hvr-color;
+            color: root.hvr-color;
         }
         has_hvr when !hl_ta.has-hover: {
-            color: link-color;
+            color: root.link-color;
         }
     ]
 

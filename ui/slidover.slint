@@ -9,7 +9,7 @@ export component SlideOver {
 
     out property <TimerConfig> tmr-config: tc.tmr-config;
 
-    property<length> cont_x;
+    out property<length> cont_x;
 
     animate cont_x {
         duration: 250ms;
@@ -28,7 +28,7 @@ export component SlideOver {
     horizontal_stretch: 0;
     Rectangle {
         y: 0px;
-        x: cont_x;
+        x: root.cont_x;
         height: 100%;
         width: 100%;
 

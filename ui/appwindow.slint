@@ -2,7 +2,6 @@ import { VerticalBox , HorizontalBox, Button, ListView } from "std-widgets.slint
 import { BorderlessWindow } from "borderless-window.slint";
 import { Theme, JsonTheme } from "theme.slint";
 import { SlideOver } from "slidover.slint";
-import { CircularProgressBar } from "circularprogress.slint";
 import { HLClick } from "hyperlink.slint";
 import { ThemeCallbacks } from "themeconfig.slint";
 import { Slider } from "slider.slint";
@@ -16,17 +15,17 @@ export component Main inherits BorderlessWindow {
     height: 480px;
 
     in-out property<image> logo <=> slideover.logo;
-    
+
     //this needs to get set to the active timer...for now I'll just force it to a value while I work on the
     //rest of the logic
-    in-out property<duration> current-timer: tmr-config.focus-time;
-    in-out property<duration> remaining-time: current-timer;
+    out property<duration> current-timer: root.tmr-config.focus-time;
+    out property<duration> remaining-time: root.current-timer;
 
     in property<image> circ-progress: @image-url("../assets/ProgressCircle.svg");
     in property<[JsonTheme]> themes;
 
-    property<int> volume: 100;
-    property<TimerConfig> tmr-config: slideover.tmr-config;
+    out property<int> volume: 100;
+    out property<TimerConfig> tmr-config: slideover.tmr-config;
 
 
     callback close-window();
@@ -37,15 +36,15 @@ export component Main inherits BorderlessWindow {
     callback tick(duration);
 
     close => {
-        close-window();
+        root.close-window();
     }
 
     minimize => {
-        minimize-window();
+        root.minimize-window();
     }
 
     move() => {
-        move-window();
+        root.move-window();
     }
 
     menu_toggled => {
@@ -53,19 +52,19 @@ export component Main inherits BorderlessWindow {
     }
 
     tick(passed-time) => {
-        remaining-time -= passed-time;
-        remaining-time = max(remaining-time, 0);
+        root.remaining-time -= passed-time;
+        root.remaining-time = max(root.remaining-time, 0);
     }
 
     function time-remaining() -> string {
-        floor(remaining-time / 60s) + ":" + (mod(remaining-time, 60s)/1s < 10 ? "0" : "") + floor(mod(remaining-time, 60s)/1s)
+        floor(root.remaining-time / 60s) + ":" + (mod(root.remaining-time, 60s)/1s < 10 ? "0" : "") + floor(mod(root.remaining-time, 60s)/1s)
     }
 
     vol_popup := PopupWindow {
         sldr := Slider {
             width: parent.width;
             height: 100%;
-            value <=> volume;
+            value <=> root.volume;
             minimum: 0;
             maximum: 100;
             color: Theme.background-lightest;
@@ -132,14 +131,14 @@ export component Main inherits BorderlessWindow {
                     y: parent.height * 0.025;
                 }*/
                 circ-prog := Image {
-                    source: circ-progress;
+                    source: root.circ-progress;
                     width: parent.width * 0.95;
                     height: parent.height * 0.95;
                 }
                 Timer := Text {
                     font-family: "Roboto Mono";
                     //text: "25:00";
-                    text: time-remaining();
+                    text: root.time-remaining();
                     color: Theme.foreground;
                     font-size: 46px;
                 }
@@ -169,7 +168,7 @@ export component Main inherits BorderlessWindow {
                 }
 
                 StartBtn_ta := TouchArea {
-                    clicked => { start-timer() }
+                    clicked => { root.start-timer() }
                 }
 
                 Image {

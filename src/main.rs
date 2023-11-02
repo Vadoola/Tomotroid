@@ -397,10 +397,10 @@ fn main() -> Result<()> {
         let timer_handle = timer_handle.clone();
         timer.start(
             TimerMode::Repeated,
-            std::time::Duration::from_millis(1000),
+            std::time::Duration::from_millis(50),
             move || {
                 let timer_handle = timer_handle.unwrap();
-                timer_handle.invoke_tick(1000);
+                timer_handle.invoke_tick(50);
                 let rem_per = timer_handle.get_remaining_time() as f32
                     / timer_handle.get_current_timer() as f32
                     * 100.0;

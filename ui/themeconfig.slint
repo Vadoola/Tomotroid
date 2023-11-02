@@ -17,7 +17,7 @@ component ThemeBar inherits Rectangle {
 
     width: 80%;
     height: 50px;
-    background: bg_color;
+    background: root.bg_color;
     border-radius: 5px;
 
     thm_ta := TouchArea {
@@ -27,14 +27,14 @@ component ThemeBar inherits Rectangle {
     accent := Rectangle {
         x: 0;
         height: 100%;
-        background: acc_color;
+        background: root.acc_color;
         width: 1%;
     }
     Text {
         x: parent.width * 0.05;
         horizontal-alignment: left;
-        text: name;
-        color: txt_color;
+        text: root.name;
+        color: root.txt_color;
         font-size: 11pt;
     }
     Image {
@@ -79,15 +79,15 @@ export component ThemePage inherits Rectangle {
                     {name: "Tokyo Night Storm",long-round: #7AA2F7,short-round: #73DACA,focus-round: #F7768E,background: #24283b,background-light: #1b1e2e,background-lightest: #9AA5CE,foreground: #c0caf5,foreground-darker: #9AA5CE,foreground-darkest: #89DDFF,accent: #9D7CD8},
 
                 ]*/
-                for disp_theme[idx] in themes : ThemeBar {
+                for disp_theme[idx] in root.themes : ThemeBar {
                     acc_color: disp_theme.accent;
                     bg_color: disp_theme.background;
                     txt_color: disp_theme.foreground;
                     name: disp_theme.name;
-                    selected: active-theme == idx;
+                    selected: root.active-theme == idx;
 
                     select => {
-                        active-theme = idx;
+                        root.active-theme = idx;
                         Theme.long_round = disp_theme.long_round;
                         Theme.short_round = disp_theme.short_round;
                         Theme.focus_round = disp_theme.focus_round;
