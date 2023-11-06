@@ -405,10 +405,11 @@ fn main() -> Result<()> {
                     / timer_handle.get_current_timer() as f32
                     * 100.0;
 
-                //Intermediate variable here is because later, I'll need to actually update the
-                //Progress bar's foreground color based on the active timer. For now I'm just
-                //always setting it to the focus round.
-                let fg_clr = timer_handle.global::<Theme>().get_focus_round().color();
+                let fg_clr = match timer_handle.get_active_timer() {
+                    ActiveTimer::Focus => timer_handle.global::<Theme>().get_focus_round().color(),
+                    ActiveTimer::ShortBreak => timer_handle.global::<Theme>().get_short_round().color(),
+                    ActiveTimer::LongBreak => timer_handle.global::<Theme>().get_long_round().color(),
+                };
 
                 timer_handle.set_circ_progress(update_prg_svg(
                     timer_handle.global::<Theme>().get_background_lightest().color(),

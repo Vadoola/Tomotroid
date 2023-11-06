@@ -9,6 +9,12 @@ import { TimerConfig } from "timerconfig.slint";
 
 export { HLClick, Theme, JsonTheme, ThemeCallbacks }
 
+export enum ActiveTimer {
+    focus,
+    short-break,
+    long-break,
+}
+
 export component Main inherits BorderlessWindow {
     title: "Tomotroid";
     width: 360px;
@@ -26,6 +32,8 @@ export component Main inherits BorderlessWindow {
 
     out property<int> volume: 100;
     out property<TimerConfig> tmr-config: slideover.tmr-config;
+    out property<ActiveTimer> active-timer: focus;
+    out property<int> active-round: 1;
 
 
     callback close-window();
@@ -33,7 +41,11 @@ export component Main inherits BorderlessWindow {
     callback move-window();
 
     callback start-timer();
+    callback pause-timer();
+    callback stop-timer();
+
     callback tick(duration);
+    callback change-timer();
 
     close => {
         root.close-window();
@@ -52,12 +64,55 @@ export component Main inherits BorderlessWindow {
     }
 
     tick(passed-time) => {
-        root.remaining-time -= passed-time;
-        root.remaining-time = max(root.remaining-time, 0);
+        root.remaining-time = max(root.remaining-time - passed-time, 0);
+
+        if (root.remaining-time == 0) {
+            //stop-timer();
+            change-timer();
+        }
+    }
+
+    change-timer => {
+        if (root.active-timer == ActiveTimer.focus) {
+            root.active-timer = ActiveTimer.short-break;
+
+            root.current-timer = root.tmr-config.shbrk-time;
+            root.remaining-time = root.tmr-config.shbrk-time;
+        } else if (root.active-timer == ActiveTimer.short-break) {
+            if (root.active-round == root.tmr-config.rounds) {
+                root.active-round = 1;
+                root.active-timer = ActiveTimer.long-break;
+
+                root.current-timer = root.tmr-config.lgbrk-time;
+                root.remaining-time = root.tmr-config.lgbrk-time;
+            } else {
+                root.active-round += 1;
+                root.active-timer = ActiveTimer.focus;
+
+                root.current-timer = root.tmr-config.focus-time;
+                root.remaining-time = root.tmr-config.focus-time;
+            }
+        } else {
+            root.active-round = 1;
+            root.active-timer = ActiveTimer.focus;
+
+            root.current-timer = root.tmr-config.focus-time;
+            root.remaining-time = root.tmr-config.focus-time;
+        }
     }
 
     function time-remaining() -> string {
         floor(root.remaining-time / 60s) + ":" + (mod(root.remaining-time, 60s)/1s < 10 ? "0" : "") + floor(mod(root.remaining-time, 60s)/1s)
+    }
+
+    function current-timer-string() -> string {
+        if (root.active-timer == ActiveTimer.focus) {
+            "FOCUS"
+        } else if (root.active-timer == ActiveTimer.short-break) {
+            "SHORT BREAK"
+        } else {
+            "LONG BREAK"
+        }
     }
 
     vol_popup := PopupWindow {
@@ -112,24 +167,6 @@ export component Main inherits BorderlessWindow {
             Rectangle {
                 height: 230px;
                 width: 230px;
-                /*CircularProgressBar {
-                    thickness: 2px;
-                    prog-color: Theme.background_lightest;
-                    value: 99;
-                    width: parent.width * 0.95;
-                    height: parent.height * 0.95;
-                    x: parent.width * 0.025;
-                    y: parent.height * 0.025;
-                }
-                CircularProgressBar {
-                    thickness: 10px;
-                    prog-color: Theme.focus_round;
-                    value: 75;
-                    width: parent.width * 0.95;
-                    height: parent.height * 0.95;
-                    x: parent.width * 0.025;
-                    y: parent.height * 0.025;
-                }*/
                 circ-prog := Image {
                     source: root.circ-progress;
                     width: parent.width * 0.95;
@@ -137,13 +174,12 @@ export component Main inherits BorderlessWindow {
                 }
                 Timer := Text {
                     font-family: "Roboto Mono";
-                    //text: "25:00";
                     text: root.time-remaining();
                     color: Theme.foreground;
                     font-size: 46px;
                 }
                 task_label := Text {
-                    text: "FOCUS";
+                    text: current-timer-string();
                     font-family: "Lato";
                     y: parent.height * 0.70;
                     color: Theme.foreground;
@@ -208,7 +244,7 @@ export component Main inherits BorderlessWindow {
             Text {
                 font-family: "Lato";
                 font-weight: 900;
-                text: "1/4";
+                text: "\{root.active-round}/\{root.tmr-config.rounds}";
                 font-size: 16px;
                 color: Theme.foreground-darker;
                 vertical-alignment: center;
