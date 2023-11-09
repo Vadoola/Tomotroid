@@ -18,6 +18,7 @@ export enum ActiveTimer {
 export enum TimerAction {
     start,
     stop,
+    reset,
 }
 
 export component Main inherits BorderlessWindow {
@@ -28,7 +29,7 @@ export component Main inherits BorderlessWindow {
     in-out property<image> logo <=> slideover.logo;
 
     out property<duration> current-timer: root.tmr-config.focus-time;
-    out property<duration> remaining-time: root.current-timer;
+    in-out property<duration> remaining-time: root.current-timer;
 
     in property<image> circ-progress: @image-url("../assets/ProgressCircle.svg");
     in property<[JsonTheme]> themes;
@@ -37,7 +38,7 @@ export component Main inherits BorderlessWindow {
     out property<TimerConfig> tmr-config: slideover.tmr-config;
     out property<ActiveTimer> active-timer: focus;
     out property<int> active-round: 1;
-    out property<bool> running: false;
+    in-out property<bool> running: false;
 
 
     callback close-window();
@@ -259,7 +260,7 @@ export component Main inherits BorderlessWindow {
                         } else {
                             root.action-timer(TimerAction.start);
                         }
-                        root.running = !root.running;
+                        //root.running = !root.running;
                     }
                 }
 
@@ -374,7 +375,9 @@ export component Main inherits BorderlessWindow {
             padding-right: 15px;
             alignment: start;
             Text {
-                ResetBtn_ta := TouchArea {}
+                ResetBtn_ta := TouchArea {
+                    clicked => { action-timer(TimerAction.reset) }
+                }
                 font-weight: 900;
                 text: "Reset";
                 font-size: 14px;

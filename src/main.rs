@@ -421,33 +421,57 @@ fn main() -> Result<()> {
         )
     });*/
     main.on_action_timer(move |action| {
-        let timer_handle = timer_handle.clone();
-        if action == TimerAction::Start {
-            timer.start(
-                TimerMode::Repeated,
-                std::time::Duration::from_millis(50),
-                move || {
-                    let timer_handle = timer_handle.unwrap();
-                    timer_handle.invoke_tick(50);
-                    let rem_per = timer_handle.get_remaining_time() as f32
-                        / timer_handle.get_current_timer() as f32
-                        * 100.0;
+        let tmrstrt_handle = timer_handle.clone();
+        let timer_handle = timer_handle.upgrade().unwrap();
+        match action {
+            TimerAction::Start => {
+                timer_handle.set_running(true);
+                timer.start(
+                    TimerMode::Repeated,
+                    std::time::Duration::from_millis(50),
+                    move || {
+                        let tmrstrt_handle = tmrstrt_handle.unwrap();
+                        tmrstrt_handle.invoke_tick(50);
+                        let rem_per = tmrstrt_handle.get_remaining_time() as f32
+                            / tmrstrt_handle.get_current_timer() as f32
+                            * 100.0;
 
-                    let fg_clr = match timer_handle.get_active_timer() {
-                        ActiveTimer::Focus => timer_handle.global::<Theme>().get_focus_round().color(),
-                        ActiveTimer::ShortBreak => timer_handle.global::<Theme>().get_short_round().color(),
-                        ActiveTimer::LongBreak => timer_handle.global::<Theme>().get_long_round().color(),
-                    };
+                        let fg_clr = match tmrstrt_handle.get_active_timer() {
+                            ActiveTimer::Focus => tmrstrt_handle.global::<Theme>().get_focus_round().color(),
+                            ActiveTimer::ShortBreak => tmrstrt_handle.global::<Theme>().get_short_round().color(),
+                            ActiveTimer::LongBreak => tmrstrt_handle.global::<Theme>().get_long_round().color(),
+                        };
 
-                    timer_handle.set_circ_progress(update_prg_svg(
-                        timer_handle.global::<Theme>().get_background_lightest().color(),
-                        fg_clr,
-                        rem_per,
-                    ));
-                },
-            )
-        } else {
-            timer.stop();
+                        tmrstrt_handle.set_circ_progress(update_prg_svg(
+                            tmrstrt_handle.global::<Theme>().get_background_lightest().color(),
+                            fg_clr,
+                            rem_per,
+                        ));
+                    },
+                )
+            },
+            TimerAction::Stop => {
+                timer_handle.set_running(false);
+                timer.stop();
+            },
+            TimerAction::Reset => {
+                timer.stop();
+                timer_handle.set_running(false);
+                timer_handle.set_remaining_time(timer_handle.get_current_timer());
+
+                let fg_clr = match timer_handle.get_active_timer() {
+                    ActiveTimer::Focus => timer_handle.global::<Theme>().get_focus_round().color(),
+                    ActiveTimer::ShortBreak => timer_handle.global::<Theme>().get_short_round().color(),
+                    ActiveTimer::LongBreak => timer_handle.global::<Theme>().get_long_round().color(),
+                };
+
+                timer_handle.set_circ_progress(update_prg_svg(
+                    timer_handle.global::<Theme>().get_background_lightest().color(),
+                    fg_clr,
+                    100.0,
+                ));
+                //need to be updating the running status from Rust not slint
+            }
         }
     });
 
