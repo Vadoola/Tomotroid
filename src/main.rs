@@ -393,7 +393,8 @@ fn main() -> Result<()> {
 
     let timer = Timer::default();
     let timer_handle = main.as_weak();
-    main.on_start_timer(move || {
+    //Ok now...how do I pause/stop this timer?
+    /*main.on_start_timer(move || {
         let timer_handle = timer_handle.clone();
         timer.start(
             TimerMode::Repeated,
@@ -418,7 +419,39 @@ fn main() -> Result<()> {
                 ));
             },
         )
+    });*/
+    main.on_action_timer(move |action| {
+        let timer_handle = timer_handle.clone();
+        if action == TimerAction::Start {
+            timer.start(
+                TimerMode::Repeated,
+                std::time::Duration::from_millis(50),
+                move || {
+                    let timer_handle = timer_handle.unwrap();
+                    timer_handle.invoke_tick(50);
+                    let rem_per = timer_handle.get_remaining_time() as f32
+                        / timer_handle.get_current_timer() as f32
+                        * 100.0;
+
+                    let fg_clr = match timer_handle.get_active_timer() {
+                        ActiveTimer::Focus => timer_handle.global::<Theme>().get_focus_round().color(),
+                        ActiveTimer::ShortBreak => timer_handle.global::<Theme>().get_short_round().color(),
+                        ActiveTimer::LongBreak => timer_handle.global::<Theme>().get_long_round().color(),
+                    };
+
+                    timer_handle.set_circ_progress(update_prg_svg(
+                        timer_handle.global::<Theme>().get_background_lightest().color(),
+                        fg_clr,
+                        rem_per,
+                    ));
+                },
+            )
+        } else {
+            timer.stop();
+        }
     });
+
+
     main.run()?;
     Ok(())
 }

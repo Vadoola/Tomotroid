@@ -14,7 +14,7 @@
 >
   <line
 	fill="none"
-	stroke="#F6F2EB"
+	stroke="black"
 	stroke-width="2"
 	stroke-linecap="round"
 	stroke-miterlimit="10"

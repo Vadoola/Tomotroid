@@ -15,6 +15,11 @@ export enum ActiveTimer {
     long-break,
 }
 
+export enum TimerAction {
+    start,
+    stop,
+}
+
 export component Main inherits BorderlessWindow {
     title: "Tomotroid";
     width: 360px;
@@ -22,8 +27,6 @@ export component Main inherits BorderlessWindow {
 
     in-out property<image> logo <=> slideover.logo;
 
-    //this needs to get set to the active timer...for now I'll just force it to a value while I work on the
-    //rest of the logic
     out property<duration> current-timer: root.tmr-config.focus-time;
     out property<duration> remaining-time: root.current-timer;
 
@@ -34,15 +37,14 @@ export component Main inherits BorderlessWindow {
     out property<TimerConfig> tmr-config: slideover.tmr-config;
     out property<ActiveTimer> active-timer: focus;
     out property<int> active-round: 1;
+    out property<bool> running: false;
 
 
     callback close-window();
     callback minimize-window();
     callback move-window();
 
-    callback start-timer();
-    callback pause-timer();
-    callback stop-timer();
+    callback action-timer(TimerAction);
 
     callback tick(duration);
     callback change-timer();
@@ -67,7 +69,6 @@ export component Main inherits BorderlessWindow {
         root.remaining-time = max(root.remaining-time - passed-time, 0);
 
         if (root.remaining-time == 0) {
-            //stop-timer();
             change-timer();
         }
     }
@@ -188,9 +189,57 @@ export component Main inherits BorderlessWindow {
             }
         }
 
+        //In Pomotroid there is a transition between play/pause where the whole circle fades out then back in
+        //I'm not sure how I can actually get this to fade out then in unless I have the play / pause as 2
+        //seperate buttons, because the transition is essentially from full opactity to full opacity. Since
+        //it's a boolean, either running or not...how could I add a third state in between with 0 opacity?
+        //as this is cosmetic, I'll leave it alone for now, and maybe come
+        //back to it later when I have a mostly functioning program.
         HorizontalLayout {
             alignment: center;
             padding: 20px;
+            //opacity: 0.05;
+
+            /*animate opacity {
+                duration: 1000ms;
+                //easing: ease-in-out;
+            }*/
+
+            states [
+                rng when root.running : {
+                    opacity: 1;
+                    out {
+                        animate opacity {
+                            duration: 250ms;
+                            easing: ease-out;
+                        }
+                    }
+                    in {
+                        animate opacity {
+                            duration: 250ms;
+                            easing: ease-in;
+                        }
+                    }
+                }
+
+                ntrng when !root.running : {
+                    //opacity: 0.05;
+                    opacity: 1;
+                    out {
+                        animate opacity {
+                            duration: 250ms;
+                            easing: ease-out;
+                        }
+                    }
+                    in {
+                        animate opacity {
+                            duration: 250ms;
+                            easing: ease-in;
+                        }
+                    }
+                }
+            ]
+
             Rectangle {
                 border-color: Theme.foreground-darkest;
                 border-width: 2px;
@@ -204,11 +253,18 @@ export component Main inherits BorderlessWindow {
                 }
 
                 StartBtn_ta := TouchArea {
-                    clicked => { root.start-timer() }
+                    clicked => {
+                        if (root.running) {
+                            root.action-timer(TimerAction.stop);
+                        } else {
+                            root.action-timer(TimerAction.start);
+                        }
+                        root.running = !root.running;
+                    }
                 }
 
                 Image {
-                    source: @image-url("../assets/icons/start.svg");
+                    source: root.running ? @image-url("../assets/icons/pause.svg") : @image-url("../assets/icons/start.svg");
                     animate colorize {
                         duration: 200ms;
                         easing: ease-in-out;
