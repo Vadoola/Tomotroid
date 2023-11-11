@@ -4,11 +4,11 @@
 A lot of the foundation has been laid, but this is not fully funcitonal software yet.
 
 ## Screenshots
-![Main Page](img/main_page.png)
-![Timer Settings](img/tmrcnf_page.png)
-![Configuration](img/config_page.png)
-![Themes](img/theme_selection.png)
-![About Page](img/about_page.png)
+<img src="img/main_page.png" width="200"/>
+<img src="img/tmrcnf_page.png" width="200"/>
+<img src="img/config_page.png" width="200"/>
+<img src="img/theme_selection.png" width="200"/>
+<img src="img/about_page.png" width="200"/>
 
 ### Reasons I started this project
 - Wanted to practice rust
