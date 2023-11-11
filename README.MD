@@ -1,5 +1,15 @@
 ## A Shameless ripoff of [Pomotroid](https://github.com/Splode/pomotroid). That I am creating to practice my Rust skills and to try and learn [Slint](https://github.com/slint-ui/slint)
 
+### Current Status
+A lot of the foundation has been laid, but this is not fully funcitonal software yet.
+
+## Screenshots
+![Main Page](img/main_page.png)
+![Timer Settings](img/tmrcnf_page.png)
+![Configuration](img/config_page.png)
+![Themes](img/theme_selection.png)
+![About Page](img/about_page.png)
+
 ### Reasons I started this project
 - Wanted to practice rust
 - Wanted to try a GUI and picked Slint
