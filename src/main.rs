@@ -21,6 +21,8 @@ use std::{
 use tray_item::{IconSource, TrayItem};
 use walkdir::WalkDir;
 
+mod settings;
+
 slint::include_modules!();
 
 pub const LOGO_BYTES: &str = include_str!("../assets/logo.svg");
@@ -209,6 +211,9 @@ fn update_prg_svg(bg_clr: slint::Color, fg_clr: slint::Color, rem_per: f32) -> s
 }
 
 fn main() -> Result<()> {
+    let settings = settings::load_settings();
+    dbg!(settings);
+    
     //TODO: I'm not seeing an obvious way to mimic the Pomotroid behavoir
     //where it just minimizes or restores by clicking the tray icon
     //because I don't see any way to capture when the tray icon is clicked
