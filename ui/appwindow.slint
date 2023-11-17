@@ -1,13 +1,14 @@
 import { VerticalBox , HorizontalBox, Button, ListView } from "std-widgets.slint";
 import { BorderlessWindow } from "borderless-window.slint";
-import { Theme, JsonTheme } from "theme.slint";
+import { Theme, JsonTheme, Settings } from "globals.slint";
 import { SlideOver } from "slidover.slint";
 import { HLClick } from "hyperlink.slint";
 import { ThemeCallbacks } from "themeconfig.slint";
 import { Slider } from "slider.slint";
 import { TimerConfig } from "timerconfig.slint";
 
-export { HLClick, Theme, JsonTheme, ThemeCallbacks }
+export { HLClick, Theme, JsonTheme, Settings, ThemeCallbacks }
+
 
 export enum ActiveTimer {
     focus,
@@ -33,6 +34,7 @@ export component Main inherits BorderlessWindow {
 
     in property<image> circ-progress: @image-url("../assets/ProgressCircle.svg");
     in property<[JsonTheme]> themes;
+    in property<Settings> settings;
 
     out property<int> volume: 100;
     out property<TimerConfig> tmr-config: slideover.tmr-config;

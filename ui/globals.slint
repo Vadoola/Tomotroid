@@ -1,0 +1,68 @@
+//default color theme is "Pomotroid" from Pomotroid software I'm mimicking.
+export global Theme {
+    in-out property <brush> long_round: #0bbddb;
+    in-out property <brush> short_round: #05ec8c;
+    in-out property <brush> focus_round: #ff4e4d;
+    in-out property <brush> background: #2f384b;
+    in-out property <brush> background_light: #3d4457;
+    in-out property <brush> background_lightest: #9ca5b5;
+    in-out property <brush> foreground: #f6f2eb;
+    in-out property <brush> foreground-darker: #c0c9da;
+    in-out property <brush> foreground-darkest: #dbe1ef;
+    in-out property <brush> accent: #05ec8c;
+    in-out property<length> letter-spacing: 3px;
+    in-out property<image> logo: @image-url("../assets/logo.svg");
+}
+
+//@rust-attr(derive(serde::Deserialize))
+export struct JsonTheme {
+    name: string,
+    long_round: brush,
+    short_round: brush,
+    focus_round: brush,
+    background: brush,
+    background_light: brush,
+    background_lightest: brush,
+    foreground: brush,
+    foreground_darker: brush,
+    foreground_darkest: brush,
+    accent: brush,
+}
+
+export struct Settings {
+    always_on_top: bool,
+    auto_start_break_timer: bool,
+    auto_start_work_timer: bool,
+    break_always_on_top: bool,
+    //global_shortcuts: GlobalShortcuts,
+    min_to_tray: bool,
+    min_to_tray_on_close: bool,
+    notifications: bool,
+    //theme: String,
+    tick_sounds: bool,
+    tick_sounds_during_break: bool,
+    time_long_break: int,
+    time_short_break: int,
+    time_work: int,
+    volume: int,
+    work_rounds: int,
+}
+
+/*export global Settings {
+    in-out property<bool> always-on-top;
+    in-out property<bool> auto-start-break-timer;
+    in-out property<bool> auto-start-work-timer;
+    in-out property<bool> break-always-on-top;
+    //in-out property<...shortcuts...> global-shortcuts;
+    in-out property<bool> min-to-tray;
+    in-out property<bool> min-to-try-on-close;
+    in-out property<bool> notifications;
+    //Theme? doesn't really need to be here as I already have the Global Theme....or should I move it into here?
+    in-out property<bool> tick-sounds;
+    in-out property<bool> tick-sounds-during-break;
+    in-out property<int> time-long-break;
+    in-out property<int> time-short-break;
+    in-out property<int> time-work;
+    in-out property<int> volume;
+    in-out property<int> work-rounds;
+}*/

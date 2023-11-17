@@ -141,39 +141,6 @@ impl Into<JsonTheme> for JsonThemeTemp {
     }
 }
 
-//using etceter for config file location: https://crates.io/crates/etcetera
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct Root {
-    pub always_on_top: bool,
-    pub auto_start_break_timer: bool,
-    pub auto_start_work_timer: bool,
-    pub break_always_on_top: bool,
-    pub global_shortcuts: GlobalShortcuts,
-    pub min_to_tray: bool,
-    pub min_to_tray_on_close: bool,
-    pub notifications: bool,
-    pub theme: String,
-    pub tick_sounds: bool,
-    pub tick_sounds_during_break: bool,
-    pub time_long_break: i64,
-    pub time_short_break: i64,
-    pub time_work: i64,
-    pub volume: i64,
-    pub work_rounds: i64,
-}
-
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct GlobalShortcuts {
-    #[serde(rename = "call-timer-reset")]
-    pub call_timer_reset: String,
-    #[serde(rename = "call-timer-skip")]
-    pub call_timer_skip: String,
-    #[serde(rename = "call-timer-toggle")]
-    pub call_timer_toggle: String,
-}
-
 enum TrayMsg {
     MinRes,
     Quit,
@@ -211,9 +178,6 @@ fn update_prg_svg(bg_clr: slint::Color, fg_clr: slint::Color, rem_per: f32) -> s
 }
 
 fn main() -> Result<()> {
-    let settings = settings::load_settings();
-    dbg!(settings);
-    
     //TODO: I'm not seeing an obvious way to mimic the Pomotroid behavoir
     //where it just minimizes or restores by clicking the tray icon
     //because I don't see any way to capture when the tray icon is clicked
@@ -259,6 +223,11 @@ fn main() -> Result<()> {
     slint::platform::set_platform(Box::new(i_slint_backend_winit::Backend::new())).unwrap();
 
     let main = Main::new()?;
+
+    let settings = settings::load_settings();
+    //main.global::<ThemeCallbacks>()
+    //main.global()::<Set
+    //main.set_settings()
 
     let close_handle = main.as_weak();
     main.on_close_window(move || {
@@ -363,6 +332,7 @@ fn main() -> Result<()> {
         let mut theme_dir = std::env::current_dir().unwrap();
         theme_dir.push("themes");
         let themes: Vec<JsonTheme> = {
+            //I'm thinking I need to move this into the settings modules maybe?
             let mut themes: Vec<JsonTheme> = WalkDir::new(theme_dir)
                 .into_iter()
                 .filter(|e| {
@@ -398,33 +368,6 @@ fn main() -> Result<()> {
 
     let timer = Timer::default();
     let timer_handle = main.as_weak();
-    //Ok now...how do I pause/stop this timer?
-    /*main.on_start_timer(move || {
-        let timer_handle = timer_handle.clone();
-        timer.start(
-            TimerMode::Repeated,
-            std::time::Duration::from_millis(50),
-            move || {
-                let timer_handle = timer_handle.unwrap();
-                timer_handle.invoke_tick(50);
-                let rem_per = timer_handle.get_remaining_time() as f32
-                    / timer_handle.get_current_timer() as f32
-                    * 100.0;
-
-                let fg_clr = match timer_handle.get_active_timer() {
-                    ActiveTimer::Focus => timer_handle.global::<Theme>().get_focus_round().color(),
-                    ActiveTimer::ShortBreak => timer_handle.global::<Theme>().get_short_round().color(),
-                    ActiveTimer::LongBreak => timer_handle.global::<Theme>().get_long_round().color(),
-                };
-
-                timer_handle.set_circ_progress(update_prg_svg(
-                    timer_handle.global::<Theme>().get_background_lightest().color(),
-                    fg_clr,
-                    rem_per,
-                ));
-            },
-        )
-    });*/
     main.on_action_timer(move |action| {
         let tmrstrt_handle = timer_handle.clone();
         let timer_handle = timer_handle.upgrade().unwrap();

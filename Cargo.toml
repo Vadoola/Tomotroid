@@ -17,6 +17,7 @@ i-slint-backend-winit = "=1.2.0"
 hex_color = { version = "2.0.0", features = [ "serde" ] }
 walkdir = "2.3"
 etcetera = "0.8.0"
+directories = "5.0.1"
 
 
 [target.'cfg(windows)'.dependencies]
