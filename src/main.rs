@@ -11,6 +11,7 @@ use anyhow::Result;
 use hex_color::HexColor;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use settings::JsonSettings;
 use slint::{Color, ModelRc, Timer, TimerMode, VecModel};
 use std::{
     fs::File,
@@ -224,10 +225,22 @@ fn main() -> Result<()> {
 
     let main = Main::new()?;
 
+    //main.set_settings(settings::load_settings());
     let settings = settings::load_settings();
-    //main.global::<ThemeCallbacks>()
-    //main.global()::<Set
-    //main.set_settings()
+    main.global::<Settings>().set_always_on_top(settings.always_on_top);
+    main.global::<Settings>().set_auto_start_break_timer(settings.auto_start_break_timer);
+    main.global::<Settings>().set_auto_start_work_timer(settings.auto_start_work_timer);
+    main.global::<Settings>().set_break_always_on_top(settings.break_always_on_top);
+    main.global::<Settings>().set_min_to_tray(settings.min_to_tray);
+    main.global::<Settings>().set_min_to_try_on_close(settings.min_to_tray_on_close);
+    main.global::<Settings>().set_notifications(settings.notifications);
+    main.global::<Settings>().set_tick_sounds(settings.tick_sounds);
+    main.global::<Settings>().set_tick_sounds_during_break(settings.tick_sounds_during_break);
+    main.global::<Settings>().set_time_long_break(settings.time_long_break.into());
+    main.global::<Settings>().set_time_short_break(settings.time_short_break.into());
+    main.global::<Settings>().set_time_work(settings.time_work.into());
+    main.global::<Settings>().set_volume(settings.volume.into());
+    main.global::<Settings>().set_work_rounds(settings.work_rounds.into());
 
     let close_handle = main.as_weak();
     main.on_close_window(move || {

@@ -1,10 +1,11 @@
 import { VerticalBox , HorizontalBox, Button } from "std-widgets.slint";
 import { TabContainer } from "tabcontainer.slint";
 import { TimerConfig } from "timerconfig.slint";
-import { Theme } from "theme.slint";
+import { Theme, Settings } from "globals.slint";
 
 export component SlideOver {
     in-out property<bool> expanded;
+    //in-out property<Settings> settings <=> tc.settings;
     in-out property<image> logo <=> tc.logo;
 
     out property <TimerConfig> tmr-config: tc.tmr-config;
