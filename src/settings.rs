@@ -1,9 +1,9 @@
-use serde::{Deserialize, Serialize};
-use std::io::BufReader;
-use std::fs::File;
-use std::path::Path;
 use directories::ProjectDirs;
+use serde::{Deserialize, Serialize};
 use std::cell::OnceCell;
+use std::fs::File;
+use std::io::BufReader;
+use std::path::Path;
 use std::sync::OnceLock;
 
 //slint::include_modules!();
@@ -73,15 +73,12 @@ pub struct GlobalShortcuts {
 static CFG_DIR: OnceLock<Option<ProjectDirs>> = OnceLock::new();
 
 fn get_dir() -> Option<&'static Path> {
-    if let Some(dirs) = CFG_DIR.get_or_init(|| {
-        ProjectDirs::from("org", "Vadoola",  "Tomotroid")
-    }) {
-        return Some(dirs.config_dir())
+    if let Some(dirs) = CFG_DIR.get_or_init(|| ProjectDirs::from("org", "Vadoola", "Tomotroid")) {
+        return Some(dirs.config_dir());
     } else {
         None
     }
 }
-
 
 //so I'm thinking this module has a load settings and save settings
 //it handles getting the proper directory etc. and just reads in a file returning a PathBuf

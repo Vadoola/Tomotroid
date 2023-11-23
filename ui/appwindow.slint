@@ -36,7 +36,7 @@ export component Main inherits BorderlessWindow {
     in property<[JsonTheme]> themes;
     //in-out property<Settings> settings <=> slideover.settings;
 
-    out property<int> volume: 100;
+    out property<int> volume: Settings.volume;
     out property<TimerConfig> tmr-config: slideover.tmr-config;
     out property<ActiveTimer> active-timer: focus;
     out property<int> active-round: 1;

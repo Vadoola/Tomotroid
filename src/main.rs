@@ -178,6 +178,39 @@ fn update_prg_svg(bg_clr: slint::Color, fg_clr: slint::Color, rem_per: f32) -> s
     .unwrap()
 }
 
+impl Main {
+    fn load_settings(&self) {
+        let settings = settings::load_settings();
+        self.global::<Settings>()
+            .set_always_on_top(settings.always_on_top);
+        self.global::<Settings>()
+            .set_auto_start_break_timer(settings.auto_start_break_timer);
+        self.global::<Settings>()
+            .set_auto_start_work_timer(settings.auto_start_work_timer);
+        self.global::<Settings>()
+            .set_break_always_on_top(settings.break_always_on_top);
+        self.global::<Settings>()
+            .set_min_to_tray(settings.min_to_tray);
+        self.global::<Settings>()
+            .set_min_to_try_on_close(settings.min_to_tray_on_close);
+        self.global::<Settings>()
+            .set_notifications(settings.notifications);
+        self.global::<Settings>()
+            .set_tick_sounds(settings.tick_sounds);
+        self.global::<Settings>()
+            .set_tick_sounds_during_break(settings.tick_sounds_during_break);
+        self.global::<Settings>()
+            .set_time_long_break(settings.time_long_break.into());
+        self.global::<Settings>()
+            .set_time_short_break(settings.time_short_break.into());
+        self.global::<Settings>()
+            .set_time_work(settings.time_work.into());
+        self.global::<Settings>().set_volume(settings.volume.into());
+        self.global::<Settings>()
+            .set_work_rounds(settings.work_rounds.into());
+    }
+}
+
 fn main() -> Result<()> {
     //TODO: I'm not seeing an obvious way to mimic the Pomotroid behavoir
     //where it just minimizes or restores by clicking the tray icon
@@ -225,22 +258,7 @@ fn main() -> Result<()> {
 
     let main = Main::new()?;
 
-    //main.set_settings(settings::load_settings());
-    let settings = settings::load_settings();
-    main.global::<Settings>().set_always_on_top(settings.always_on_top);
-    main.global::<Settings>().set_auto_start_break_timer(settings.auto_start_break_timer);
-    main.global::<Settings>().set_auto_start_work_timer(settings.auto_start_work_timer);
-    main.global::<Settings>().set_break_always_on_top(settings.break_always_on_top);
-    main.global::<Settings>().set_min_to_tray(settings.min_to_tray);
-    main.global::<Settings>().set_min_to_try_on_close(settings.min_to_tray_on_close);
-    main.global::<Settings>().set_notifications(settings.notifications);
-    main.global::<Settings>().set_tick_sounds(settings.tick_sounds);
-    main.global::<Settings>().set_tick_sounds_during_break(settings.tick_sounds_during_break);
-    main.global::<Settings>().set_time_long_break(settings.time_long_break.into());
-    main.global::<Settings>().set_time_short_break(settings.time_short_break.into());
-    main.global::<Settings>().set_time_work(settings.time_work.into());
-    main.global::<Settings>().set_volume(settings.volume.into());
-    main.global::<Settings>().set_work_rounds(settings.work_rounds.into());
+    main.load_settings();
 
     let close_handle = main.as_weak();
     main.on_close_window(move || {
@@ -398,23 +416,32 @@ fn main() -> Result<()> {
                             * 100.0;
 
                         let fg_clr = match tmrstrt_handle.get_active_timer() {
-                            ActiveTimer::Focus => tmrstrt_handle.global::<Theme>().get_focus_round().color(),
-                            ActiveTimer::ShortBreak => tmrstrt_handle.global::<Theme>().get_short_round().color(),
-                            ActiveTimer::LongBreak => tmrstrt_handle.global::<Theme>().get_long_round().color(),
+                            ActiveTimer::Focus => {
+                                tmrstrt_handle.global::<Theme>().get_focus_round().color()
+                            }
+                            ActiveTimer::ShortBreak => {
+                                tmrstrt_handle.global::<Theme>().get_short_round().color()
+                            }
+                            ActiveTimer::LongBreak => {
+                                tmrstrt_handle.global::<Theme>().get_long_round().color()
+                            }
                         };
 
                         tmrstrt_handle.set_circ_progress(update_prg_svg(
-                            tmrstrt_handle.global::<Theme>().get_background_lightest().color(),
+                            tmrstrt_handle
+                                .global::<Theme>()
+                                .get_background_lightest()
+                                .color(),
                             fg_clr,
                             rem_per,
                         ));
                     },
                 )
-            },
+            }
             TimerAction::Stop => {
                 timer_handle.set_running(false);
                 timer.stop();
-            },
+            }
             TimerAction::Reset => {
                 timer.stop();
                 timer_handle.set_running(false);
@@ -422,12 +449,19 @@ fn main() -> Result<()> {
 
                 let fg_clr = match timer_handle.get_active_timer() {
                     ActiveTimer::Focus => timer_handle.global::<Theme>().get_focus_round().color(),
-                    ActiveTimer::ShortBreak => timer_handle.global::<Theme>().get_short_round().color(),
-                    ActiveTimer::LongBreak => timer_handle.global::<Theme>().get_long_round().color(),
+                    ActiveTimer::ShortBreak => {
+                        timer_handle.global::<Theme>().get_short_round().color()
+                    }
+                    ActiveTimer::LongBreak => {
+                        timer_handle.global::<Theme>().get_long_round().color()
+                    }
                 };
 
                 timer_handle.set_circ_progress(update_prg_svg(
-                    timer_handle.global::<Theme>().get_background_lightest().color(),
+                    timer_handle
+                        .global::<Theme>()
+                        .get_background_lightest()
+                        .color(),
                     fg_clr,
                     100.0,
                 ));
@@ -435,7 +469,6 @@ fn main() -> Result<()> {
             }
         }
     });
-
 
     main.run()?;
     Ok(())
