@@ -1,4 +1,4 @@
-import { Theme, Settings } from "globals.slint";
+import { Theme, Settings, BoolSettTypes } from "globals.slint";
 import { VerticalBox, HorizontalBox, ScrollView, TextEdit } from "std-widgets.slint";
 
 export component CheckBox {
@@ -105,7 +105,7 @@ component ConfigBar inherits Rectangle {
         }
 
         @children
-     }
+    }
 }
 
 export component ConfigPage inherits Rectangle {
@@ -123,23 +123,23 @@ export component ConfigPage inherits Rectangle {
                 }
 
                 for setting[idx] in [
-                    {name: "Always On Top", state: Settings.always-on-top},
-                    
-                    //did I leave this out of my settings struct?s
-                    {name: "Deactivate Always On Top on Breaks", state: false},//only shown when "Always On Top" is selected
-                    
-                    {name: "Auto-start Work Timer", state: Settings.auto-start-work-timer},
-                    {name: "Auto-start Break Timer", state: Settings.auto-start-break-timer},
-                    {name: "Tick Sounds - Work", state: Settings.tick-sounds},
-                    {name: "Tick Sounds - Break", state: Settings.tick-sounds-during-break},
-                    {name: "Desktop Notifications", state: Settings.notifications},
-                    {name: "Minimize to Tray", state: Settings.min-to-tray},
-                    {name: "Minimize to Tray on Close", state: Settings.min-to-try-on-close},
+                    {name: "Always On Top", state: Settings.always-on-top, sett_type: BoolSettTypes.AlwOnTop},
+                    {name: "Deactivate Always On Top on Breaks", state: Settings.break-always-on-top, sett_type: BoolSettTypes.BrkAlwOnTop},//only shown when "Always On Top" is selected
+                    {name: "Auto-start Work Timer", state: Settings.auto-start-work-timer, sett_type: BoolSettTypes.AutoStrtWrkTim},
+                    {name: "Auto-start Break Timer", state: Settings.auto-start-break-timer, sett_type: BoolSettTypes.AutoStrtBreakTim},
+                    {name: "Tick Sounds - Work", state: Settings.tick-sounds, sett_type: BoolSettTypes.TickSounds},
+                    {name: "Tick Sounds - Break", state: Settings.tick-sounds-during-break, sett_type: BoolSettTypes.TickSoundsBreak},
+                    {name: "Desktop Notifications", state: Settings.notifications, sett_type: BoolSettTypes.Notifications},
+                    {name: "Minimize to Tray", state: Settings.min-to-tray, sett_type: BoolSettTypes.MinToTray},
+                    {name: "Minimize to Tray on Close", state: Settings.min-to-tray-on-close, sett_type: BoolSettTypes.MinToTryCls},
                 ] : ConfigBar {
                     label: setting.name;
                     hidden: false;
                     CheckBox {
                         checked: setting.state;
+                        clicked => {
+                            Settings.bool_changed(setting.sett_type, self.checked);
+                        }
                     }
                 }
 

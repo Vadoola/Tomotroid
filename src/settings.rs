@@ -1,8 +1,8 @@
 use directories::ProjectDirs;
 use serde::{Deserialize, Serialize};
 use std::cell::OnceCell;
-use std::fs::File;
-use std::io::BufReader;
+use std::fs::{File, OpenOptions};
+use std::io::{BufReader, BufWriter, Write};
 use std::path::Path;
 use std::sync::OnceLock;
 
@@ -22,12 +22,11 @@ pub struct JsonSettings {
     pub theme: String,
     pub tick_sounds: bool,
     pub tick_sounds_during_break: bool,
-    //in Pomotroid these have a max value of 90..and are stored in minutes...that's reasonable, so an i8 should be fine
-    pub time_long_break: i8,
-    pub time_short_break: i8,
-    pub time_work: i8,
-    pub volume: i8,
-    pub work_rounds: i8,
+    pub time_long_break: i32,
+    pub time_short_break: i32,
+    pub time_work: i32,
+    pub volume: i32,
+    pub work_rounds: i32,
 }
 
 //Need to look into if the serialization of the Slint structs in better in the newer release
@@ -99,9 +98,7 @@ pub fn load_settings() -> JsonSettings {
         let set_file = File::open(file).unwrap();
         let reader = BufReader::new(set_file);
 
-        let jset: JsonSettings = serde_json::from_reader(reader).unwrap();
-        //jset.into()
-        jset
+        serde_json::from_reader(reader).unwrap()
     } else {
         default_setings()
     }
@@ -110,10 +107,46 @@ pub fn load_settings() -> JsonSettings {
 //fn default_setings() -> Settings {
 fn default_setings() -> JsonSettings {
     let def_set = include_bytes!("../assets/default-preferences.json");
-    let jset: JsonSettings = serde_json::from_reader(&def_set[..]).unwrap();
-    //jset.into()
-    jset
+    serde_json::from_reader(&def_set[..]).unwrap()
 }
 
 //Use https://docs.rs/serde_json/latest/serde_json/fn.to_writer_pretty.html
 //for writing out the json when I save the settings
+
+//what's the best way to call this...calling save settings every time a setting change
+//would be the safest from the perspective of ensuring the settings are updated
+//but that could be a lot of saving the file over and over.
+//for example they change a timer slider form say 5m to 10m
+//will the slint slider trigger the callback once, saying it was changed to 10,
+//or will it trigger on every value update (ie, 6, 7, 8, 9, 10) triggering 5 updates
+//to save settings? Since the settings file is pretty small/simple, I'm not sure it's worth
+//trying to update just the value that's changed, probably just easier to rewrite the whole
+//file every time. I could just save the settings on program exit...but if the program does crash
+//the settings woin't get saved. Is there some good middle ground? Every X minutes check if there
+//is a mismatch and save the settings? But then I have the overhead of some sort of timer to
+//check every so often....Actually could I save the settings only when on the main screen somehow?
+//So if the volume is changed, it saves right away (may not be super effecient, if it triggers for
+//update of the slider and they change the volume a large amount), but if it changes something on the
+//slidover screen, ie, timer, theme, etc it only saves when the slideover goes away? The logic might be
+//a bit trickier, but might be a good middle ground of ensuring the settings get saved without quite
+//writing out the file quite as much.
+pub fn save_settings(settings: JsonSettings) {
+    if let Some(cfg_dir) = get_dir() {
+        let file = cfg_dir.join("preferences.json");
+        //let set_file = File::open(file).unwrap();
+        let set_file = OpenOptions::new().write(true).create(true).open(file).unwrap();
+        //let set_file = OpenOptions::new().write(true).create_new(true).open(file).unwrap();
+        let writer = BufWriter::new(set_file);
+
+        //for some reason on occasion, I'm getting an extra } at the end of the json file..?
+        //It only seems to happen when it sets a bool value to true
+        //and it gets cleared when I set a bool value to false...?
+        //and it's cummulative, if I turns on five settings as true it will add 5 }
+        //and then for each one I set back to false a } will go away
+        //ok so this is only happening with the to_writer_pretty not the to_string_pretty
+        //what is going on here?
+        println!("{}", serde_json::to_string_pretty(&settings).unwrap());
+        serde_json::to_writer_pretty(writer, &settings).unwrap();
+        //serde_json::to_writer(writer, &settings).unwrap();
+    }
+}

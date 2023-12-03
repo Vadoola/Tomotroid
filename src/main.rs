@@ -11,7 +11,7 @@ use anyhow::Result;
 use hex_color::HexColor;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use settings::JsonSettings;
+use settings::{JsonSettings, GlobalShortcuts};
 use slint::{Color, ModelRc, Timer, TimerMode, VecModel};
 use std::{
     fs::File,
@@ -192,7 +192,7 @@ impl Main {
         self.global::<Settings>()
             .set_min_to_tray(settings.min_to_tray);
         self.global::<Settings>()
-            .set_min_to_try_on_close(settings.min_to_tray_on_close);
+            .set_min_to_tray_on_close(settings.min_to_tray_on_close);
         self.global::<Settings>()
             .set_notifications(settings.notifications);
         self.global::<Settings>()
@@ -200,14 +200,50 @@ impl Main {
         self.global::<Settings>()
             .set_tick_sounds_during_break(settings.tick_sounds_during_break);
         self.global::<Settings>()
-            .set_time_long_break(settings.time_long_break.into());
+            .set_time_long_break(settings.time_long_break);
         self.global::<Settings>()
-            .set_time_short_break(settings.time_short_break.into());
+            .set_time_short_break(settings.time_short_break);
         self.global::<Settings>()
-            .set_time_work(settings.time_work.into());
-        self.global::<Settings>().set_volume(settings.volume.into());
+            .set_time_work(settings.time_work);
+        self.global::<Settings>().set_volume(settings.volume);
         self.global::<Settings>()
-            .set_work_rounds(settings.work_rounds.into());
+            .set_work_rounds(settings.work_rounds);
+    }
+
+    fn save_settings(&self) {
+        settings::save_settings(
+            JsonSettings {
+                always_on_top: self.global::<Settings>().get_always_on_top(),
+                auto_start_break_timer: self.global::<Settings>().get_auto_start_break_timer(),
+                auto_start_work_timer: self.global::<Settings>().get_auto_start_work_timer(),
+                break_always_on_top: self.global::<Settings>().get_break_always_on_top(),
+
+                //don't have the global shortcuts working yet...just temporarily create some defaults
+                global_shortcuts: GlobalShortcuts {
+                    call_timer_reset: String::from("Control+F2"),
+                    call_timer_skip: String::from("Control+F3"),
+                    call_timer_toggle: String::from("Control+F1"),
+                },
+
+
+                min_to_tray: self.global::<Settings>().get_min_to_tray(),
+                min_to_tray_on_close: self.global::<Settings>().get_min_to_tray_on_close(),
+                notifications: self.global::<Settings>().get_notifications(),
+
+                //Haven't decided how I'm going to handle the theme yet. Just have the theme name here
+                //in the settings? Put it into the global theme objects? etc
+                //for now I'll just set this statically
+                theme: String::from("Pomotroid"),
+
+                tick_sounds: self.global::<Settings>().get_tick_sounds(),
+                tick_sounds_during_break: self.global::<Settings>().get_tick_sounds_during_break(),
+                time_long_break: self.global::<Settings>().get_time_long_break(),
+                time_short_break: self.global::<Settings>().get_time_short_break(),
+                time_work: self.global::<Settings>().get_time_work(),
+                volume: self.global::<Settings>().get_volume(),
+                work_rounds: self.global::<Settings>().get_work_rounds(),
+            }
+        );
     }
 }
 
@@ -254,17 +290,61 @@ fn main() -> Result<()> {
     })
     .unwrap();
 
-    slint::platform::set_platform(Box::new(i_slint_backend_winit::Backend::new())).unwrap();
+    slint::platform::set_platform(Box::new(i_slint_backend_winit::Backend::new().unwrap())).unwrap();
 
     let main = Main::new()?;
 
     main.load_settings();
+    let set_handle = main.as_weak();
+    //if this is being called when the value changes....why is it passing me the old value?
+    //I guess this is being called instead of the Touch Area's callback? So the value isn't updating
+    //until I do it here? But how will that work with the sliders? I can't just invert the value
+    //like I can with the bools.
+    main.global::<Settings>().on_bool_changed(move |set_type, val| {
+        let set_handle = set_handle.upgrade().unwrap();
+        match set_type {
+            BoolSettTypes::AlwOnTop => {
+                set_handle.global::<Settings>().set_always_on_top(!val);
+            },
+            BoolSettTypes::AutoStrtBreakTim => {
+                set_handle.global::<Settings>().set_auto_start_break_timer(!val);
+            },
+            BoolSettTypes::AutoStrtWrkTim => {
+                set_handle.global::<Settings>().set_auto_start_work_timer(!val);
+            },
+            BoolSettTypes::BrkAlwOnTop => {
+                set_handle.global::<Settings>().set_break_always_on_top(!val);
+            },
+            BoolSettTypes::MinToTray => {
+                set_handle.global::<Settings>().set_min_to_tray(!val);
+            },
+            BoolSettTypes::MinToTryCls => {
+                set_handle.global::<Settings>().set_min_to_tray_on_close(!val);
+            },
+            BoolSettTypes::Notifications => {
+                set_handle.global::<Settings>().set_notifications(!val);
+            },
+            BoolSettTypes::TickSounds => {
+                set_handle.global::<Settings>().set_tick_sounds(!val);
+            },
+            BoolSettTypes::TickSoundsBreak => {
+                set_handle.global::<Settings>().set_tick_sounds_during_break(!val);
+            },
+        }
+        //write out settings?...not the most effecient way every change..but for now should be fine
+        set_handle.save_settings();
+    });
 
     let close_handle = main.as_weak();
     main.on_close_window(move || {
-        close_handle.upgrade().unwrap().hide().unwrap();
+        //for now to test that saving the settings are working, I'm just going to set it to save on close
+        let close_handle = close_handle.upgrade().unwrap();
+        close_handle.save_settings();
+
+        close_handle.hide().unwrap();
 
         //After I get the system tray working I'm going to want to hide the window instead of actually close it
+        //if it's set to hide on close
         //i_slint_backend_winit::WinitWindowAccessor::with_winit_window(min_handle.window(), |win| win.set_visible(false));
     });
 

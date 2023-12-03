@@ -1,0 +1,22 @@
+{
+    "alwaysOnTop": false,
+    "autoStartBreakTimer": true,
+    "autoStartWorkTimer": true,
+    "breakAlwaysOnTop": false,
+    "globalShortcuts": {
+        "call-timer-reset": "Control+F2",
+        "call-timer-skip": "Control+F3",
+        "call-timer-toggle": "Control+F1"
+    },
+    "minToTray": true,
+    "minToTrayOnClose": false,
+    "notifications": true,
+    "theme": "Pomotroid",
+    "tickSounds": false,
+    "tickSoundsDuringBreak": true,
+    "timeLongBreak": 15,
+    "timeShortBreak": 5,
+    "timeWork": 25,
+    "volume": 100,
+    "workRounds": 4
+}
