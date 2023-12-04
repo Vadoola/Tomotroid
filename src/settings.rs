@@ -95,17 +95,19 @@ pub fn load_settings() -> JsonSettings {
     //need to load defualts
     if let Some(cfg_dir) = get_dir() {
         let file = cfg_dir.join("preferences.json");
-        let set_file = File::open(file).unwrap();
-        let reader = BufReader::new(set_file);
-
-        serde_json::from_reader(reader).unwrap()
+        if let Ok(set_file) = File::open(file) {
+            let reader = BufReader::new(set_file);
+            serde_json::from_reader(reader).unwrap()
+        } else {
+            default_settings()
+        }
     } else {
-        default_setings()
+        default_settings()
     }
 }
 
-//fn default_setings() -> Settings {
-fn default_setings() -> JsonSettings {
+//fn default_settings() -> Settings {
+fn default_settings() -> JsonSettings {
     let def_set = include_bytes!("../assets/default-preferences.json");
     serde_json::from_reader(&def_set[..]).unwrap()
 }
@@ -133,20 +135,14 @@ fn default_setings() -> JsonSettings {
 pub fn save_settings(settings: JsonSettings) {
     if let Some(cfg_dir) = get_dir() {
         let file = cfg_dir.join("preferences.json");
-        //let set_file = File::open(file).unwrap();
-        let set_file = OpenOptions::new().write(true).create(true).open(file).unwrap();
-        //let set_file = OpenOptions::new().write(true).create_new(true).open(file).unwrap();
+        let set_file = OpenOptions::new()
+            .write(true)
+            .create(true)
+            .truncate(true)
+            .open(file)
+            .unwrap();
         let writer = BufWriter::new(set_file);
 
-        //for some reason on occasion, I'm getting an extra } at the end of the json file..?
-        //It only seems to happen when it sets a bool value to true
-        //and it gets cleared when I set a bool value to false...?
-        //and it's cummulative, if I turns on five settings as true it will add 5 }
-        //and then for each one I set back to false a } will go away
-        //ok so this is only happening with the to_writer_pretty not the to_string_pretty
-        //what is going on here?
-        println!("{}", serde_json::to_string_pretty(&settings).unwrap());
         serde_json::to_writer_pretty(writer, &settings).unwrap();
-        //serde_json::to_writer(writer, &settings).unwrap();
     }
 }
