@@ -292,14 +292,14 @@ fn main() -> Result<()> {
     let main = Main::new()?;
 
     main.load_settings();
-    let set_handle = main.as_weak();
+    let set_bool_handle = main.as_weak();
     //if this is being called when the value changes....why is it passing me the old value?
     //I guess this is being called instead of the Touch Area's callback? So the value isn't updating
     //until I do it here? But how will that work with the sliders? I can't just invert the value
     //like I can with the bools.
     main.global::<Settings>()
         .on_bool_changed(move |set_type, val| {
-            let set_handle = set_handle.upgrade().unwrap();
+            let set_handle = set_bool_handle.upgrade().unwrap();
             match set_type {
                 BoolSettTypes::AlwOnTop => {
                     set_handle.global::<Settings>().set_always_on_top(!val);
@@ -342,6 +342,36 @@ fn main() -> Result<()> {
             //write out settings?...not the most effecient way every change..but for now should be fine
             set_handle.save_settings();
         });
+
+    let set_int_handle = main.as_weak();
+    main.global::<Settings>()
+        .on_int_changed(move |set_type, val| {
+            let set_handle = set_int_handle.upgrade().unwrap();
+            match set_type {
+                IntSettTypes::LongBreak => {
+                    set_handle.global::<Settings>().set_time_long_break(val);
+                },
+                IntSettTypes::ShortBreak => {
+                    set_handle.global::<Settings>().set_time_short_break(val);
+                },
+                IntSettTypes::Work => {
+                    set_handle.global::<Settings>().set_time_work(val);
+                },
+                IntSettTypes::Volume => {
+                    set_handle.global::<Settings>().set_volume(val);
+                },
+                IntSettTypes::Rounds => {
+                    set_handle.global::<Settings>().set_work_rounds(val);
+                },
+            }
+
+            //write out settings?...not the most effecient way every change..but for now should be fine
+            set_handle.save_settings();
+        });
+
+    // settings not currently being saved
+    //    * Global Shortcuts (which can't even be set currently)
+    //    * Theme
 
     let close_handle = main.as_weak();
     main.on_close_window(move || {

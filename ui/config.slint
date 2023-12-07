@@ -18,9 +18,9 @@ export component CheckBox {
     }
 
     ta := TouchArea {
-        clicked => {
+        /*clicked => {
             root.checked = !root.checked;
-        }
+        }*/
     }
 
     states [
@@ -138,7 +138,7 @@ export component ConfigPage inherits Rectangle {
                     CheckBox {
                         checked: setting.state;
                         clicked => {
-                            Settings.bool_changed(setting.sett_type, self.checked);
+                            Settings.bool-changed(setting.sett_type, self.checked);
                         }
                     }
                 }

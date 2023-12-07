@@ -2,7 +2,7 @@ import "../assets/fonts/RobotoMono-Light.ttf";
 
 import { VerticalBox, HorizontalBox } from "std-widgets.slint";
 import { Slider } from "slider.slint";
-import { Theme, Settings } from "globals.slint";
+import { Theme, Settings, IntSettTypes } from "globals.slint";
 
 export struct TimerConfig {
     focus-time: duration,
@@ -31,6 +31,8 @@ component ValueTag inherits HorizontalLayout {
 }
 
 component TimerSlider inherits VerticalLayout {
+    callback value_changed(int);
+
     in property<string> label;
     in property<int> min;
     in property<int> max;
@@ -62,6 +64,9 @@ component TimerSlider inherits VerticalLayout {
             ft-color: root.sl_color;
             ghv-color: root.sl_color;
             mt-color: Theme.background;
+            value-changed(int) => {
+                root.value-changed(int)
+            }
         }
     }
 }
@@ -89,6 +94,9 @@ export component TimerConfigPage inherits Rectangle {
             value: Settings.time-work;
             tail: ":00";
             sl-color: Theme.focus_round;
+            value-changed(int) => {
+                Settings.int-changed(IntSettTypes.Work, int);
+            }
         }
         shbrk-slider := TimerSlider {
             label: "Short Break";
@@ -97,6 +105,9 @@ export component TimerConfigPage inherits Rectangle {
             value: Settings.time-short-break;
             tail: ":00";
             sl-color: Theme.short_round;
+            value-changed(int) => {
+                Settings.int-changed(IntSettTypes.ShortBreak, int);
+            }
         }
         lngbrk-slider := TimerSlider {
             label: "Long Break";
@@ -105,6 +116,9 @@ export component TimerConfigPage inherits Rectangle {
             value: Settings.time-long-break;
             tail: ":00";
             sl-color: Theme.long_round;
+            value-changed(int) => {
+                Settings.int-changed(IntSettTypes.LongBreak, int);
+            }
         }
         round-slider := TimerSlider {
             label: "Round";
@@ -113,6 +127,9 @@ export component TimerConfigPage inherits Rectangle {
             value: Settings.work-rounds;
             //tail: "";
             sl-color: Theme.background_lightest;
+            value-changed(int) => {
+                Settings.int-changed(IntSettTypes.Rounds, int);
+            }
         }
         Text {
             text: "Reset Defaults";

@@ -1,6 +1,6 @@
 import { VerticalBox , HorizontalBox, Button, ListView } from "std-widgets.slint";
 import { BorderlessWindow } from "borderless-window.slint";
-import { Theme, JsonTheme, Settings } from "globals.slint";
+import { Theme, JsonTheme, Settings, IntSettTypes } from "globals.slint";
 import { SlideOver } from "slidover.slint";
 import { HLClick } from "hyperlink.slint";
 import { ThemeCallbacks } from "themeconfig.slint";
@@ -64,8 +64,8 @@ export component Main inherits BorderlessWindow {
         root.move-window();
     }
 
-    menu_toggled => {
-        slideover.expanded = self.menu_open;
+    menu-toggled => {
+        slideover.expanded = self.menu-open;
     }
 
     tick(passed-time) => {
@@ -119,7 +119,7 @@ export component Main inherits BorderlessWindow {
         }
     }
 
-    vol_popup := PopupWindow {
+    vol-popup := PopupWindow {
         sldr := Slider {
             width: parent.width;
             height: 100%;
@@ -127,10 +127,14 @@ export component Main inherits BorderlessWindow {
             minimum: 0;
             maximum: 100;
             color: Theme.background-lightest;
-            ft_color: Theme.background-lightest;
+            ft-color: Theme.background-lightest;
             ghv-color: Theme.accent;
-            mt_color: Theme.background-lightest;
+            mt-color: Theme.background-lightest;
             vertical: true;
+
+            value-changed(int) => {
+                Settings.int-changed(IntSettTypes.Volume, int);
+            }
         }
         x: 310px;
         y: 270px;
@@ -140,7 +144,7 @@ export component Main inherits BorderlessWindow {
 
     VerticalLayout {
         states [
-            vis when root.menu_open : {
+            vis when root.menu-open : {
                 opacity: 0;
                 in {
                     animate opacity {
@@ -150,7 +154,7 @@ export component Main inherits BorderlessWindow {
                     }
                 }
             }
-            not_vis when !root.menu_open: {
+            not-vis when !root.menu-open: {
                 opacity: 1;
                 in {
                     animate opacity {
@@ -182,7 +186,7 @@ export component Main inherits BorderlessWindow {
                     color: Theme.foreground;
                     font-size: 46px;
                 }
-                task_label := Text {
+                task-label := Text {
                     text: current-timer-string();
                     font-family: "Lato";
                     y: parent.height * 0.70;
@@ -255,7 +259,7 @@ export component Main inherits BorderlessWindow {
                     easing: ease-in-out;
                 }
 
-                StartBtn_ta := TouchArea {
+                StartBtn-ta := TouchArea {
                     clicked => {
                         if (root.running) {
                             root.action-timer(TimerAction.stop);
@@ -274,21 +278,21 @@ export component Main inherits BorderlessWindow {
                     }
 
                     states [
-                        hvr when StartBtn_ta.has-hover : {
+                        hvr when StartBtn-ta.has-hover : {
                             colorize: Theme.accent;
                         }
 
-                        nthvr when !StartBtn_ta.has-hover : {
+                        nthvr when !StartBtn-ta.has-hover : {
                             colorize: Theme.foreground;
                         }
                     ]
                 }
 
                 states [
-                    hvr when StartBtn_ta.has-hover : {
+                    hvr when StartBtn-ta.has-hover : {
                         background: Theme.background.brighter(0.2);
                     }
-                    nthvr when !StartBtn_ta.has-hover : {
+                    nthvr when !StartBtn-ta.has-hover : {
                         background: Theme.background;
                     }
                 ]
@@ -312,7 +316,7 @@ export component Main inherits BorderlessWindow {
                 min-width: 80px;
                 Rectangle {
                     y: parent.height/2 - self.height/2;
-                    SkipBtn_ta := TouchArea {
+                    SkipBtn-ta := TouchArea {
                     }
                     Image {
                         source: @image-url("../assets/icons/skip.svg");
@@ -323,24 +327,24 @@ export component Main inherits BorderlessWindow {
                         }
 
                         states [
-                            hvr when SkipBtn_ta.has-hover : {
+                            hvr when SkipBtn-ta.has-hover : {
                                 colorize: Theme.accent;
                             }
 
-                            nthvr when !SkipBtn_ta.has-hover : {
-                                colorize: Theme.background_lightest;
+                            nthvr when !SkipBtn-ta.has-hover : {
+                                colorize: Theme.background-lightest;
                             }
                         ]
                     }
                 }
                 Rectangle {
                     y: parent.height/2 - self.height/2;
-                    MuteBtn_ta := TouchArea {
+                    MuteBtn-ta := TouchArea {
                         clicked => {
-                            vol_popup.show();
+                            vol-popup.show();
                         }
                     }
-                    mt_img := Image {
+                    mt-img := Image {
                         height: 20px;
                         animate colorize {
                             duration: 250ms;
@@ -359,12 +363,12 @@ export component Main inherits BorderlessWindow {
                     }
 
                     states [
-                        hvr when MuteBtn_ta.has-hover : {
+                        hvr when MuteBtn-ta.has-hover : {
                             mt-img.colorize: Theme.accent;
                         }
 
-                        nthvr when !MuteBtn_ta.has-hover : {
-                            mt_img.colorize: Theme.background_lightest;
+                        nthvr when !MuteBtn-ta.has-hover : {
+                            mt-img.colorize: Theme.background-lightest;
                         }
                     ]
                 }
@@ -377,7 +381,7 @@ export component Main inherits BorderlessWindow {
             padding-right: 15px;
             alignment: start;
             Text {
-                ResetBtn_ta := TouchArea {
+                ResetBtn-ta := TouchArea {
                     clicked => { action-timer(TimerAction.reset) }
                 }
                 font-weight: 900;
@@ -385,11 +389,11 @@ export component Main inherits BorderlessWindow {
                 font-size: 14px;
 
                 states [
-                    hvr when ResetBtn_ta.has-hover : {
+                    hvr when ResetBtn-ta.has-hover : {
                         color: Theme.accent;
                     }
 
-                    nthvr when !ResetBtn_ta.has-hover : {
+                    nthvr when !ResetBtn-ta.has-hover : {
                         color: Theme.foreground-darker;
                     }
                 ]
