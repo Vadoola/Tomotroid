@@ -2,39 +2,39 @@ import { VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
 import {Theme, JsonTheme} from "globals.slint";
 
 export global ThemeCallbacks {
-    pure callback theme_changed(JsonTheme);
+    pure callback theme-changed(JsonTheme);
 
-    pure callback load_themes() -> [JsonTheme];
+    pure callback load-themes() -> [JsonTheme];
 }
 
 component ThemeBar inherits Rectangle {
-    in property<color> acc_color: Theme.accent;
-    in property<color> bg_color: Theme.background;
-    in property<color> txt_color: Theme.foreground;
+    in property<color> acc-color: Theme.accent;
+    in property<color> bg-color: Theme.background;
+    in property<color> txt-color: Theme.foreground;
     in property<string> name: "Pomotroid";
     in-out property<bool> selected: false;
     callback select;
 
     width: 80%;
     height: 50px;
-    background: root.bg_color;
+    background: root.bg-color;
     border-radius: 5px;
 
-    thm_ta := TouchArea {
+    thm-ta := TouchArea {
         clicked => { root.select();}
     }
 
     accent := Rectangle {
         x: 0;
         height: 100%;
-        background: root.acc_color;
+        background: root.acc-color;
         width: 1%;
     }
     Text {
         x: parent.width * 0.05;
         horizontal-alignment: left;
         text: root.name;
-        color: root.txt_color;
+        color: root.txt-color;
         font-size: 11pt;
     }
     Image {
@@ -46,7 +46,7 @@ component ThemeBar inherits Rectangle {
     }
 }
 export component ThemePage inherits Rectangle {
-    background: Theme.background_light;
+    background: Theme.background-light;
     out property<int> active-theme: 0;
     in property<[JsonTheme]> themes: ThemeCallbacks.load-themes();
 
@@ -58,47 +58,27 @@ export component ThemePage inherits Rectangle {
                     font-size: 11pt;
                     horizontal-alignment: center;
                 }
-                //eventually I need to read these in from the json files at startup instead of having them statically here.
-                /*for disp_theme[idx] in [
-                    {name: "Andromeda",long-round: #C74DED,short-round: #00E8C6,focus-round: #EE5D43,background: #23262E,background-light: #2e323d,background-lightest: #746f77,foreground: #d5ced9,foreground-darker: #746f77,foreground-darkest: #CD9731,accent: #FFE66D},
-                    {name: "Ayu",long-round: #5CCFE6,short-round: #BAE67E,focus-round: #F28779,background: #1F2430,background-light: #2a3546,background-lightest: #707a8c,foreground: #CBCCC6,foreground-darker: #CBCCC6,foreground-darkest: #5ccfe6,accent: #FFCC66},
-                    {name: "City Lights",long-round: #6796E6,short-round: #33CED8,focus-round: #E27E8D,background: #1d252c,background-light: #28313a,background-lightest: #718CA1,foreground: #b7c5d3,foreground-darker: #718CA1,foreground-darkest: #718CA1,accent: #EBBF83},
-                    {name: "Dracula",long-round: #8be9fd,short-round: #50fa7b,focus-round: #ff5555,background: #282a36,background-light: #363846,background-lightest: #6272a4,foreground: #f8f8f2,foreground-darker: #ffb86c,foreground-darkest: #ff79c6,accent: #bd93f9},
-                    {name: "D.Va",long-round: #26adff,short-round: #0de2c9,focus-round: #ec57fd,background: #2e2733,background-light: #35303a,background-lightest: #aba3b3,foreground: #f2f8f7,foreground-darker: #e8d3ea,foreground-darkest: #d5bbd8,accent: #0de2c9},
-                    {name: "GitHub",long-round: #6F42C1,short-round: #005CC5,focus-round: #CD3131,background: #FFFFFF,background-light: #f6f8fa,background-lightest: #24292e,foreground: #24292e,foreground-darker: #586069,foreground-darkest: #80878e,accent: #005CC5},
-                    {name: "Graphite",long-round: #505154,short-round: #505154,focus-round: #505154,background: #ebebea,background-light: #fcfcfc,background-lightest: #adafb1,foreground: #27292d,foreground-darker: #4a4e56,foreground-darkest: #656a75,accent: #08568c},
-                    {name: "Gruvbox",long-round: #83A598,short-round: #B8BB26,focus-round: #FB4934,background: #282828,background-light: #3c3836,background-lightest: #bdae93,foreground: #ebdbb2,foreground-darker: #bdae93,foreground-darkest: #928374,accent: #FABD2F},
-                    {name: "Monokai",long-round: #66d9ef,short-round: #a6e22e,focus-round: #f92672,background: #272822,background-light: #393a34,background-lightest: #9c9e92,foreground: #FDF9F3,foreground-darker: #dad2c6,foreground-darkest: #d8cbb6,accent: #AE81FF},
-                    {name: "Nord",long-round: #5E81AC,short-round: #8FBCBB,focus-round: #B48EAD,background: #2e3440,background-light: #3b4252,background-lightest: #616E88,foreground: #d8dee9,foreground-darker: #8FBCBB,foreground-darkest: #88C0D0,accent: #A3BE8C},
-                    {name: "One Dark Pro",long-round: #61AFEF,short-round: #98C379,focus-round: #E06C75,background: #282c34,background-light: #3b4048,background-lightest: #7f848e,foreground: #abb2bf,foreground-darker: #abb2bf,foreground-darkest: #E5C07B,accent: #C678DD},
-                    {name: "Pomotroid",long-round: #0bbddb,short-round: #05ec8c,focus-round: #ff4e4d,background: #2f384b,background-light: #3d4457,background-lightest: #9ca5b5,foreground: #f6f2eb,foreground-darker: #c0c9da,foreground-darkest: #dbe1ef,accent: #05ec8c},
-                    {name: "Popping and Locking",long-round: #458588,short-round: #7ec16e,focus-round: #f42c3e,background: #21222d,background-light: #313242,background-lightest: #7f7d7a,foreground: #f2e5bc,foreground-darker: #f9f5d7,foreground-darkest: #ebdbb2,accent: #d79921},
-                    {name: "Solarized Light",long-round: #2AA198,short-round: #859900,focus-round: #B58900,background: #FDF6E3,background-light: #EEE8D5,background-lightest: #657b83,foreground: #586e75,foreground-darker: #93A1A1,foreground-darkest: #AC9D57,accent: #268BD2},
-                    {name: "Spandex",long-round: #00dcff,short-round: #09ffbb,focus-round: #c92fdc,background: #181a1b,background-light: #212425,background-lightest: #5e696d,foreground: #e0e3e6,foreground-darker: #b9bdc1,foreground-darkest: #9da2a7,accent: #f0ff09},
-                    {name: "Synthwave",long-round: #36F9F6,short-round: #72F1B8,focus-round: #FF7EDB,background: #262335,background-light: #372d4b,background-lightest: #495495,foreground: #e0e3e6,foreground-darker: #b893ce,foreground-darkest: #DD5500,accent: #CD9731},
-                    {name: "Tokyo Night Storm",long-round: #7AA2F7,short-round: #73DACA,focus-round: #F7768E,background: #24283b,background-light: #1b1e2e,background-lightest: #9AA5CE,foreground: #c0caf5,foreground-darker: #9AA5CE,foreground-darkest: #89DDFF,accent: #9D7CD8},
 
-                ]*/
-                for disp_theme[idx] in root.themes : ThemeBar {
-                    acc_color: disp_theme.accent;
-                    bg_color: disp_theme.background;
-                    txt_color: disp_theme.foreground;
-                    name: disp_theme.name;
+                for disp-theme[idx] in root.themes : ThemeBar {
+                    acc-color: disp-theme.accent;
+                    bg-color: disp-theme.background;
+                    txt-color: disp-theme.foreground;
+                    name: disp-theme.name;
                     selected: root.active-theme == idx;
 
                     select => {
                         root.active-theme = idx;
-                        Theme.long_round = disp_theme.long_round;
-                        Theme.short_round = disp_theme.short_round;
-                        Theme.focus_round = disp_theme.focus_round;
-                        Theme.background = disp_theme.background;
-                        Theme.background_light = disp_theme.background_light;
-                        Theme.background_lightest = disp_theme.background_lightest;
-                        Theme.foreground = disp_theme.foreground;
-                        Theme.foreground-darker = disp_theme.foreground ;
-                        Theme.foreground-darkest = disp_theme.foreground ;
-                        Theme.accent = disp_theme.accent;
-                        ThemeCallbacks.theme-changed(disp_theme);
+                        Theme.long-round = disp-theme.long-round;
+                        Theme.short-round = disp-theme.short-round;
+                        Theme.focus-round = disp-theme.focus-round;
+                        Theme.background = disp-theme.background;
+                        Theme.background-light = disp-theme.background-light;
+                        Theme.background-lightest = disp-theme.background-lightest;
+                        Theme.foreground = disp-theme.foreground;
+                        Theme.foreground-darker = disp-theme.foreground ;
+                        Theme.foreground-darkest = disp-theme.foreground ;
+                        Theme.accent = disp-theme.accent;
+                        ThemeCallbacks.theme-changed(disp-theme);
                     }
                 }
             }

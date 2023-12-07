@@ -24,22 +24,22 @@ export component CheckBox {
     }
 
     states [
-        checked_no_hv when root.checked && !ta.has-hover : {
+        checked-no-hv when root.checked && !ta.has-hover : {
             checkbox.border-width: 0;
             checkbox.background: Theme.accent;
         }
 
-        checked_hv when root.checked && ta.has-hover : {
+        checked-hv when root.checked && ta.has-hover : {
             checkbox.border-width: 2px;
             checkbox.background: Theme.accent;
             checkbox.border-color: Theme.background-lightest;
         }
 
-        unchecked_no_hv when !root.checked && !ta.has-hover : {
+        unchecked-no-hv when !root.checked && !ta.has-hover : {
             checkbox.border-color: Theme.background-lightest;
         }
 
-        unchecked_hv when !root.checked && ta.has-hover : {
+        unchecked-hv when !root.checked && ta.has-hover : {
             checkbox.border-color: Theme.accent;
         }
     ]
@@ -109,7 +109,7 @@ component ConfigBar inherits Rectangle {
 }
 
 export component ConfigPage inherits Rectangle {
-    background: Theme.background_light;
+    background: Theme.background-light;
     //in-out property<Settings> settings;
     out property<int> active-theme: 0;
     VerticalBox {
@@ -123,22 +123,22 @@ export component ConfigPage inherits Rectangle {
                 }
 
                 for setting[idx] in [
-                    {name: "Always On Top", state: Settings.always-on-top, sett_type: BoolSettTypes.AlwOnTop},
-                    {name: "Deactivate Always On Top on Breaks", state: Settings.break-always-on-top, sett_type: BoolSettTypes.BrkAlwOnTop},//only shown when "Always On Top" is selected
-                    {name: "Auto-start Work Timer", state: Settings.auto-start-work-timer, sett_type: BoolSettTypes.AutoStrtWrkTim},
-                    {name: "Auto-start Break Timer", state: Settings.auto-start-break-timer, sett_type: BoolSettTypes.AutoStrtBreakTim},
-                    {name: "Tick Sounds - Work", state: Settings.tick-sounds, sett_type: BoolSettTypes.TickSounds},
-                    {name: "Tick Sounds - Break", state: Settings.tick-sounds-during-break, sett_type: BoolSettTypes.TickSoundsBreak},
-                    {name: "Desktop Notifications", state: Settings.notifications, sett_type: BoolSettTypes.Notifications},
-                    {name: "Minimize to Tray", state: Settings.min-to-tray, sett_type: BoolSettTypes.MinToTray},
-                    {name: "Minimize to Tray on Close", state: Settings.min-to-tray-on-close, sett_type: BoolSettTypes.MinToTryCls},
+                    {name: "Always On Top", state: Settings.always-on-top, sett-param: BoolSettTypes.AlwOnTop},
+                    {name: "Deactivate Always On Top on Breaks", state: Settings.break-always-on-top, sett-param: BoolSettTypes.BrkAlwOnTop},//only shown when "Always On Top" is selected
+                    {name: "Auto-start Work Timer", state: Settings.auto-start-work-timer, sett-param: BoolSettTypes.AutoStrtWrkTim},
+                    {name: "Auto-start Break Timer", state: Settings.auto-start-break-timer, sett-param: BoolSettTypes.AutoStrtBreakTim},
+                    {name: "Tick Sounds - Work", state: Settings.tick-sounds, sett-param: BoolSettTypes.TickSounds},
+                    {name: "Tick Sounds - Break", state: Settings.tick-sounds-during-break, sett-param: BoolSettTypes.TickSoundsBreak},
+                    {name: "Desktop Notifications", state: Settings.notifications, sett-param: BoolSettTypes.Notifications},
+                    {name: "Minimize to Tray", state: Settings.min-to-tray, sett-param: BoolSettTypes.MinToTray},
+                    {name: "Minimize to Tray on Close", state: Settings.min-to-tray-on-close, sett-param: BoolSettTypes.MinToTryCls},
                 ] : ConfigBar {
                     label: setting.name;
                     hidden: false;
                     CheckBox {
                         checked: setting.state;
                         clicked => {
-                            Settings.bool-changed(setting.sett_type, self.checked);
+                            Settings.bool-changed(setting.sett-param, self.checked);
                         }
                     }
                 }

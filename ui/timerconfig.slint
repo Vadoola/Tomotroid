@@ -31,13 +31,13 @@ component ValueTag inherits HorizontalLayout {
 }
 
 component TimerSlider inherits VerticalLayout {
-    callback value_changed(int);
+    callback value-changed(int);
 
     in property<string> label;
     in property<int> min;
     in property<int> max;
     in property<string> tail;
-    in property<color> sl_color;
+    in property<color> sl-color;
 
     in-out property<int> value <=> sldr.value;
 
@@ -60,9 +60,9 @@ component TimerSlider inherits VerticalLayout {
             value: 1;
             minimum: root.min;
             maximum: root.max;
-            color: root.sl_color;
-            ft-color: root.sl_color;
-            ghv-color: root.sl_color;
+            color: root.sl-color;
+            ft-color: root.sl-color;
+            ghv-color: root.sl-color;
             mt-color: Theme.background;
             value-changed(int) => {
                 root.value-changed(int)
@@ -79,7 +79,7 @@ export component TimerConfigPage inherits Rectangle {
         rounds: round-slider.value,
     };
 
-    background: Theme.background_light;
+    background: Theme.background-light;
     VerticalBox {
         Text {
             text: "Timer";
@@ -93,7 +93,7 @@ export component TimerConfigPage inherits Rectangle {
             max: 90;
             value: Settings.time-work;
             tail: ":00";
-            sl-color: Theme.focus_round;
+            sl-color: Theme.focus-round;
             value-changed(int) => {
                 Settings.int-changed(IntSettTypes.Work, int);
             }
@@ -104,7 +104,7 @@ export component TimerConfigPage inherits Rectangle {
             max: 90;
             value: Settings.time-short-break;
             tail: ":00";
-            sl-color: Theme.short_round;
+            sl-color: Theme.short-round;
             value-changed(int) => {
                 Settings.int-changed(IntSettTypes.ShortBreak, int);
             }
@@ -115,7 +115,7 @@ export component TimerConfigPage inherits Rectangle {
             max: 90;
             value: Settings.time-long-break;
             tail: ":00";
-            sl-color: Theme.long_round;
+            sl-color: Theme.long-round;
             value-changed(int) => {
                 Settings.int-changed(IntSettTypes.LongBreak, int);
             }
@@ -126,7 +126,7 @@ export component TimerConfigPage inherits Rectangle {
             max: 12;
             value: Settings.work-rounds;
             //tail: "";
-            sl-color: Theme.background_lightest;
+            sl-color: Theme.background-lightest;
             value-changed(int) => {
                 Settings.int-changed(IntSettTypes.Rounds, int);
             }
@@ -135,13 +135,13 @@ export component TimerConfigPage inherits Rectangle {
             text: "Reset Defaults";
             font-size: 11pt;
             horizontal-alignment: center;
-            rd_ta := TouchArea {}
+            rd-ta := TouchArea {}
 
             states [
-                on_hvr when rd_ta.has-hover: {
+                on-hvr when rd-ta.has-hover: {
                     color: Theme.accent;
                 }
-                off_hvr when !rd_ta.has-hover: {
+                off-hvr when !rd-ta.has-hover: {
                     color: Theme.background-lightest;
                 }
             ]

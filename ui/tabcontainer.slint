@@ -21,10 +21,9 @@ component BottomBarIcon inherits Rectangle {
             }
         }
         @children
-
     }
 
-    bbi_ta := TouchArea {
+    bbi-ta := TouchArea {
         clicked => { root.activate();}
     }
 
@@ -33,22 +32,22 @@ component BottomBarIcon inherits Rectangle {
     }
 
     states [
-        hvr_act when bbi_ta.has-hover && root.active: {
+        hvr-act when bbi-ta.has-hover && root.active: {
             background: Theme.background.brighter(0.3);
             slct.width: self.width * 0.333;
             slct.x: 0px + (self.width * 0.333);
         }
-        hvr_nt_act when bbi_ta.has-hover && !root.active: {
+        hvr-nt-act when bbi-ta.has-hover && !root.active: {
             background: Theme.background.brighter(0.3);
             slct.width: 0px;
             slct.x: self.width / 2;
         }
-        nt_hvr_act when !bbi_ta.has-hover && root.active: {
+        nt-hvr-act when !bbi-ta.has-hover && root.active: {
             background: Theme.background;
             slct.width: self.width * 0.333;
             slct.x: 0px + (self.width * 0.333);
         }
-        nt_hvr_nt_act when !bbi_ta.has-hover && !root.active: {
+        nt-hvr-nt-act when !bbi-ta.has-hover && !root.active: {
             background: Theme.background;
             slct.width: 0px;
             slct.x: self.width / 2;
@@ -76,7 +75,7 @@ component BottomBar inherits Rectangle {
             active: root.active-page == idx;
 
             icon := Image {
-                colorize: Theme.background_lightest;
+                colorize: Theme.background-lightest;
                 animate colorize {
                     duration: 125ms;
                 }

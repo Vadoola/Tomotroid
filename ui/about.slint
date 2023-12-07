@@ -6,8 +6,8 @@ export component AboutPage inherits Rectangle {
     //my initial attempts to add the logo to the theme weren't working. Passing it all the way through
     //from multiple components feels a bit hacky, but it was a quick way to test the rest of my logic
     //in regartds to updating the SVG and re-applying the logo
-    in-out property<image> logo <=> hl_logo.source;
-    background: Theme.background_light;
+    in-out property<image> logo <=> hl-logo.source;
+    background: Theme.background-light;
     VerticalBox {
         Text {
             text: "About";
@@ -17,13 +17,12 @@ export component AboutPage inherits Rectangle {
         }
         HorizontalLayout {
             alignment: center;
-            hl_logo := Image {
+            hl-logo := Image {
                 source: @image-url("../assets/logo.svg");
                 height: 75px;
                 width: 75px;
             }
         }
-        
 
         Text {
             text: "Tomotroid";
@@ -44,7 +43,7 @@ export component AboutPage inherits Rectangle {
             Text {
                 text: "Version 0.1.0";
                 font-size: 11pt;
-                color: Theme.background_lightest;
+                color: Theme.background-lightest;
             }
             HyperLink {
                 text: "(release notes)";

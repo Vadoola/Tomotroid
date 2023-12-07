@@ -9,14 +9,14 @@ export component BorderlessWindow inherits Window{
     min-height: 200px;
 
     in property <string> parent;
-    out property<bool> menu_open <=> menu_btn.toggled;
+    out property<bool> menu-open <=> menu-btn.toggled;
 
     out property <bool> title-bar-pressed: false;
 
     callback close();
     callback minimize();
     callback move();
-    callback menu_toggled();
+    callback menu-toggled();
 
     VerticalLayout {
         padding: 0;
@@ -31,22 +31,22 @@ export component BorderlessWindow inherits Window{
 
                 //Below is the Menu button that opens the sliding popover.
                 //And has the animation to conver the menu bars to a back arrow
-                menu_btn := Rectangle {
+                menu-btn := Rectangle {
                     property<bool> toggled: false;
 
-                    property<int> mt_1_x: menu_btn.width * 0.2/1px;
-                    property<int> mt_1_y: menu_btn.height * 0.5/1px;
+                    property<int> mt-1-x: menu-btn.width * 0.2/1px;
+                    property<int> mt-1-y: menu-btn.height * 0.5/1px;
 
-                    property<int> lt_1_x: menu_btn.width * 0.2/1px;
-                    property<int> lt_1_y: menu_btn.height * 0.15/1px;
+                    property<int> lt-1-x: menu-btn.width * 0.2/1px;
+                    property<int> lt-1-y: menu-btn.height * 0.15/1px;
 
-                    property<int> mt_2_x: menu_btn.width * 0.2/1px;
-                    property<int> mt_2_y: menu_btn.height * 0.5/1px;
+                    property<int> mt-2-x: menu-btn.width * 0.2/1px;
+                    property<int> mt-2-y: menu-btn.height * 0.5/1px;
 
-                    property<int> lt_2_x: menu_btn.width * 0.60/1px;
-                    property<int> lt_2_y: menu_btn.height * 0.85/1px;
+                    property<int> lt-2-x: menu-btn.width * 0.60/1px;
+                    property<int> lt-2-y: menu-btn.height * 0.85/1px;
 
-                    animate mt_1_x, mt_1_y, lt_1_x, lt_1_y, mt_2_x, mt_2_y, lt_2_x, lt_2_y {
+                    animate mt-1-x, mt-1-y, lt-1-x, lt-1-y, mt-2-x, mt-2-y, lt-2-x, lt-2-y {
                         duration: 200ms;
                         easing: ease-in-out;
                     }
@@ -54,65 +54,65 @@ export component BorderlessWindow inherits Window{
                     y: parent.height/2 - self.height/2;
                     width: parent.height * 0.75;
                     height: parent.height * 0.75;
-                    menuBtn_ta := TouchArea {
+                    menuBtn-ta := TouchArea {
                         clicked => {
                             toggled = !toggled;
                             root.menu-toggled();
                         }
                     }
                     Path {
-                        stroke: menuBtn_ta.has-hover? closeBtn_ta.pressed? Theme.background_lightest: Theme.accent : Theme.background_lightest;
+                        stroke: menuBtn-ta.has-hover? closeBtn-ta.pressed? Theme.background-lightest: Theme.accent : Theme.background-lightest;
                         stroke-width: 2px;
                         viewbox-height: parent.height/1px;
                         viewbox-width: parent.width/1px;
 
                         MoveTo {
-                            x: mt_1_x;
-                            y: mt_1_y;
+                            x: mt-1-x;
+                            y: mt-1-y;
                         }
 
                         LineTo {
-                            x: lt_1_x;
-                            y: lt_1_y;
+                            x: lt-1-x;
+                            y: lt-1-y;
                         }
 
                         MoveTo {
-                            x: mt_2_x;
-                            y: mt_2_y;
+                            x: mt-2-x;
+                            y: mt-2-y;
                         }
 
                         LineTo {
-                            x: lt_2_x;
-                            y: lt_2_y;
+                            x: lt-2-x;
+                            y: lt-2-y;
                         }
                     }
                     states [
                         open when self.toggled: {
-                            mt_1_x: menu_btn.width * 0.2/1px;//top left
-                            mt_1_y: menu_btn.height * 0.5/1px;
+                            mt-1-x: menu-btn.width * 0.2/1px;//top left
+                            mt-1-y: menu-btn.height * 0.5/1px;
 
-                            lt_1_x: menu_btn.width * 0.60/1px;//top right
-                            lt_1_y: menu_btn.height * 0.15/1px;
+                            lt-1-x: menu-btn.width * 0.60/1px;//top right
+                            lt-1-y: menu-btn.height * 0.15/1px;
 
-                            mt_2_x: menu_btn.width * 0.2/1px;//bottom left
-                            mt_2_y: menu_btn.height * 0.5/1px;
+                            mt-2-x: menu-btn.width * 0.2/1px;//bottom left
+                            mt-2-y: menu-btn.height * 0.5/1px;
 
-                            lt_2_x: menu_btn.width * 0.6/1px;//bottom right
-                            lt_2_y: menu_btn.height * 0.85/1px;
+                            lt-2-x: menu-btn.width * 0.6/1px;//bottom right
+                            lt-2-y: menu-btn.height * 0.85/1px;
                         }
 
                         closed when !self.toggled: {
-                            mt_1_x: menu_btn.width * 0.1/1px;
-                            mt_1_y: menu_btn.height * 0.333/1px;
+                            mt-1-x: menu-btn.width * 0.1/1px;
+                            mt-1-y: menu-btn.height * 0.333/1px;
 
-                            lt_1_x: menu_btn.width * 0.90/1px;
-                            lt_1_y: menu_btn.height * 0.333/1px;
+                            lt-1-x: menu-btn.width * 0.90/1px;
+                            lt-1-y: menu-btn.height * 0.333/1px;
 
-                            mt_2_x: menu_btn.width * 0.1/1px;
-                            mt_2_y: menu_btn.height * 0.667/1px;
+                            mt-2-x: menu-btn.width * 0.1/1px;
+                            mt-2-y: menu-btn.height * 0.667/1px;
 
-                            lt_2_x: menu_btn.width * 0.50/1px;
-                            lt_2_y: menu_btn.height * 0.667/1px;
+                            lt-2-x: menu-btn.width * 0.50/1px;
+                            lt-2-y: menu-btn.height * 0.667/1px;
                         }
                     ]
                 }
@@ -151,7 +151,7 @@ export component BorderlessWindow inherits Window{
                     width: parent.height * 0.75;
                     height: parent.height * 0.75;
 
-                    minBtn_ta := TouchArea {
+                    minBtn-ta := TouchArea {
                         clicked => { root.minimize() }
                     }
                     Image {
@@ -162,12 +162,12 @@ export component BorderlessWindow inherits Window{
                         }
 
                         states [
-                            hvr when minBtn_ta.has-hover : {
+                            hvr when minBtn-ta.has-hover : {
                                 colorize: Theme.accent;
                             }
 
-                            nthvr when !minBtn_ta.has-hover : {
-                                colorize: Theme.background_lightest;
+                            nthvr when !minBtn-ta.has-hover : {
+                                colorize: Theme.background-lightest;
                             }
                         ]
                     }
@@ -178,12 +178,12 @@ export component BorderlessWindow inherits Window{
                     y: parent.height/2 - self.height/2;
                     width: parent.height * 0.75;
                     height: parent.height * 0.75;
-                    closeBtn_ta := TouchArea {
+                    closeBtn-ta := TouchArea {
                         clicked => { root.close() }
                     }
                     Image {
                         source: @image-url("../assets/icons/close.svg");
-                        colorize: closeBtn_ta.has-hover? closeBtn_ta.pressed? Theme.background_light: Theme.focus_round : Theme.background_lightest;
+                        colorize: closeBtn-ta.has-hover? closeBtn-ta.pressed? Theme.background-light: Theme.focus-round : Theme.background-lightest;
                         animate colorize {
                             duration: 250ms;
                         }

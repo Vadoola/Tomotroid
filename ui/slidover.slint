@@ -5,41 +5,37 @@ import { Theme, Settings } from "globals.slint";
 
 export component SlideOver {
     in-out property<bool> expanded;
-    //in-out property<Settings> settings <=> tc.settings;
     in-out property<image> logo <=> tc.logo;
 
     out property <TimerConfig> tmr-config: tc.tmr-config;
+    out property<length> cont-x;
 
-    out property<length> cont_x;
-
-    animate cont_x {
+    animate cont-x {
         duration: 250ms;
         easing: ease-in-out;
     }
 
     states [
         vis when root.expanded : {
-            cont_x: 0px;
+            cont-x: 0px;
         }
-        not_vis when !root.expanded: {
-            cont_x: self.width * -1;
+        not-vis when !root.expanded: {
+            cont-x: self.width * -1;
         }
     ]
 
-    horizontal_stretch: 0;
+    horizontal-stretch: 0;
     Rectangle {
         y: 0px;
-        x: root.cont_x;
+        x: root.cont-x;
         height: 100%;
         width: 100%;
 
-
-        i_content := Rectangle {
-            background: Theme.background_light;
+        i-content := Rectangle {
+            background: Theme.background-light;
             clip: true;
 
             tc := TabContainer {}
         }
-
     }
 }

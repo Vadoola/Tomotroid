@@ -1,6 +1,6 @@
 import {Theme} from "globals.slint";
 export component Slider {
-    callback value_changed(int);
+    callback value-changed(int);
 
     in-out property <int> value: 0;
 
@@ -8,9 +8,9 @@ export component Slider {
     in property<int> maximum: 100;
     in property<int> step: 1;
     in property<color> color: red;
-    in property<color> mt_color: black;
-    in property<color> ft_color: red;
-    in property<color> ghv_color: red;
+    in property<color> mt-color: black;
+    in property<color> ft-color: red;
+    in property<color> ghv-color: red;
     in property<bool> vertical: false;
 
     min-width: 16px;
@@ -18,14 +18,14 @@ export component Slider {
     horizontal-stretch: root.vertical ? 0 : 1;
     vertical-stretch: root.vertical ? 1 :0;
 
-    main_track := Rectangle {
+    main-track := Rectangle {
         y: (parent.height - self.height) / 2;
-        background: root.mt_color;
+        background: root.mt-color;
 
         animate background { duration: 150ms; }
     }
 
-    filled_track := Rectangle {
+    filled-track := Rectangle {
         background: parent.color;
 
         animate background { duration: 150ms; }
@@ -34,52 +34,52 @@ export component Slider {
     grabber := Rectangle {
         width: 18px;
         height: self.width;
-        border_radius: self.width / 2;
+        border-radius: self.width / 2;
         background: slider-ta.has-hover ? parent.ghv-color : parent.color;
         animate background { duration: 150ms; }
     }
 
-    slider_ta := TouchArea {
-        property <int> pressed_value;
+    slider-ta := TouchArea {
+        property <int> pressed-value;
         property <int> minimum: parent.minimum;
         property <int> maximum: parent.maximum;
-        property <int> step_size: (self.maximum - self.minimum) / parent.step;
+        property <int> step-size: (self.maximum - self.minimum) / parent.step;
 
         width: parent.width;
         height: parent.height;
 
         pointer-event(event) => {
             if(event.button == PointerEventButton.left && event.kind == PointerEventKind.down) {
-                self.pressed_value = root.value;
+                self.pressed-value = root.value;
             }
         }
 
         moved => {
             if(self.enabled && self.pressed) {
                 if (root.vertical) {
-                    root.value = max(slider_ta.minimum, min(slider_ta.maximum,
-                        self.pressed_value - (slider_ta.mouse_y - slider_ta.pressed_y) * (self.maximum - self.minimum) / (root.height - grabber.height)));
+                    root.value = max(slider-ta.minimum, min(slider-ta.maximum,
+                        self.pressed-value - (slider-ta.mouse-y - slider-ta.pressed-y) * (self.maximum - self.minimum) / (root.height - grabber.height)));
                 } else {
-                    root.value = max(slider_ta.minimum, min(slider_ta.maximum,
-                        self.pressed_value + (slider_ta.mouse_x - slider_ta.pressed_x) * (self.maximum - self.minimum) / (root.width - grabber.width)));
+                    root.value = max(slider-ta.minimum, min(slider-ta.maximum,
+                        self.pressed-value + (slider-ta.mouse-x - slider-ta.pressed-x) * (self.maximum - self.minimum) / (root.width - grabber.width)));
                 }
-                root.value_changed(root.value);
+                root.value-changed(root.value);
             }
         }
     }
 
-    i_focus_scope := FocusScope {
+    i-focus-scope := FocusScope {
         x: 0px;
         width: 0px;
 
         key-pressed(event) => {
             if(self.enabled && event.text == Key.RightArrow) {
-                root.value = Math.min(root.value + slider_ta.step_size, slider_ta.maximum);
-                root.value_changed(root.value);
+                root.value = Math.min(root.value + slider-ta.step-size, slider-ta.maximum);
+                root.value-changed(root.value);
                 accept
             } else if(self.enabled && event.text == Key.LeftArrow) {
-                root.value = Math.max(root.value - slider_ta.step_size, slider_ta.minimum);
-                root.value_changed(root.value);
+                root.value = Math.max(root.value - slider-ta.step-size, slider-ta.minimum);
+                root.value-changed(root.value);
                 accept
             } else {
                 reject
@@ -92,13 +92,13 @@ export component Slider {
             main-track.width: 3px;
             main-track.height: self.height;
 
-            filled-track.x: main_track.x;
+            filled-track.x: main-track.x;
             filled-track.y: self.height - filled-track.height;
             filled-track.height: self.height * ((self.value - (self.minimum/2))/self.maximum);
             filled-track.width: main-track.width;
 
             grabber.x: (self.width - grabber.width) / 2;
-            grabber.y: (self.height - grabber.height) - ((self.height - grabber.height) * (self.value - slider_ta.minimum) / (slider_ta.maximum - slider_ta.minimum));
+            grabber.y: (self.height - grabber.height) - ((self.height - grabber.height) * (self.value - slider-ta.minimum) / (slider-ta.maximum - slider-ta.minimum));
         }
 
         horiz when !root.vertical : {
@@ -107,10 +107,10 @@ export component Slider {
 
             filled-track.x: 0;
             filled-track.y: (self.height - filled-track.height) / 2;
-            filled-track.height: main_track.height;
+            filled-track.height: main-track.height;
             filled-track.width: self.width * ((self.value - (self.minimum/2))/self.maximum);
 
-            grabber.x: (self.width - grabber.width) * (self.value - slider_ta.minimum) / (slider_ta.maximum - slider_ta.minimum);
+            grabber.x: (self.width - grabber.width) * (self.value - slider-ta.minimum) / (slider-ta.maximum - slider-ta.minimum);
             grabber.y: (self.height - grabber.height) / 2;
         }
     ]

@@ -1,24 +1,24 @@
 export global HLClick {
-    pure callback hl_clicked(string);
+    pure callback hl-clicked(string);
 }
 
 export component HyperLink inherits Text {
-    in property<string> link_text;
+    in property<string> link-text;
     in property<string> url;
     in property<color> link-color;
     in property<color> hvr-color;
 
-    text: root.link_text;
+    text: root.link-text;
 
-    hl_ta := TouchArea {
-        clicked => { HLClick.hl_clicked(root.url)}
+    hl-ta := TouchArea {
+        clicked => { HLClick.hl-clicked(root.url)}
     }
 
     states [
-        has_hvr when hl_ta.has-hover: {
+        has-hvr when hl-ta.has-hover: {
             color: root.hvr-color;
         }
-        has_hvr when !hl_ta.has-hover: {
+        not-hvr when !hl-ta.has-hover: {
             color: root.link-color;
         }
     ]
