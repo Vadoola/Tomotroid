@@ -4,9 +4,11 @@ use std::cell::OnceCell;
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, BufWriter, Write};
 use std::path::Path;
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 
-//slint::include_modules!();
+use crate::JsonThemeTemp;
+
+slint::include_modules!();
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -70,6 +72,7 @@ pub struct GlobalShortcuts {
 }
 
 static CFG_DIR: OnceLock<Option<ProjectDirs>> = OnceLock::new();
+static DEF_THEME: OnceLock<JsonThemeTemp> = OnceLock::new();
 
 fn get_dir() -> Option<&'static Path> {
     if let Some(dirs) = CFG_DIR.get_or_init(|| ProjectDirs::from("org", "Vadoola", "Tomotroid")) {
@@ -77,6 +80,27 @@ fn get_dir() -> Option<&'static Path> {
     } else {
         None
     }
+}
+
+pub fn default_theme() -> &'static JsonThemeTemp {
+    DEF_THEME.get_or_init(|| {
+        let def_theme = r##"{
+            "name": "Rangitoto",
+            "colors": {
+            "--color-long-round": "#af486d",
+            "--color-short-round": "#719002",
+            "--color-focus-round": "#3c73b8",
+            "--color-background": "#1a191e",
+            "--color-background-light": "#343132",
+            "--color-background-lightest": "#837c7e",
+            "--color-foreground": "#dfdfd7",
+            "--color-foreground-darker": "#bec0c0",
+            "--color-foreground-darkest": "#adadae",
+            "--color-accent": "#cd7a0c"
+            }
+        }"##;
+        serde_json::from_str::<JsonThemeTemp>(&def_theme).unwrap()
+    })
 }
 
 //so I'm thinking this module has a load settings and save settings
@@ -87,7 +111,7 @@ fn get_dir() -> Option<&'static Path> {
 //just looking at the raw Json? Could it provide any benefit or flexibility?
 //pub fn load_settings() -> Settings {
 pub fn load_settings() -> JsonSettings {
-    //if reading the files failes use default settings
+    //if reading the files fails use default settings
     //need to start adding some logging probably
     //actually probably need to restructure this a bit
     //if the cfg dir doesn't exist, need to load defaults,

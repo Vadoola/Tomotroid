@@ -1,15 +1,16 @@
 //default color theme is "Pomotroid" from Pomotroid software I'm mimicking.
 export global Theme {
-    in-out property <brush> long-round: #0bbddb;
-    in-out property <brush> short-round: #05ec8c;
-    in-out property <brush> focus-round: #ff4e4d;
-    in-out property <brush> background: #2f384b;
-    in-out property <brush> background-light: #3d4457;
-    in-out property <brush> background-lightest: #9ca5b5;
-    in-out property <brush> foreground: #f6f2eb;
-    in-out property <brush> foreground-darker: #c0c9da;
-    in-out property <brush> foreground-darkest: #dbe1ef;
-    in-out property <brush> accent: #05ec8c;
+    in-out property <int> theme-idx: 0;
+    in-out property <brush> long-round: #af486d;
+    in-out property <brush> short-round: #719002;
+    in-out property <brush> focus-round: #3c73b8;
+    in-out property <brush> background: #1a191e;
+    in-out property <brush> background-light: #343132;
+    in-out property <brush> background-lightest: #837c7e;
+    in-out property <brush> foreground: #dfdfd7;
+    in-out property <brush> foreground-darker: #bec0c0;
+    in-out property <brush> foreground-darkest: #adadae;
+    in-out property <brush> accent: #cd7a0c;
     in-out property <length> letter-spacing: 3px;
     in-out property <image> logo: @image-url("../assets/logo.svg");
 }
@@ -50,22 +51,22 @@ export enum IntSettTypes {
 }
 
 export global Settings {
-    in-out property<bool> always-on-top;
-    in-out property<bool> auto-start-break-timer;
-    in-out property<bool> auto-start-work-timer;
-    in-out property<bool> break-always-on-top;
+    in-out property <bool> always-on-top;
+    in-out property <bool> auto-start-break-timer;
+    in-out property <bool> auto-start-work-timer;
+    in-out property <bool> break-always-on-top;
     //in-out property<...shortcuts...> global-shortcuts;
-    in-out property<bool> min-to-tray;
-    in-out property<bool> min-to-tray-on-close;
-    in-out property<bool> notifications;
-    //Theme? doesn't really need to be here as I already have the Global Theme....or should I move it into here?
-    in-out property<bool> tick-sounds;
-    in-out property<bool> tick-sounds-during-break;
-    in-out property<int> time-long-break;
-    in-out property<int> time-short-break;
-    in-out property<int> time-work;
-    in-out property<int> volume;
-    in-out property<int> work-rounds;
+    in-out property <bool> min-to-tray;
+    in-out property <bool> min-to-tray-on-close;
+    in-out property <bool> notifications;
+    in-out property <string> theme;
+    in-out property <bool> tick-sounds;
+    in-out property <bool> tick-sounds-during-break;
+    in-out property <int> time-long-break;
+    in-out property <int> time-short-break;
+    in-out property <int> time-work;
+    in-out property <int> volume;
+    in-out property <int> work-rounds;
 
     //hmm so maybe an enum with each setting in it, and can pass the enum to the callback?
     //but I guess I would a callback for each type, ie a bool-changed, int-changed, etc?

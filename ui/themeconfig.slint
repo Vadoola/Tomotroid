@@ -2,7 +2,7 @@ import { VerticalBox, HorizontalBox, ScrollView } from "std-widgets.slint";
 import {Theme, JsonTheme} from "globals.slint";
 
 export global ThemeCallbacks {
-    pure callback theme-changed(JsonTheme);
+    pure callback theme-changed(int, JsonTheme);
 
     pure callback load-themes() -> [JsonTheme];
 }
@@ -47,7 +47,7 @@ component ThemeBar inherits Rectangle {
 }
 export component ThemePage inherits Rectangle {
     background: Theme.background-light;
-    out property<int> active-theme: 0;
+    in-out property<int> active-theme: Theme.theme-idx;
     in property<[JsonTheme]> themes: ThemeCallbacks.load-themes();
 
     VerticalBox {
@@ -67,18 +67,7 @@ export component ThemePage inherits Rectangle {
                     selected: root.active-theme == idx;
 
                     select => {
-                        root.active-theme = idx;
-                        Theme.long-round = disp-theme.long-round;
-                        Theme.short-round = disp-theme.short-round;
-                        Theme.focus-round = disp-theme.focus-round;
-                        Theme.background = disp-theme.background;
-                        Theme.background-light = disp-theme.background-light;
-                        Theme.background-lightest = disp-theme.background-lightest;
-                        Theme.foreground = disp-theme.foreground;
-                        Theme.foreground-darker = disp-theme.foreground ;
-                        Theme.foreground-darkest = disp-theme.foreground ;
-                        Theme.accent = disp-theme.accent;
-                        ThemeCallbacks.theme-changed(disp-theme);
+                        ThemeCallbacks.theme-changed(idx, disp-theme);
                     }
                 }
             }

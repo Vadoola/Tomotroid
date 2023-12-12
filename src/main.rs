@@ -32,7 +32,7 @@ pub const PROG_BYTES: &str = include_str!("../assets/ProgressCircle.svg");
 //Right now serde support in Slint is new and crude, some of the types in the Slint version
 //of this struct like Brush don't support serde yet. So for now I'm creating 2 versions
 //the slint version and this version to manually convert between them.
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 struct ThemeColors {
     #[serde(rename = "--color-long-round")]
     long_round: HexColor,
@@ -65,7 +65,7 @@ struct ThemeColors {
     accent: HexColor,
 }
 
-#[derive(Deserialize)]
+#[derive(Clone, Deserialize)]
 struct JsonThemeTemp {
     name: String,
     colors: ThemeColors,
@@ -189,12 +189,14 @@ impl Main {
             .set_auto_start_work_timer(settings.auto_start_work_timer);
         self.global::<Settings>()
             .set_break_always_on_top(settings.break_always_on_top);
+        //Global Shortcuts
         self.global::<Settings>()
             .set_min_to_tray(settings.min_to_tray);
         self.global::<Settings>()
             .set_min_to_tray_on_close(settings.min_to_tray_on_close);
         self.global::<Settings>()
             .set_notifications(settings.notifications);
+        self.global::<Settings>().set_theme(settings.theme.into());
         self.global::<Settings>()
             .set_tick_sounds(settings.tick_sounds);
         self.global::<Settings>()
@@ -227,10 +229,7 @@ impl Main {
             min_to_tray_on_close: self.global::<Settings>().get_min_to_tray_on_close(),
             notifications: self.global::<Settings>().get_notifications(),
 
-            //Haven't decided how I'm going to handle the theme yet. Just have the theme name here
-            //in the settings? Put it into the global theme objects? etc
-            //for now I'll just set this statically
-            theme: String::from("Pomotroid"),
+            theme: self.global::<Settings>().get_theme().to_string(),
 
             tick_sounds: self.global::<Settings>().get_tick_sounds(),
             tick_sounds_during_break: self.global::<Settings>().get_tick_sounds_during_break(),
@@ -350,19 +349,19 @@ fn main() -> Result<()> {
             match set_type {
                 IntSettTypes::LongBreak => {
                     set_handle.global::<Settings>().set_time_long_break(val);
-                },
+                }
                 IntSettTypes::ShortBreak => {
                     set_handle.global::<Settings>().set_time_short_break(val);
-                },
+                }
                 IntSettTypes::Work => {
                     set_handle.global::<Settings>().set_time_work(val);
-                },
+                }
                 IntSettTypes::Volume => {
                     set_handle.global::<Settings>().set_volume(val);
-                },
+                }
                 IntSettTypes::Rounds => {
                     set_handle.global::<Settings>().set_work_rounds(val);
-                },
+                }
             }
 
             //write out settings?...not the most effecient way every change..but for now should be fine
@@ -371,11 +370,9 @@ fn main() -> Result<()> {
 
     // settings not currently being saved
     //    * Global Shortcuts (which can't even be set currently)
-    //    * Theme
 
     let close_handle = main.as_weak();
     main.on_close_window(move || {
-        //for now to test that saving the settings are working, I'm just going to set it to save on close
         let close_handle = close_handle.upgrade().unwrap();
         close_handle.save_settings();
 
@@ -437,8 +434,11 @@ fn main() -> Result<()> {
 
     let thm_handle = main.as_weak();
     main.global::<ThemeCallbacks>()
-        .on_theme_changed(move |theme| {
+        .on_theme_changed(move |idx, theme| {
             let thm_handle = thm_handle.upgrade().unwrap();
+            thm_handle.global::<Settings>().set_theme(theme.name);
+            thm_handle.save_settings();
+
             thm_handle.set_logo(
                 slint::Image::load_from_svg_data(
                     LOGO_BYTES
@@ -470,14 +470,49 @@ fn main() -> Result<()> {
                 .unwrap(),
             );
 
+            let rem_per = thm_handle.get_remaining_time() as f32
+                / thm_handle.get_current_timer() as f32
+                * 100.0;
             thm_handle.set_circ_progress(update_prg_svg(
                 theme.background_lightest.color(),
                 theme.focus_round.color(),
-                75.0,
+                rem_per,
             ));
+
+            thm_handle.global::<Theme>().set_theme_idx(idx);
+            thm_handle
+                .global::<Theme>()
+                .set_long_round(theme.long_round);
+            thm_handle
+                .global::<Theme>()
+                .set_short_round(theme.short_round);
+            thm_handle
+                .global::<Theme>()
+                .set_focus_round(theme.focus_round);
+            thm_handle
+                .global::<Theme>()
+                .set_background(theme.background);
+            thm_handle
+                .global::<Theme>()
+                .set_background_light(theme.background_light);
+            thm_handle
+                .global::<Theme>()
+                .set_background_lightest(theme.background_lightest);
+            thm_handle
+                .global::<Theme>()
+                .set_foreground(theme.foreground);
+            thm_handle
+                .global::<Theme>()
+                .set_foreground_darker(theme.foreground_darker);
+            thm_handle
+                .global::<Theme>()
+                .set_foreground_darkest(theme.foreground_darkest);
+            thm_handle.global::<Theme>().set_accent(theme.accent);
         });
 
+    let load_theme_handle = main.as_weak();
     main.global::<ThemeCallbacks>().on_load_themes(move || {
+        let load_theme_handle = load_theme_handle.unwrap();
         let mut theme_dir = std::env::current_dir().unwrap();
         theme_dir.push("themes");
         let themes: Vec<JsonTheme> = {
@@ -504,10 +539,23 @@ fn main() -> Result<()> {
                     .ok()
                 })
                 .collect();
+            if themes.is_empty() {
+                themes.push((*settings::default_theme()).clone().into())
+            }
             themes.sort_by(|a, b| a.name.partial_cmp(&b.name).unwrap());
             themes
         };
 
+        let thm_name = load_theme_handle.global::<Settings>().get_theme();
+        let (idx, cur_theme) = themes
+            .iter()
+            .enumerate()
+            .find(|(_, thm)| thm.name == thm_name)
+            .unwrap();
+
+        load_theme_handle
+            .global::<ThemeCallbacks>()
+            .invoke_theme_changed(idx as i32, cur_theme.clone());
         let model: Rc<VecModel<JsonTheme>> = Rc::new(VecModel::from(themes));
 
         ModelRc::from(model.clone())
