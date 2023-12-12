@@ -12,6 +12,7 @@ use hex_color::HexColor;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use settings::{GlobalShortcuts, JsonSettings};
+use single_instance::SingleInstance;
 use slint::{Color, ModelRc, Timer, TimerMode, VecModel};
 use std::{
     fs::File,
@@ -243,6 +244,12 @@ impl Main {
 }
 
 fn main() -> Result<()> {
+    let instance = SingleInstance::new("org.vadoola.tomotroid").unwrap();
+    assert!(instance.is_single());
+    if !instance.is_single() {
+        return Err(anyhow::anyhow!("Only one instance of Tomotroid is allowed to run"));
+    }
+    
     //TODO: I'm not seeing an obvious way to mimic the Pomotroid behavoir
     //where it just minimizes or restores by clicking the tray icon
     //because I don't see any way to capture when the tray icon is clicked

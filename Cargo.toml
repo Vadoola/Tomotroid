@@ -18,6 +18,7 @@ hex_color = { version = "2.1.0", features = [ "serde" ] }
 walkdir = "2.4"
 etcetera = "0.8.0"
 directories = "5.0.1"
+single-instance = "0.3.3"
 
 
 [target.'cfg(windows)'.dependencies]
