@@ -520,7 +520,8 @@ fn main() -> Result<()> {
     let load_theme_handle = main.as_weak();
     main.global::<ThemeCallbacks>().on_load_themes(move || {
         let load_theme_handle = load_theme_handle.unwrap();
-        let mut theme_dir = std::env::current_dir().unwrap();
+        //let mut theme_dir = std::env::current_dir().unwrap();
+        let mut theme_dir = std::path::PathBuf::from(settings::get_dir().unwrap());
         theme_dir.push("themes");
         let themes: Vec<JsonTheme> = {
             //I'm thinking I need to move this into the settings modules maybe?
