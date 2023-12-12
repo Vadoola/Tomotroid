@@ -1,0 +1,15 @@
+{
+  "name": "Rangitoto",
+  "colors": {
+    "--color-long-round": "#af486d",
+    "--color-short-round": "#719002",
+    "--color-focus-round": "#3c73b8",
+    "--color-background": "#1a191e",
+    "--color-background-light": "#343132",
+    "--color-background-lightest": "#837c7e",
+    "--color-foreground": "#dfdfd7",
+    "--color-foreground-darker": "#bec0c0",
+    "--color-foreground-darkest": "#adadae",
+    "--color-accent": "#cd7a0c"
+  }
+}
