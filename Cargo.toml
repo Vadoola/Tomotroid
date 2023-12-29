@@ -19,6 +19,7 @@ walkdir = "2.4"
 etcetera = "0.8.0"
 directories = "5.0.1"
 single-instance = "0.3.3"
+global-hotkey = "0.4.1"
 
 
 [target.'cfg(windows)'.dependencies]

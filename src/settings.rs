@@ -77,7 +77,6 @@ static DEF_THEME: OnceLock<JsonThemeTemp> = OnceLock::new();
 //This really probably shouldn't be public. But for now as a quick way to get the theme loading
 //working from the correct directory I'm making it public. I need to move the theme loading
 //from the main.rs file into the settings module, then I can make this private again
-//fn get_dir() -> Option<&'static Path> {
 pub fn get_dir() -> Option<&'static Path> {
     if let Some(dirs) = CFG_DIR.get_or_init(|| ProjectDirs::from("org", "Vadoola", "Tomotroid")) {
         return Some(dirs.config_dir());
@@ -103,7 +102,7 @@ pub fn default_theme() -> &'static JsonThemeTemp {
             "--color-accent": "#cd7a0c"
             }
         }"##;
-        serde_json::from_str::<JsonThemeTemp>(&def_theme).unwrap()
+        serde_json::from_str::<JsonThemeTemp>(def_theme).unwrap()
     })
 }
 

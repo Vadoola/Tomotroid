@@ -19,6 +19,7 @@ export enum TimerAction {
     start,
     stop,
     reset,
+    skip,
 }
 
 export component Main inherits BorderlessWindow {
@@ -316,6 +317,7 @@ export component Main inherits BorderlessWindow {
                 Rectangle {
                     y: parent.height/2 - self.height/2;
                     SkipBtn-ta := TouchArea {
+                        clicked => { action-timer(TimerAction.skip) }
                     }
                     Image {
                         source: @image-url("../assets/icons/skip.svg");

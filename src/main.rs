@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use settings::{GlobalShortcuts, JsonSettings};
 use single_instance::SingleInstance;
-use slint::{Color, ModelRc, Timer, TimerMode, VecModel};
+use slint::{Color, JoinHandle, ModelRc, Timer, TimerMode, VecModel};
 use std::{
     fs::File,
     io::{BufReader, Read},
@@ -22,6 +22,12 @@ use std::{
 };
 use tray_item::{IconSource, TrayItem};
 use walkdir::WalkDir;
+
+use global_hotkey::GlobalHotKeyEvent;
+use global_hotkey::{
+    hotkey::{Code, HotKey, Modifiers},
+    GlobalHotKeyManager,
+};
 
 mod settings;
 
@@ -157,31 +163,8 @@ fn color_to_hex_string(color: slint::Color) -> String {
     )
 }
 
-fn update_prg_svg(bg_clr: slint::Color, fg_clr: slint::Color, rem_per: f32) -> slint::Image {
-    //     stroke-dasharray="100, 100"
-    slint::Image::load_from_svg_data(
-        PROG_BYTES
-            .replace(
-                "stroke:#9ca5b5",
-                &format!("stroke:{}", color_to_hex_string(bg_clr)),
-            )
-            //for now I'll just set this to the focus round, but it actually depends on what timer is active
-            .replace(
-                "stroke:#ff4e4d",
-                &format!("stroke:{}", color_to_hex_string(fg_clr)),
-            )
-            .replace(
-                "stroke-dasharray=\"100, 100\"",
-                &format!("stroke-dasharray=\"{}, 100\"", rem_per),
-            )
-            .as_bytes(),
-    )
-    .unwrap()
-}
-
 impl Main {
-    fn load_settings(&self) {
-        let settings = settings::load_settings();
+    fn set_settings(&self, settings: &JsonSettings) {
         self.global::<Settings>()
             .set_always_on_top(settings.always_on_top);
         self.global::<Settings>()
@@ -197,7 +180,8 @@ impl Main {
             .set_min_to_tray_on_close(settings.min_to_tray_on_close);
         self.global::<Settings>()
             .set_notifications(settings.notifications);
-        self.global::<Settings>().set_theme(settings.theme.into());
+        self.global::<Settings>()
+            .set_theme((&settings.theme).into());
         self.global::<Settings>()
             .set_tick_sounds(settings.tick_sounds);
         self.global::<Settings>()
@@ -243,13 +227,70 @@ impl Main {
     }
 }
 
+struct Tomotroid {
+    pub window: Main,
+    settings: JsonSettings,
+    reset: HotKey,
+    skip: HotKey,
+    toggle: HotKey,
+    ghk_manager: GlobalHotKeyManager,
+}
+
+impl Tomotroid {
+    fn new() -> Self {
+        let settings = settings::load_settings();
+
+        let ghk_manager = GlobalHotKeyManager::new().unwrap();
+        let toggle = HotKey::new(Some(Modifiers::CONTROL), Code::F1);
+        let reset = HotKey::new(Some(Modifiers::CONTROL), Code::F2);
+        let skip = HotKey::new(Some(Modifiers::CONTROL), Code::F3);
+
+        ghk_manager.register(toggle).unwrap();
+        ghk_manager.register(reset).unwrap();
+        ghk_manager.register(skip).unwrap();
+
+        let window = Main::new().unwrap();
+        window.set_settings(&settings);
+
+        Self {
+            window,
+            settings,
+            reset,
+            skip,
+            toggle,
+            ghk_manager,
+        }
+    }
+
+    fn update_prg_svg(bg_clr: slint::Color, fg_clr: slint::Color, rem_per: f32) -> slint::Image {
+        slint::Image::load_from_svg_data(
+            PROG_BYTES
+                .replace(
+                    "stroke:#9ca5b5",
+                    &format!("stroke:{}", color_to_hex_string(bg_clr)),
+                )
+                .replace(
+                    "stroke:#ff4e4d",
+                    &format!("stroke:{}", color_to_hex_string(fg_clr)),
+                )
+                .replace(
+                    "stroke-dasharray=\"100, 100\"",
+                    &format!("stroke-dasharray=\"{}, 100\"", rem_per),
+                )
+                .as_bytes(),
+        )
+        .unwrap()
+    }
+}
+
 fn main() -> Result<()> {
     let instance = SingleInstance::new("org.vadoola.tomotroid").unwrap();
-    assert!(instance.is_single());
     if !instance.is_single() {
-        return Err(anyhow::anyhow!("Only one instance of Tomotroid is allowed to run"));
+        return Err(anyhow::anyhow!(
+            "Only one instance of Tomotroid is allowed to run"
+        ));
     }
-    
+
     //TODO: I'm not seeing an obvious way to mimic the Pomotroid behavoir
     //where it just minimizes or restores by clicking the tray icon
     //because I don't see any way to capture when the tray icon is clicked
@@ -286,7 +327,7 @@ fn main() -> Result<()> {
     })
     .unwrap();
 
-    let quit_tx = tray_tx; //.clone();
+    let quit_tx = tray_tx;
     tray.add_menu_item("Quit", move || {
         quit_tx.send(TrayMsg::Quit).unwrap();
     })
@@ -295,15 +336,16 @@ fn main() -> Result<()> {
     slint::platform::set_platform(Box::new(i_slint_backend_winit::Backend::new().unwrap()))
         .unwrap();
 
-    let main = Main::new()?;
+    let tomotroid = Tomotroid::new();
 
-    main.load_settings();
-    let set_bool_handle = main.as_weak();
+    let set_bool_handle = tomotroid.window.as_weak();
     //if this is being called when the value changes....why is it passing me the old value?
     //I guess this is being called instead of the Touch Area's callback? So the value isn't updating
     //until I do it here? But how will that work with the sliders? I can't just invert the value
     //like I can with the bools.
-    main.global::<Settings>()
+    tomotroid
+        .window
+        .global::<Settings>()
         .on_bool_changed(move |set_type, val| {
             let set_handle = set_bool_handle.upgrade().unwrap();
             match set_type {
@@ -349,8 +391,42 @@ fn main() -> Result<()> {
             set_handle.save_settings();
         });
 
-    let set_int_handle = main.as_weak();
-    main.global::<Settings>()
+    let ghk_handle = tomotroid.window.as_weak();
+    let ghk_receiver = GlobalHotKeyEvent::receiver();
+    let _thread = std::thread::spawn(move || loop {
+        let ghk_handle2 = ghk_handle.clone();
+        slint::invoke_from_event_loop(move || {
+            if let Ok(event) = ghk_receiver.try_recv() {
+                if event.state() == global_hotkey::HotKeyState::Released {
+                    let ghk_handle2 = ghk_handle2.upgrade().unwrap();
+                    match event.id() {
+                        tg_id if tg_id == tomotroid.toggle.id() => {
+                            let action = if ghk_handle2.get_running() {
+                                TimerAction::Stop
+                            } else {
+                                TimerAction::Start
+                            };
+                            ghk_handle2.invoke_action_timer(action);
+                        }
+                        rst_id if rst_id == tomotroid.reset.id() => {
+                            ghk_handle2.invoke_action_timer(TimerAction::Reset)
+                        }
+                        skp_id if skp_id == tomotroid.skip.id() => {
+                            ghk_handle2.invoke_action_timer(TimerAction::Skip)
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        })
+        .unwrap();
+        std::thread::sleep(std::time::Duration::from_millis(500));
+    });
+
+    let set_int_handle = tomotroid.window.as_weak();
+    tomotroid
+        .window
+        .global::<Settings>()
         .on_int_changed(move |set_type, val| {
             let set_handle = set_int_handle.upgrade().unwrap();
             match set_type {
@@ -378,8 +454,8 @@ fn main() -> Result<()> {
     // settings not currently being saved
     //    * Global Shortcuts (which can't even be set currently)
 
-    let close_handle = main.as_weak();
-    main.on_close_window(move || {
+    let close_handle = tomotroid.window.as_weak();
+    tomotroid.window.on_close_window(move || {
         let close_handle = close_handle.upgrade().unwrap();
         close_handle.save_settings();
 
@@ -390,16 +466,16 @@ fn main() -> Result<()> {
         //i_slint_backend_winit::WinitWindowAccessor::with_winit_window(min_handle.window(), |win| win.set_visible(false));
     });
 
-    let min_handle = main.as_weak();
-    main.on_minimize_window(move || {
+    let min_handle = tomotroid.window.as_weak();
+    tomotroid.window.on_minimize_window(move || {
         let min_handle = min_handle.upgrade().unwrap();
         i_slint_backend_winit::WinitWindowAccessor::with_winit_window(min_handle.window(), |win| {
             win.set_minimized(true);
         });
     });
 
-    let move_handle = main.as_weak();
-    main.on_move_window(move || {
+    let move_handle = tomotroid.window.as_weak();
+    tomotroid.window.on_move_window(move || {
         let move_handle = move_handle.upgrade().unwrap();
         i_slint_backend_winit::WinitWindowAccessor::with_winit_window(
             move_handle.window(),
@@ -407,7 +483,7 @@ fn main() -> Result<()> {
         );
     });
 
-    let tray_handle = main.as_weak();
+    let tray_handle = tomotroid.window.as_weak();
     let _tray_rec_thread = std::thread::spawn(move || loop {
         match tray_rx.recv() {
             Ok(TrayMsg::MinRes) => {
@@ -435,12 +511,14 @@ fn main() -> Result<()> {
         }
     });
 
-    main.global::<HLClick>().on_hl_clicked(|url| {
+    tomotroid.window.global::<HLClick>().on_hl_clicked(|url| {
         open::that(url.as_str()).unwrap();
     });
 
-    let thm_handle = main.as_weak();
-    main.global::<ThemeCallbacks>()
+    let thm_handle = tomotroid.window.as_weak();
+    tomotroid
+        .window
+        .global::<ThemeCallbacks>()
         .on_theme_changed(move |idx, theme| {
             let thm_handle = thm_handle.upgrade().unwrap();
             thm_handle.global::<Settings>().set_theme(theme.name);
@@ -480,7 +558,7 @@ fn main() -> Result<()> {
             let rem_per = thm_handle.get_remaining_time() as f32
                 / thm_handle.get_current_timer() as f32
                 * 100.0;
-            thm_handle.set_circ_progress(update_prg_svg(
+            thm_handle.set_circ_progress(Tomotroid::update_prg_svg(
                 theme.background_lightest.color(),
                 theme.focus_round.color(),
                 rem_per,
@@ -517,63 +595,67 @@ fn main() -> Result<()> {
             thm_handle.global::<Theme>().set_accent(theme.accent);
         });
 
-    let load_theme_handle = main.as_weak();
-    main.global::<ThemeCallbacks>().on_load_themes(move || {
-        let load_theme_handle = load_theme_handle.unwrap();
-        //let mut theme_dir = std::env::current_dir().unwrap();
-        let mut theme_dir = std::path::PathBuf::from(settings::get_dir().unwrap());
-        theme_dir.push("themes");
-        let themes: Vec<JsonTheme> = {
-            //I'm thinking I need to move this into the settings modules maybe?
-            let mut themes: Vec<JsonTheme> = WalkDir::new(theme_dir)
-                .into_iter()
-                .filter(|e| {
-                    return e.as_ref().map_or(false, |f| {
-                        f.file_name()
-                            .to_str()
-                            .map(|s| s.to_lowercase().ends_with(".json"))
-                            .unwrap_or(false)
-                    });
-                })
-                .filter_map(|e| {
-                    e.map(|e| {
-                        let reader = BufReader::new(File::open(e.path()).unwrap());
-                        let theme = std::io::read_to_string(reader).unwrap();
-                        let theme = serde_json::from_str::<JsonThemeTemp>(&theme)
-                            .unwrap()
-                            .into();
-                        theme
+    let load_theme_handle = tomotroid.window.as_weak();
+    tomotroid
+        .window
+        .global::<ThemeCallbacks>()
+        .on_load_themes(move || {
+            let load_theme_handle = load_theme_handle.unwrap();
+            let mut theme_dir = std::path::PathBuf::from(settings::get_dir().unwrap());
+            theme_dir.push("themes");
+            let themes: Vec<JsonTheme> = {
+                //I'm thinking I need to move this into the settings modules maybe?
+                let mut themes: Vec<JsonTheme> = WalkDir::new(theme_dir)
+                    .into_iter()
+                    .filter(|e| {
+                        return e.as_ref().map_or(false, |f| {
+                            f.file_name()
+                                .to_str()
+                                .map(|s| s.to_lowercase().ends_with(".json"))
+                                .unwrap_or(false)
+                        });
                     })
-                    .ok()
-                })
-                .collect();
-            if themes.is_empty() {
-                themes.push((*settings::default_theme()).clone().into())
-            }
-            themes.sort_by(|a, b| a.name.partial_cmp(&b.name).unwrap());
-            themes
-        };
+                    .filter_map(|e| {
+                        e.map(|e| {
+                            let reader = BufReader::new(File::open(e.path()).unwrap());
+                            let theme = std::io::read_to_string(reader).unwrap();
+                            serde_json::from_str::<JsonThemeTemp>(&theme)
+                                .unwrap()
+                                .into()
+                        })
+                        .ok()
+                    })
+                    .collect();
+                if themes.is_empty() {
+                    themes.push((*settings::default_theme()).clone().into())
+                }
+                themes.sort_by(|a, b| a.name.partial_cmp(&b.name).unwrap());
+                themes
+            };
 
-        let thm_name = load_theme_handle.global::<Settings>().get_theme();
-        let (idx, cur_theme) = themes
-            .iter()
-            .enumerate()
-            .find(|(_, thm)| thm.name == thm_name)
-            .unwrap();
+            let thm_name = load_theme_handle.global::<Settings>().get_theme();
+            let (idx, cur_theme) = themes
+                .iter()
+                .enumerate()
+                .find(|(_, thm)| thm.name == thm_name)
+                .unwrap();
 
-        load_theme_handle
-            .global::<ThemeCallbacks>()
-            .invoke_theme_changed(idx as i32, cur_theme.clone());
-        let model: Rc<VecModel<JsonTheme>> = Rc::new(VecModel::from(themes));
+            load_theme_handle
+                .global::<ThemeCallbacks>()
+                .invoke_theme_changed(idx as i32, cur_theme.clone());
+            let model: Rc<VecModel<JsonTheme>> = Rc::new(VecModel::from(themes));
 
-        ModelRc::from(model.clone())
-    });
+            ModelRc::from(model.clone())
+        });
 
-    main.global::<ThemeCallbacks>().invoke_load_themes();
+    tomotroid
+        .window
+        .global::<ThemeCallbacks>()
+        .invoke_load_themes();
 
     let timer = Timer::default();
-    let timer_handle = main.as_weak();
-    main.on_action_timer(move |action| {
+    let timer_handle = tomotroid.window.as_weak();
+    tomotroid.window.on_action_timer(move |action| {
         let tmrstrt_handle = timer_handle.clone();
         let timer_handle = timer_handle.upgrade().unwrap();
         match action {
@@ -601,7 +683,7 @@ fn main() -> Result<()> {
                             }
                         };
 
-                        tmrstrt_handle.set_circ_progress(update_prg_svg(
+                        tmrstrt_handle.set_circ_progress(Tomotroid::update_prg_svg(
                             tmrstrt_handle
                                 .global::<Theme>()
                                 .get_background_lightest()
@@ -631,7 +713,7 @@ fn main() -> Result<()> {
                     }
                 };
 
-                timer_handle.set_circ_progress(update_prg_svg(
+                timer_handle.set_circ_progress(Tomotroid::update_prg_svg(
                     timer_handle
                         .global::<Theme>()
                         .get_background_lightest()
@@ -641,9 +723,12 @@ fn main() -> Result<()> {
                 ));
                 //need to be updating the running status from Rust not slint
             }
+            TimerAction::Skip => {
+                println!("Skip pressed");
+            }
         }
     });
 
-    main.run()?;
+    tomotroid.window.run()?;
     Ok(())
 }
