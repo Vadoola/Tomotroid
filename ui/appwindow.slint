@@ -29,17 +29,15 @@ export component Main inherits BorderlessWindow {
 
     in-out property<image> logo <=> slideover.logo;
 
-    out property<duration> current-timer: root.tmr-config.focus-time;
-    in-out property<duration> remaining-time: root.current-timer;
+    in property<duration> target-time: root.tmr-config.focus-time;
+    in-out property<duration> remaining-time: root.target-time;
 
     in property<image> circ-progress: @image-url("../assets/ProgressCircle.svg");
-    in property<[JsonTheme]> themes;
-    //in-out property<Settings> settings <=> slideover.settings;
 
     out property<int> volume: Settings.volume;
     out property<TimerConfig> tmr-config: slideover.tmr-config;
-    out property<ActiveTimer> active-timer: focus;
-    out property<int> active-round: 1;
+    in property<ActiveTimer> active-timer: focus;
+    in property<int> active-round: 1;
     in-out property<bool> running: false;
 
 
@@ -73,35 +71,6 @@ export component Main inherits BorderlessWindow {
 
         if (root.remaining-time == 0) {
             change-timer();
-        }
-    }
-
-    change-timer => {
-        if (root.active-timer == ActiveTimer.focus) {
-            root.active-timer = ActiveTimer.short-break;
-
-            root.current-timer = root.tmr-config.shbrk-time;
-            root.remaining-time = root.tmr-config.shbrk-time;
-        } else if (root.active-timer == ActiveTimer.short-break) {
-            if (root.active-round == root.tmr-config.rounds) {
-                root.active-round = 1;
-                root.active-timer = ActiveTimer.long-break;
-
-                root.current-timer = root.tmr-config.lgbrk-time;
-                root.remaining-time = root.tmr-config.lgbrk-time;
-            } else {
-                root.active-round += 1;
-                root.active-timer = ActiveTimer.focus;
-
-                root.current-timer = root.tmr-config.focus-time;
-                root.remaining-time = root.tmr-config.focus-time;
-            }
-        } else {
-            root.active-round = 1;
-            root.active-timer = ActiveTimer.focus;
-
-            root.current-timer = root.tmr-config.focus-time;
-            root.remaining-time = root.tmr-config.focus-time;
         }
     }
 
@@ -206,10 +175,13 @@ export component Main inherits BorderlessWindow {
             alignment: center;
             padding: 20px;
             //opacity: 0.05;
+            //opacity: root.running ? 1 : 0.99;
 
             /*animate opacity {
                 duration: 1000ms;
                 //easing: ease-in-out;
+                //easing: ease-in-out-back;
+                easing: cubic-bezier(0,2.04,0.53,-1.31);
             }*/
 
             states [
@@ -218,13 +190,16 @@ export component Main inherits BorderlessWindow {
                     out {
                         animate opacity {
                             duration: 250ms;
-                            easing: ease-out;
+                            //easing: ease-out;
+                            //easing: ease-in-out-back;
+                            easing: cubic-bezier(0,2.04,0.53,-1.31);
                         }
                     }
                     in {
                         animate opacity {
                             duration: 250ms;
-                            easing: ease-in;
+                            //easing: ease-in;
+                            easing: ease-in-out-back;
                         }
                     }
                 }
@@ -235,13 +210,15 @@ export component Main inherits BorderlessWindow {
                     out {
                         animate opacity {
                             duration: 250ms;
-                            easing: ease-out;
+                            //easing: ease-out;
+                            easing: ease-in-out-back;
                         }
                     }
                     in {
                         animate opacity {
                             duration: 250ms;
-                            easing: ease-in;
+                            //easing: ease-in;
+                            easing: ease-in-out-back;
                         }
                     }
                 }

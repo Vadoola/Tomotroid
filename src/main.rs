@@ -13,7 +13,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use settings::{GlobalShortcuts, JsonSettings};
 use single_instance::SingleInstance;
-use slint::{Color, JoinHandle, ModelRc, Timer, TimerMode, VecModel};
+use slint::{Color, JoinHandle, ModelRc, Timer, TimerMode, VecModel, Model};
 use std::{
     fs::File,
     io::{BufReader, Read},
@@ -21,7 +21,7 @@ use std::{
     sync::mpsc,
 };
 use tray_item::{IconSource, TrayItem};
-use walkdir::WalkDir;
+
 
 use global_hotkey::GlobalHotKeyEvent;
 use global_hotkey::{
@@ -35,119 +35,6 @@ slint::include_modules!();
 
 pub const LOGO_BYTES: &str = include_str!("../assets/logo.svg");
 pub const PROG_BYTES: &str = include_str!("../assets/ProgressCircle.svg");
-
-//Right now serde support in Slint is new and crude, some of the types in the Slint version
-//of this struct like Brush don't support serde yet. So for now I'm creating 2 versions
-//the slint version and this version to manually convert between them.
-#[derive(Clone, Deserialize)]
-struct ThemeColors {
-    #[serde(rename = "--color-long-round")]
-    long_round: HexColor,
-
-    #[serde(rename = "--color-short-round")]
-    short_round: HexColor,
-
-    #[serde(rename = "--color-focus-round")]
-    focus_round: HexColor,
-
-    #[serde(rename = "--color-background")]
-    background: HexColor,
-
-    #[serde(rename = "--color-background-light")]
-    background_light: HexColor,
-
-    #[serde(rename = "--color-background-lightest")]
-    background_lightest: HexColor,
-
-    #[serde(rename = "--color-foreground")]
-    foreground: HexColor,
-
-    #[serde(rename = "--color-foreground-darker")]
-    foreground_darker: HexColor,
-
-    #[serde(rename = "--color-foreground-darkest")]
-    foreground_darkest: HexColor,
-
-    #[serde(rename = "--color-accent")]
-    accent: HexColor,
-}
-
-#[derive(Clone, Deserialize)]
-struct JsonThemeTemp {
-    name: String,
-    colors: ThemeColors,
-}
-
-//I realize implemeting From is more idomatic, but that would require creating a newtype for JsonThemeTemp,
-//due to the orphan rule, and then having to convert that (or maybe deref) that into JsonThemeTemp. I think this is a
-//good and straight forward stop gap, until slint adds support for Serde to more types
-impl Into<JsonTheme> for JsonThemeTemp {
-    fn into(self) -> JsonTheme {
-        JsonTheme {
-            name: self.name.into(),
-            long_round: Color::from_rgb_u8(
-                self.colors.long_round.r,
-                self.colors.long_round.g,
-                self.colors.long_round.b,
-            )
-            .into(),
-            short_round: Color::from_rgb_u8(
-                self.colors.short_round.r,
-                self.colors.short_round.g,
-                self.colors.short_round.b,
-            )
-            .into(),
-            focus_round: Color::from_rgb_u8(
-                self.colors.focus_round.r,
-                self.colors.focus_round.g,
-                self.colors.focus_round.b,
-            )
-            .into(),
-            background: Color::from_rgb_u8(
-                self.colors.background.r,
-                self.colors.background.g,
-                self.colors.background.b,
-            )
-            .into(),
-            background_light: Color::from_rgb_u8(
-                self.colors.background_light.r,
-                self.colors.background_light.g,
-                self.colors.background_light.b,
-            )
-            .into(),
-            background_lightest: Color::from_rgb_u8(
-                self.colors.background_lightest.r,
-                self.colors.background_lightest.g,
-                self.colors.background_lightest.b,
-            )
-            .into(),
-            foreground: Color::from_rgb_u8(
-                self.colors.foreground.r,
-                self.colors.foreground.g,
-                self.colors.foreground.b,
-            )
-            .into(),
-            foreground_darker: Color::from_rgb_u8(
-                self.colors.foreground_darker.r,
-                self.colors.foreground_darker.g,
-                self.colors.foreground_darker.b,
-            )
-            .into(),
-            foreground_darkest: Color::from_rgb_u8(
-                self.colors.foreground_darkest.r,
-                self.colors.foreground_darkest.g,
-                self.colors.foreground_darkest.b,
-            )
-            .into(),
-            accent: Color::from_rgb_u8(
-                self.colors.accent.r,
-                self.colors.accent.g,
-                self.colors.accent.b,
-            )
-            .into(),
-        }
-    }
-}
 
 enum TrayMsg {
     MinRes,
@@ -239,6 +126,7 @@ struct Tomotroid {
 impl Tomotroid {
     fn new() -> Self {
         let settings = settings::load_settings();
+        let themes = settings::load_themes();
 
         let ghk_manager = GlobalHotKeyManager::new().unwrap();
         let toggle = HotKey::new(Some(Modifiers::CONTROL), Code::F1);
@@ -251,6 +139,20 @@ impl Tomotroid {
 
         let window = Main::new().unwrap();
         window.set_settings(&settings);
+
+        let thm_name = &settings.theme;
+        let (idx, cur_theme) = themes
+            .iter()
+            .enumerate()
+            .find(|(_, thm)| thm.name == thm_name)
+            .unwrap();
+
+        window
+            .global::<ThemeCallbacks>()
+            .invoke_theme_changed(idx as i32, cur_theme.clone());
+        let model: Rc<VecModel<JsonTheme>> = Rc::new(VecModel::from(themes));
+
+        window.global::<ThemeCallbacks>().set_themes(ModelRc::from(model.clone()));
 
         Self {
             window,
@@ -556,7 +458,7 @@ fn main() -> Result<()> {
             );
 
             let rem_per = thm_handle.get_remaining_time() as f32
-                / thm_handle.get_current_timer() as f32
+                / thm_handle.get_target_time() as f32
                 * 100.0;
             thm_handle.set_circ_progress(Tomotroid::update_prg_svg(
                 theme.background_lightest.color(),
@@ -595,64 +497,6 @@ fn main() -> Result<()> {
             thm_handle.global::<Theme>().set_accent(theme.accent);
         });
 
-    let load_theme_handle = tomotroid.window.as_weak();
-    tomotroid
-        .window
-        .global::<ThemeCallbacks>()
-        .on_load_themes(move || {
-            let load_theme_handle = load_theme_handle.unwrap();
-            let mut theme_dir = std::path::PathBuf::from(settings::get_dir().unwrap());
-            theme_dir.push("themes");
-            let themes: Vec<JsonTheme> = {
-                //I'm thinking I need to move this into the settings modules maybe?
-                let mut themes: Vec<JsonTheme> = WalkDir::new(theme_dir)
-                    .into_iter()
-                    .filter(|e| {
-                        return e.as_ref().map_or(false, |f| {
-                            f.file_name()
-                                .to_str()
-                                .map(|s| s.to_lowercase().ends_with(".json"))
-                                .unwrap_or(false)
-                        });
-                    })
-                    .filter_map(|e| {
-                        e.map(|e| {
-                            let reader = BufReader::new(File::open(e.path()).unwrap());
-                            let theme = std::io::read_to_string(reader).unwrap();
-                            serde_json::from_str::<JsonThemeTemp>(&theme)
-                                .unwrap()
-                                .into()
-                        })
-                        .ok()
-                    })
-                    .collect();
-                if themes.is_empty() {
-                    themes.push((*settings::default_theme()).clone().into())
-                }
-                themes.sort_by(|a, b| a.name.partial_cmp(&b.name).unwrap());
-                themes
-            };
-
-            let thm_name = load_theme_handle.global::<Settings>().get_theme();
-            let (idx, cur_theme) = themes
-                .iter()
-                .enumerate()
-                .find(|(_, thm)| thm.name == thm_name)
-                .unwrap();
-
-            load_theme_handle
-                .global::<ThemeCallbacks>()
-                .invoke_theme_changed(idx as i32, cur_theme.clone());
-            let model: Rc<VecModel<JsonTheme>> = Rc::new(VecModel::from(themes));
-
-            ModelRc::from(model.clone())
-        });
-
-    tomotroid
-        .window
-        .global::<ThemeCallbacks>()
-        .invoke_load_themes();
-
     let timer = Timer::default();
     let timer_handle = tomotroid.window.as_weak();
     tomotroid.window.on_action_timer(move |action| {
@@ -668,7 +512,7 @@ fn main() -> Result<()> {
                         let tmrstrt_handle = tmrstrt_handle.unwrap();
                         tmrstrt_handle.invoke_tick(50);
                         let rem_per = tmrstrt_handle.get_remaining_time() as f32
-                            / tmrstrt_handle.get_current_timer() as f32
+                            / tmrstrt_handle.get_target_time() as f32
                             * 100.0;
 
                         let fg_clr = match tmrstrt_handle.get_active_timer() {
@@ -701,7 +545,7 @@ fn main() -> Result<()> {
             TimerAction::Reset => {
                 timer.stop();
                 timer_handle.set_running(false);
-                timer_handle.set_remaining_time(timer_handle.get_current_timer());
+                timer_handle.set_remaining_time(timer_handle.get_target_time());
 
                 let fg_clr = match timer_handle.get_active_timer() {
                     ActiveTimer::Focus => timer_handle.global::<Theme>().get_focus_round().color(),
@@ -724,7 +568,49 @@ fn main() -> Result<()> {
                 //need to be updating the running status from Rust not slint
             }
             TimerAction::Skip => {
-                println!("Skip pressed");
+                //timer_handle.set_remaining_time(0);
+                timer_handle.invoke_change_timer();
+            }
+        }
+    });
+
+    let chg_tmr_handle = tomotroid.window.as_weak();
+    tomotroid.window.on_change_timer(move || {
+        let chg_tmr_handle = chg_tmr_handle.upgrade().unwrap();
+        match chg_tmr_handle.get_active_timer() {
+            ActiveTimer::Focus => {
+                let shbrk_time = chg_tmr_handle.get_tmr_config().shbrk_time;
+                chg_tmr_handle.set_active_timer(ActiveTimer::ShortBreak);
+                chg_tmr_handle.set_target_time(shbrk_time);
+                chg_tmr_handle.set_remaining_time(shbrk_time);
+            }
+            ActiveTimer::ShortBreak => {
+                if chg_tmr_handle.get_active_round() == chg_tmr_handle.get_tmr_config().rounds {
+                    let lgbrk_time = chg_tmr_handle.get_tmr_config().lgbrk_time;
+
+                    chg_tmr_handle.set_active_round(1);
+                    chg_tmr_handle.set_active_timer(ActiveTimer::LongBreak);
+
+                    chg_tmr_handle.set_target_time(lgbrk_time);
+                    chg_tmr_handle.set_remaining_time(lgbrk_time);
+                } else {
+                    let focus_time = chg_tmr_handle.get_tmr_config().focus_time;
+
+                    chg_tmr_handle.set_active_round(chg_tmr_handle.get_active_round() + 1);
+                    chg_tmr_handle.set_active_timer(ActiveTimer::Focus);
+
+                    chg_tmr_handle.set_target_time(focus_time);
+                    chg_tmr_handle.set_remaining_time(focus_time);
+                }
+            }
+            ActiveTimer::LongBreak => {
+                let focus_time = chg_tmr_handle.get_tmr_config().focus_time;
+
+                chg_tmr_handle.set_active_round(1);
+                chg_tmr_handle.set_active_timer(ActiveTimer::Focus);
+
+                chg_tmr_handle.set_target_time(focus_time);
+                chg_tmr_handle.set_remaining_time(focus_time);
             }
         }
     });

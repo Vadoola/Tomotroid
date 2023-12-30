@@ -1,14 +1,128 @@
 use directories::ProjectDirs;
+use hex_color::HexColor;
 use serde::{Deserialize, Serialize};
 use std::cell::OnceCell;
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, BufWriter, Write};
 use std::path::Path;
 use std::sync::{Arc, OnceLock};
+use slint::Color;
+use walkdir::WalkDir;
 
-use crate::JsonThemeTemp;
+use crate::JsonTheme;
 
-slint::include_modules!();
+//Right now serde support in Slint is new and crude, some of the types in the Slint version
+//of this struct like Brush don't support serde yet. So for now I'm creating 2 versions
+//the slint version and this version to manually convert between them.
+#[derive(Clone, Deserialize)]
+struct ThemeColors {
+    #[serde(rename = "--color-long-round")]
+    long_round: HexColor,
+
+    #[serde(rename = "--color-short-round")]
+    short_round: HexColor,
+
+    #[serde(rename = "--color-focus-round")]
+    focus_round: HexColor,
+
+    #[serde(rename = "--color-background")]
+    background: HexColor,
+
+    #[serde(rename = "--color-background-light")]
+    background_light: HexColor,
+
+    #[serde(rename = "--color-background-lightest")]
+    background_lightest: HexColor,
+
+    #[serde(rename = "--color-foreground")]
+    foreground: HexColor,
+
+    #[serde(rename = "--color-foreground-darker")]
+    foreground_darker: HexColor,
+
+    #[serde(rename = "--color-foreground-darkest")]
+    foreground_darkest: HexColor,
+
+    #[serde(rename = "--color-accent")]
+    accent: HexColor,
+}
+
+#[derive(Clone, Deserialize)]
+pub struct JsonThemeTemp {
+    name: String,
+    colors: ThemeColors,
+}
+
+//I realize implemeting From is more idomatic, but that would require creating a newtype for JsonThemeTemp,
+//due to the orphan rule, and then having to convert that (or maybe deref) that into JsonThemeTemp. I think this is a
+//good and straight forward stop gap, until slint adds support for Serde to more types
+impl Into<JsonTheme> for JsonThemeTemp {
+    fn into(self) -> JsonTheme {
+        JsonTheme {
+            name: self.name.into(),
+            long_round: Color::from_rgb_u8(
+                self.colors.long_round.r,
+                self.colors.long_round.g,
+                self.colors.long_round.b,
+            )
+            .into(),
+            short_round: Color::from_rgb_u8(
+                self.colors.short_round.r,
+                self.colors.short_round.g,
+                self.colors.short_round.b,
+            )
+            .into(),
+            focus_round: Color::from_rgb_u8(
+                self.colors.focus_round.r,
+                self.colors.focus_round.g,
+                self.colors.focus_round.b,
+            )
+            .into(),
+            background: Color::from_rgb_u8(
+                self.colors.background.r,
+                self.colors.background.g,
+                self.colors.background.b,
+            )
+            .into(),
+            background_light: Color::from_rgb_u8(
+                self.colors.background_light.r,
+                self.colors.background_light.g,
+                self.colors.background_light.b,
+            )
+            .into(),
+            background_lightest: Color::from_rgb_u8(
+                self.colors.background_lightest.r,
+                self.colors.background_lightest.g,
+                self.colors.background_lightest.b,
+            )
+            .into(),
+            foreground: Color::from_rgb_u8(
+                self.colors.foreground.r,
+                self.colors.foreground.g,
+                self.colors.foreground.b,
+            )
+            .into(),
+            foreground_darker: Color::from_rgb_u8(
+                self.colors.foreground_darker.r,
+                self.colors.foreground_darker.g,
+                self.colors.foreground_darker.b,
+            )
+            .into(),
+            foreground_darkest: Color::from_rgb_u8(
+                self.colors.foreground_darkest.r,
+                self.colors.foreground_darkest.g,
+                self.colors.foreground_darkest.b,
+            )
+            .into(),
+            accent: Color::from_rgb_u8(
+                self.colors.accent.r,
+                self.colors.accent.g,
+                self.colors.accent.b,
+            )
+            .into(),
+        }
+    }
+}
 
 #[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -74,10 +188,7 @@ pub struct GlobalShortcuts {
 static CFG_DIR: OnceLock<Option<ProjectDirs>> = OnceLock::new();
 static DEF_THEME: OnceLock<JsonThemeTemp> = OnceLock::new();
 
-//This really probably shouldn't be public. But for now as a quick way to get the theme loading
-//working from the correct directory I'm making it public. I need to move the theme loading
-//from the main.rs file into the settings module, then I can make this private again
-pub fn get_dir() -> Option<&'static Path> {
+fn get_dir() -> Option<&'static Path> {
     if let Some(dirs) = CFG_DIR.get_or_init(|| ProjectDirs::from("org", "Vadoola", "Tomotroid")) {
         return Some(dirs.config_dir());
     } else {
@@ -133,6 +244,40 @@ pub fn load_settings() -> JsonSettings {
     }
 }
 
+pub fn load_themes() -> Vec<JsonTheme> {
+    let theme_dir = {
+        let mut theme_dir = std::path::PathBuf::from(get_dir().unwrap());
+        theme_dir.push("themes");
+        theme_dir
+    };
+    let mut themes: Vec<JsonTheme> = WalkDir::new(theme_dir)
+        .into_iter()
+        .filter(|e| {
+            return e.as_ref().map_or(false, |f| {
+                f.file_name()
+                    .to_str()
+                    .map(|s| s.to_lowercase().ends_with(".json"))
+                    .unwrap_or(false)
+            });
+        })
+        .filter_map(|e| {
+            e.map(|e| {
+                let reader = BufReader::new(File::open(e.path()).unwrap());
+                let theme = std::io::read_to_string(reader).unwrap();
+                serde_json::from_str::<JsonThemeTemp>(&theme)
+                    .unwrap()
+                    .into()
+            })
+            .ok()
+        })
+        .collect();
+    if themes.is_empty() {
+        themes.push((*default_theme()).clone().into())
+    }
+    themes.sort_by(|a, b| a.name.partial_cmp(&b.name).unwrap());
+    themes
+}
+
 //fn default_settings() -> Settings {
 fn default_settings() -> JsonSettings {
     let def_set = include_bytes!("../assets/default-preferences.json");
@@ -157,7 +302,7 @@ fn default_settings() -> JsonSettings {
 //So if the volume is changed, it saves right away (may not be super effecient, if it triggers for
 //update of the slider and they change the volume a large amount), but if it changes something on the
 //slidover screen, ie, timer, theme, etc it only saves when the slideover goes away? The logic might be
-//a bit trickier, but might be a good middle ground of ensuring the settings get saved without quite
+//a bit trickier, but might be a good middle ground of ensuring the settings get saved without
 //writing out the file quite as much.
 pub fn save_settings(settings: JsonSettings) {
     if let Some(cfg_dir) = get_dir() {

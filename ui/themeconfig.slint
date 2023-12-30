@@ -3,8 +3,9 @@ import {Theme, JsonTheme} from "globals.slint";
 
 export global ThemeCallbacks {
     pure callback theme-changed(int, JsonTheme);
+    //pure callback load-themes() -> [JsonTheme];
 
-    pure callback load-themes() -> [JsonTheme];
+    in property<[JsonTheme]> themes;
 }
 
 component ThemeBar inherits Rectangle {
@@ -48,7 +49,14 @@ component ThemeBar inherits Rectangle {
 export component ThemePage inherits Rectangle {
     background: Theme.background-light;
     in-out property<int> active-theme: Theme.theme-idx;
-    in property<[JsonTheme]> themes: ThemeCallbacks.load-themes();
+
+    //ok so while the timer is running this  load-themes gets called every tick of the timer
+    //I'm really not sure why...but it does. If I comment it out, and use an empty themes model
+    //the themes of course don't get loaded, but it no longer calls the load-themes on every single
+    //tick of the timer....so I need to come up with a better way to load these themes....
+    //maybe just make the model a global and set it from the Rust code when the settings are loaded?
+    //in property<[JsonTheme]> themes: ThemeCallbacks.load-themes();
+    in property<[JsonTheme]> themes: ThemeCallbacks.themes;
 
     VerticalBox {
         ScrollView {
