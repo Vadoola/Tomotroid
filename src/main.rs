@@ -9,6 +9,7 @@ use std::io::Cursor;
 
 use anyhow::Result;
 use hex_color::HexColor;
+use notify_rust::{Notification, Hint};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use settings::{GlobalShortcuts, JsonSettings};
@@ -311,10 +312,10 @@ fn main() -> Result<()> {
                             ghk_handle2.invoke_action_timer(action);
                         }
                         rst_id if rst_id == tomotroid.reset.id() => {
-                            ghk_handle2.invoke_action_timer(TimerAction::Reset)
+                            ghk_handle2.invoke_action_timer(TimerAction::Reset);
                         }
                         skp_id if skp_id == tomotroid.skip.id() => {
-                            ghk_handle2.invoke_action_timer(TimerAction::Skip)
+                            ghk_handle2.invoke_action_timer(TimerAction::Skip);
                         }
                         _ => {}
                     }
@@ -500,6 +501,7 @@ fn main() -> Result<()> {
     let timer = Timer::default();
     let timer_handle = tomotroid.window.as_weak();
     tomotroid.window.on_action_timer(move |action| {
+        //Notification::new().summary("Performing an Action").show().unwrap();
         let tmrstrt_handle = timer_handle.clone();
         let timer_handle = timer_handle.upgrade().unwrap();
         match action {
@@ -579,13 +581,7 @@ fn main() -> Result<()> {
         let chg_tmr_handle = chg_tmr_handle.upgrade().unwrap();
         match chg_tmr_handle.get_active_timer() {
             ActiveTimer::Focus => {
-                let shbrk_time = chg_tmr_handle.get_tmr_config().shbrk_time;
-                chg_tmr_handle.set_active_timer(ActiveTimer::ShortBreak);
-                chg_tmr_handle.set_target_time(shbrk_time);
-                chg_tmr_handle.set_remaining_time(shbrk_time);
-            }
-            ActiveTimer::ShortBreak => {
-                if chg_tmr_handle.get_active_round() == chg_tmr_handle.get_tmr_config().rounds {
+                let body_str = if chg_tmr_handle.get_active_round() == chg_tmr_handle.get_tmr_config().rounds {
                     let lgbrk_time = chg_tmr_handle.get_tmr_config().lgbrk_time;
 
                     chg_tmr_handle.set_active_round(1);
@@ -593,15 +589,35 @@ fn main() -> Result<()> {
 
                     chg_tmr_handle.set_target_time(lgbrk_time);
                     chg_tmr_handle.set_remaining_time(lgbrk_time);
+                    format!("Begin a {} minute long break.", lgbrk_time / 60000)
                 } else {
-                    let focus_time = chg_tmr_handle.get_tmr_config().focus_time;
+                    let shbrk_time = chg_tmr_handle.get_tmr_config().shbrk_time;
+                    chg_tmr_handle.set_active_timer(ActiveTimer::ShortBreak);
+                    chg_tmr_handle.set_target_time(shbrk_time);
+                    chg_tmr_handle.set_remaining_time(shbrk_time);
+                    format!("Begin a {} minute short break.", shbrk_time / 60000)
+                };
+                Notification::new()
+                    //.appname("Tomotroid")
+                    //.icon("../assets/logo.png")
+                    .summary("Focus Round Complete")
+                    .body(&body_str)
+                    .show().unwrap();
+            }
+            ActiveTimer::ShortBreak => {
+                let focus_time = chg_tmr_handle.get_tmr_config().focus_time;
 
-                    chg_tmr_handle.set_active_round(chg_tmr_handle.get_active_round() + 1);
-                    chg_tmr_handle.set_active_timer(ActiveTimer::Focus);
+                chg_tmr_handle.set_active_round(chg_tmr_handle.get_active_round() + 1);
+                chg_tmr_handle.set_active_timer(ActiveTimer::Focus);
 
-                    chg_tmr_handle.set_target_time(focus_time);
-                    chg_tmr_handle.set_remaining_time(focus_time);
-                }
+                chg_tmr_handle.set_target_time(focus_time);
+                chg_tmr_handle.set_remaining_time(focus_time);
+                Notification::new()
+                    //.appname("Tomotroid")
+                    //.icon("../assets/logo.png")
+                    .summary("Break Finished")
+                    .body(&format!("Begin focusing for {} minutes.", focus_time / 60000))
+                    .show().unwrap();
             }
             ActiveTimer::LongBreak => {
                 let focus_time = chg_tmr_handle.get_tmr_config().focus_time;
@@ -611,10 +627,21 @@ fn main() -> Result<()> {
 
                 chg_tmr_handle.set_target_time(focus_time);
                 chg_tmr_handle.set_remaining_time(focus_time);
+                Notification::new()
+                    //.appname("Tomotroid")
+                    //.icon("../assets/logo.png")
+                    .summary("Break Finished")
+                    .body(&format!("Begin focusing for {} minutes.", focus_time / 60000))
+                    .show().unwrap();
             }
         }
     });
 
+    //Notification::new().summary("About to run").show().unwrap();
+    
+    //so for some reason this appname and icon aren't working
+    //no matter what it shows as coming from "PowerShell" and has the PowerShell icon
+    //Notification::new().appname("Tomotroid").icon("../assets/logo.png").body("Test Body").summary("Test Summary").subtitle("Test Subtitle").show().unwrap();
     tomotroid.window.run()?;
     Ok(())
 }
