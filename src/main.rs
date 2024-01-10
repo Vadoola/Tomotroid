@@ -118,9 +118,9 @@ impl Main {
 struct Tomotroid {
     pub window: Main,
     settings: JsonSettings,
-    reset: HotKey,
-    skip: HotKey,
-    toggle: HotKey,
+    reset: Option<HotKey>,
+    skip: Option<HotKey>,
+    toggle: Option<HotKey>,
     ghk_manager: GlobalHotKeyManager,
 }
 
@@ -134,9 +134,9 @@ impl Tomotroid {
         let reset = HotKey::new(Some(Modifiers::CONTROL), Code::F2);
         let skip = HotKey::new(Some(Modifiers::CONTROL), Code::F3);
 
-        ghk_manager.register(toggle).unwrap();
-        ghk_manager.register(reset).unwrap();
-        ghk_manager.register(skip).unwrap();
+        let toggle = ghk_manager.register(toggle).map_or(None, |_|Some(toggle));
+        let reset = ghk_manager.register(reset).map_or(None, |_|Some(reset));
+        let skip = ghk_manager.register(skip).map_or(None, |_|Some(skip));
 
         let window = Main::new().unwrap();
         window.set_settings(&settings);
@@ -303,7 +303,7 @@ fn main() -> Result<()> {
                 if event.state() == global_hotkey::HotKeyState::Released {
                     let ghk_handle2 = ghk_handle2.upgrade().unwrap();
                     match event.id() {
-                        tg_id if tg_id == tomotroid.toggle.id() => {
+                        tg_id if tomotroid.toggle.is_some_and(|toggle| toggle.id() == tg_id) => {
                             let action = if ghk_handle2.get_running() {
                                 TimerAction::Stop
                             } else {
@@ -311,10 +311,10 @@ fn main() -> Result<()> {
                             };
                             ghk_handle2.invoke_action_timer(action);
                         }
-                        rst_id if rst_id == tomotroid.reset.id() => {
+                        rst_id if tomotroid.reset.is_some_and(|reset| reset.id() == rst_id) => {
                             ghk_handle2.invoke_action_timer(TimerAction::Reset);
                         }
-                        skp_id if skp_id == tomotroid.skip.id() => {
+                        skp_id if tomotroid.skip.is_some_and(|skip| skip.id() == skp_id) => {
                             ghk_handle2.invoke_action_timer(TimerAction::Skip);
                         }
                         _ => {}
