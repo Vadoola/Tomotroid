@@ -306,6 +306,8 @@ fn default_settings() -> JsonSettings {
 //writing out the file quite as much.
 pub fn save_settings(settings: JsonSettings) {
     if let Some(cfg_dir) = get_dir() {
+        std::fs::create_dir_all(cfg_dir).unwrap();
+
         let file = cfg_dir.join("preferences.json");
         let set_file = OpenOptions::new()
             .write(true)
