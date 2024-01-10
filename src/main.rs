@@ -14,7 +14,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use settings::{GlobalShortcuts, JsonSettings};
 use single_instance::SingleInstance;
-use slint::{Color, JoinHandle, ModelRc, Timer, TimerMode, VecModel, Model};
+use slint::{Color, JoinHandle, ModelRc, Timer, TimerMode, VecModel, Model, PlatformError};
 use std::{
     fs::File,
     io::{BufReader, Read},
@@ -141,18 +141,7 @@ impl Tomotroid {
         let window = Main::new().unwrap();
         window.set_settings(&settings);
 
-        let thm_name = &settings.theme;
-        let (idx, cur_theme) = themes
-            .iter()
-            .enumerate()
-            .find(|(_, thm)| thm.name == thm_name)
-            .unwrap();
-
-        window
-            .global::<ThemeCallbacks>()
-            .invoke_theme_changed(idx as i32, cur_theme.clone());
         let model: Rc<VecModel<JsonTheme>> = Rc::new(VecModel::from(themes));
-
         window.global::<ThemeCallbacks>().set_themes(ModelRc::from(model.clone()));
 
         Self {
@@ -183,6 +172,19 @@ impl Tomotroid {
                 .as_bytes(),
         )
         .unwrap()
+    }
+
+    fn run(&self) -> Result<(), PlatformError> {
+        let thm_name = &self.settings.theme;
+        let themes = self.window.global::<ThemeCallbacks>().get_themes();
+        let (idx, cur_theme) = themes
+            .iter()
+            .enumerate()
+            .find(|(_, thm)| thm.name == thm_name)
+            .unwrap();
+        self.window.global::<ThemeCallbacks>().invoke_theme_changed(idx as i32, cur_theme.clone());
+
+        self.window.run()
     }
 }
 
@@ -638,10 +640,10 @@ fn main() -> Result<()> {
     });
 
     //Notification::new().summary("About to run").show().unwrap();
-    
     //so for some reason this appname and icon aren't working
     //no matter what it shows as coming from "PowerShell" and has the PowerShell icon
     //Notification::new().appname("Tomotroid").icon("../assets/logo.png").body("Test Body").summary("Test Summary").subtitle("Test Subtitle").show().unwrap();
-    tomotroid.window.run()?;
+    
+    tomotroid.run()?;
     Ok(())
 }

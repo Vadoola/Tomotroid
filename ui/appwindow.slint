@@ -33,6 +33,8 @@ export component Main inherits BorderlessWindow {
     in-out property<duration> remaining-time: root.target-time;
 
     in property<image> circ-progress: @image-url("../assets/ProgressCircle.svg");
+    //in property<[JsonTheme]> themes;
+    //in-out property<Settings> settings <=> slideover.settings;
 
     out property<int> volume: Settings.volume;
     out property<TimerConfig> tmr-config: slideover.tmr-config;
