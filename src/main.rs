@@ -4,6 +4,8 @@
     //clippy::cargo,
 )]*/
 
+#![windows_subsystem = "windows"]
+
 #[cfg(unix)]
 use std::io::Cursor;
 
