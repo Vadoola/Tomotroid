@@ -9,6 +9,8 @@ export component AboutPage inherits Rectangle {
     in-out property<image> logo <=> hl-logo.source;
     background: Theme.background-light;
     VerticalBox {
+        spacing: 5px;
+        
         Text {
             text: "About";
             font-size: 11pt;
@@ -31,11 +33,40 @@ export component AboutPage inherits Rectangle {
             horizontal-alignment: center;
         }
 
-        Text {
-            text: "A shameless rip off of Pomotroid\nI created to learn Slint UI";
-            //font-size: 16pt;
-            //color: Theme.accent;
-            horizontal-alignment: center;
+        HorizontalBox {
+            alignment: center;
+            spacing: 3pt;
+            Text {
+                text: "A themeable pomodoro timer created to learn";
+                font-size: 11pt;
+                color: Theme.background-lightest;
+            }
+            HyperLink {
+                text: "Slint";
+                url: "https://slint.dev";
+                link-color: Theme.background-lightest;
+                hvr-color: Theme.accent;
+                font-size: 11pt;
+            }
+        }
+
+        HorizontalBox {
+            alignment: center;
+            spacing: 3pt;
+            Text {
+                text: "Design modeled after";
+                font-size: 11pt;
+                color: Theme.background-lightest;
+                padding: 0px;
+            }
+            HyperLink {
+                text: "Pomotroid.";
+                url: "https://splode.github.io/pomotroid/";
+                link-color: Theme.background-lightest;
+                hvr-color: Theme.accent;
+                font-size: 11pt;
+                padding: 0px;
+            }
         }
 
         HorizontalBox {
