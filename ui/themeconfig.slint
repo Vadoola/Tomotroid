@@ -3,7 +3,6 @@ import {Theme, JsonTheme} from "globals.slint";
 
 export global ThemeCallbacks {
     pure callback theme-changed(int, JsonTheme);
-    //pure callback load-themes() -> [JsonTheme];
 
     in property<[JsonTheme]> themes;
 }

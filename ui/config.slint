@@ -1,6 +1,16 @@
 import { Theme, Settings, BoolSettTypes } from "globals.slint";
 import { VerticalBox, HorizontalBox, ScrollView, TextEdit } from "std-widgets.slint";
 
+enum GHKShortcuts {
+    toggle-timer,
+    reset-timer,
+    skip-round,
+}
+
+export global ConfigCallbacks {
+    pure callback new-ghk(GHKShortcuts, KeyEvent);
+}
+
 export component CheckBox {
     callback clicked <=> ta.clicked;
     in-out property <bool> checked;
@@ -18,9 +28,6 @@ export component CheckBox {
     }
 
     ta := TouchArea {
-        /*clicked => {
-            root.checked = !root.checked;
-        }*/
     }
 
     states [
@@ -50,40 +57,40 @@ component ShortCutTag inherits HorizontalLayout {
     in property<string> label;
     out property<bool> editing;
 
+    callback new-ghk(KeyEvent);
+
     Rectangle {
+        forward-focus: ghk-focus;
         height: 20px;
         y: (parent.height - self.height)/2;
         width: 100px;
-        border-width: root.editing ? 2px : 0px;
+        //border-width: root.editing ? 2px : 0px;
+        border-width: ghk-focus.has-focus ? 2px : 0px;
         border-color: Theme.background-lightest;
         border-radius: 3px;
-        background: root.editing ? Theme.background : Theme.background-light;
+        //background: root.editing ? Theme.background : Theme.background-light;
+        background: ghk-focus.has-focus ? Theme.background : Theme.background-light;
 
-
-        /*if !editing: */Text {
+        ghk-txt := Text {
             text: root.label;
             font-family: "Roboto Mono";
             color: Theme.accent;
 
-            ta := TouchArea {
+            /*ta := TouchArea {
                 mouse-cursor: self.has-hover ? text : default;
                 clicked => {
                     root.editing = ! root.editing;
                 }
-            }
+            }*/
         }
 
-        /*if editing: edt := TextEdit {
-            //this isn't really a text edit though...it just kind of looks like one
-            //I think when I manually create this I'm not going to worry about
-            //the cursor or copying text....I'm not really sure why you would want
-            //to...honestly this seems like a strange design in Pomotroid
-            //you can't really "type" into it, as your keys suddenly get chosen
-            //as your shortcut, so really the cursor would only be to
-            //A. Show a change to prove you are editing it
-            //B. Allow you to copy and paste the text for your shortcut
-        }*/
-
+        ghk-focus := FocusScope {
+            key-released(event) => {
+                new-ghk(event);
+                accept
+                //reject
+            }
+        }
     }
 }
 
@@ -112,6 +119,7 @@ export component ConfigPage inherits Rectangle {
     background: Theme.background-light;
     //in-out property<Settings> settings;
     out property<int> active-theme: 0;
+
     VerticalBox {
         ScrollView {
             VerticalBox {
@@ -151,13 +159,14 @@ export component ConfigPage inherits Rectangle {
                 }
 
                 for setting[idx] in [
-                    {lbl: "Toggle Timer", shortcut: "Control+F1"},
-                    {lbl: "Reset Timer", shortcut: "Control+F2"},
-                    {lbl: "Skip Round", shortcut: "Control+F3"}
+                    {lbl: "Toggle Timer", shortcut: "Control+F1", ghk: GHKShortcuts.toggle-timer},
+                    {lbl: "Reset Timer", shortcut: "Control+F2", ghk: GHKShortcuts.reset-timer},
+                    {lbl: "Skip Round", shortcut: "Control+F3", ghk: GHKShortcuts.skip-round},
                 ] : ConfigBar {
                     label: setting.lbl;
                     ShortCutTag {
                         label: setting.shortcut;
+                        new-ghk(event) => {ConfigCallbacks.new-ghk(setting.ghk, event)}
                     }
                 }
             }

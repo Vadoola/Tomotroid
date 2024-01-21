@@ -1,12 +1,12 @@
 use directories::ProjectDirs;
 use hex_color::HexColor;
 use serde::{Deserialize, Serialize};
+use slint::Color;
 use std::cell::OnceCell;
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, BufWriter, Write};
 use std::path::Path;
 use std::sync::{Arc, OnceLock};
-use slint::Color;
 use walkdir::WalkDir;
 
 use crate::JsonTheme;

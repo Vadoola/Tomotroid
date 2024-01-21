@@ -3,7 +3,6 @@
     clippy::pedantic,
     //clippy::cargo,
 )]*/
-
 #![windows_subsystem = "windows"]
 
 #[cfg(unix)]
@@ -11,12 +10,12 @@ use std::io::Cursor;
 
 use anyhow::Result;
 use hex_color::HexColor;
-use notify_rust::{Notification, Hint};
+use notify_rust::{Hint, Notification};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use settings::{GlobalShortcuts, JsonSettings};
 use single_instance::SingleInstance;
-use slint::{Color, JoinHandle, ModelRc, Timer, TimerMode, VecModel, Model, PlatformError};
+use slint::{Color, JoinHandle, Model, ModelRc, PlatformError, Timer, TimerMode, VecModel};
 use std::{
     fs::File,
     io::{BufReader, Read},
@@ -24,7 +23,6 @@ use std::{
     sync::mpsc,
 };
 use tray_item::{IconSource, TrayItem};
-
 
 use global_hotkey::GlobalHotKeyEvent;
 use global_hotkey::{
@@ -136,15 +134,17 @@ impl Tomotroid {
         let reset = HotKey::new(Some(Modifiers::CONTROL), Code::F2);
         let skip = HotKey::new(Some(Modifiers::CONTROL), Code::F3);
 
-        let toggle = ghk_manager.register(toggle).map_or(None, |_|Some(toggle));
-        let reset = ghk_manager.register(reset).map_or(None, |_|Some(reset));
-        let skip = ghk_manager.register(skip).map_or(None, |_|Some(skip));
+        let toggle = ghk_manager.register(toggle).map_or(None, |_| Some(toggle));
+        let reset = ghk_manager.register(reset).map_or(None, |_| Some(reset));
+        let skip = ghk_manager.register(skip).map_or(None, |_| Some(skip));
 
         let window = Main::new().unwrap();
         window.set_settings(&settings);
 
         let model: Rc<VecModel<JsonTheme>> = Rc::new(VecModel::from(themes));
-        window.global::<ThemeCallbacks>().set_themes(ModelRc::from(model.clone()));
+        window
+            .global::<ThemeCallbacks>()
+            .set_themes(ModelRc::from(model.clone()));
 
         Self {
             window,
@@ -184,7 +184,9 @@ impl Tomotroid {
             .enumerate()
             .find(|(_, thm)| thm.name == thm_name)
             .unwrap();
-        self.window.global::<ThemeCallbacks>().invoke_theme_changed(idx as i32, cur_theme.clone());
+        self.window
+            .global::<ThemeCallbacks>()
+            .invoke_theme_changed(idx as i32, cur_theme.clone());
 
         self.window.run()
     }
@@ -585,7 +587,9 @@ fn main() -> Result<()> {
         let chg_tmr_handle = chg_tmr_handle.upgrade().unwrap();
         match chg_tmr_handle.get_active_timer() {
             ActiveTimer::Focus => {
-                let body_str = if chg_tmr_handle.get_active_round() == chg_tmr_handle.get_tmr_config().rounds {
+                let body_str = if chg_tmr_handle.get_active_round()
+                    == chg_tmr_handle.get_tmr_config().rounds
+                {
                     let lgbrk_time = chg_tmr_handle.get_tmr_config().lgbrk_time;
 
                     chg_tmr_handle.set_active_round(1);
@@ -606,7 +610,8 @@ fn main() -> Result<()> {
                     //.icon("../assets/logo.png")
                     .summary("Focus Round Complete")
                     .body(&body_str)
-                    .show().unwrap();
+                    .show()
+                    .unwrap();
             }
             ActiveTimer::ShortBreak => {
                 let focus_time = chg_tmr_handle.get_tmr_config().focus_time;
@@ -620,8 +625,12 @@ fn main() -> Result<()> {
                     //.appname("Tomotroid")
                     //.icon("../assets/logo.png")
                     .summary("Break Finished")
-                    .body(&format!("Begin focusing for {} minutes.", focus_time / 60000))
-                    .show().unwrap();
+                    .body(&format!(
+                        "Begin focusing for {} minutes.",
+                        focus_time / 60000
+                    ))
+                    .show()
+                    .unwrap();
             }
             ActiveTimer::LongBreak => {
                 let focus_time = chg_tmr_handle.get_tmr_config().focus_time;
@@ -635,17 +644,57 @@ fn main() -> Result<()> {
                     //.appname("Tomotroid")
                     //.icon("../assets/logo.png")
                     .summary("Break Finished")
-                    .body(&format!("Begin focusing for {} minutes.", focus_time / 60000))
-                    .show().unwrap();
+                    .body(&format!(
+                        "Begin focusing for {} minutes.",
+                        focus_time / 60000
+                    ))
+                    .show()
+                    .unwrap();
             }
         }
     });
 
-    //Notification::new().summary("About to run").show().unwrap();
-    //so for some reason this appname and icon aren't working
-    //no matter what it shows as coming from "PowerShell" and has the PowerShell icon
-    //Notification::new().appname("Tomotroid").icon("../assets/logo.png").body("Test Body").summary("Test Summary").subtitle("Test Subtitle").show().unwrap();
-    
+    let ghk_handle = tomotroid.window.as_weak();
+    tomotroid
+        .window
+        .global::<ConfigCallbacks>()
+        .on_new_ghk(move |ghk, event| {
+            //ok so the basic concept of this is working, I'm getting the keys on release
+            //and I'm getting the keys with the modifier...but of course I also get another firing
+            //when I release the modifiers afterward. IE if I press left Ctrl+D, and release the D
+            //first I get the correct combination I would expect. But then when I release the Ctrl
+            //I get an event where the modifiers are all false, and then event text is "\x11" which
+            //according to an Ascii chart is "Device Control 1". If I do the same with the right Ctrl
+            //key I actually get a text of "\x16"...which is "Synchronous idle"? either way I need to
+            //be able to filter these out?, but what I need to filter depends on the modifer used
+            //It make sense that any global hotkey would use a modifier. It would cause problems to
+            //just set a global hotkey to the D key, anytime you needed to type D and the program was
+            //running you couldn't. So I had the thought to just reject all events where there are no modifiers
+            //but what if they want the GHK to just be F8 for example....that wouldn't have any modifiers
+            //I can't look at the repeat key, because per the documentation and my testing repeat is always
+            //false for key release....might I have to do some sort of odd handshaking? Put in a key pressed
+            //event look at what's pressed look for repeat, set some sort of flag and then look for a set flag
+            //on the release? Another Option I guess would be to filter to some sort of good characters?
+            //IE if the text isn't a-z, F-keys, etc reject it....but I could end up rejecting valid combinations easily
+            //especially perhaps if someone has an international keyboard I would assume I would miss also sorts of valid
+            //key combinations that I'm just unaware of for other language keyboards.
+            let ghk_handle = ghk_handle.upgrade().unwrap();
+            let mut text = String::new();
+            if event.modifiers.control {
+                text = "Ctrl+".to_string();
+            }
+            if event.modifiers.alt {
+                text = format!("{text}Alt+").to_string();
+            }
+            if event.modifiers.shift {
+                text = format!("{text}Shft+").to_string();
+            }
+            if event.modifiers.meta {
+                text = format!("{text}Meta+").to_string();
+            }
+            text = format!("{text}{}", event.text).to_string();
+        });
+
     tomotroid.run()?;
     Ok(())
 }
