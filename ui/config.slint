@@ -60,35 +60,43 @@ component ShortCutTag inherits HorizontalLayout {
     callback new-ghk(KeyEvent);
 
     Rectangle {
-        forward-focus: ghk-focus;
+        //forward-focus: ghk-focus;
         height: 20px;
         y: (parent.height - self.height)/2;
-        width: 100px;
-        //border-width: root.editing ? 2px : 0px;
+        width: 120px;
         border-width: ghk-focus.has-focus ? 2px : 0px;
         border-color: Theme.background-lightest;
         border-radius: 3px;
-        //background: root.editing ? Theme.background : Theme.background-light;
         background: ghk-focus.has-focus ? Theme.background : Theme.background-light;
 
         ghk-txt := Text {
             text: root.label;
             font-family: "Roboto Mono";
             color: Theme.accent;
-
-            /*ta := TouchArea {
-                mouse-cursor: self.has-hover ? text : default;
-                clicked => {
-                    root.editing = ! root.editing;
-                }
-            }*/
         }
 
-        ghk-focus := FocusScope {
-            key-released(event) => {
-                new-ghk(event);
-                accept
-                //reject
+        ta := TouchArea {
+            mouse-cursor: self.has-hover ? text : default;
+            clicked => {
+                if (!ghk-focus.enabled) {
+                    ghk-focus.enabled = true;
+                    ghk-focus.focus();
+                } else {
+                    ghk-focus.enabled = false;
+                }
+            }
+
+            ghk-focus := FocusScope {
+                enabled: false;
+                key-released(event) => {
+                    self.enabled = false;
+                    /*if (event.text == Key.Tab || event.text == Key.Escape)
+                    {
+                        return reject;
+                    }*/
+                    new-ghk(event);
+                    accept
+                }
             }
         }
     }
@@ -117,7 +125,6 @@ component ConfigBar inherits Rectangle {
 
 export component ConfigPage inherits Rectangle {
     background: Theme.background-light;
-    //in-out property<Settings> settings;
     out property<int> active-theme: 0;
 
     VerticalBox {
@@ -159,9 +166,9 @@ export component ConfigPage inherits Rectangle {
                 }
 
                 for setting[idx] in [
-                    {lbl: "Toggle Timer", shortcut: "Control+F1", ghk: GHKShortcuts.toggle-timer},
-                    {lbl: "Reset Timer", shortcut: "Control+F2", ghk: GHKShortcuts.reset-timer},
-                    {lbl: "Skip Round", shortcut: "Control+F3", ghk: GHKShortcuts.skip-round},
+                    {lbl: "Toggle Timer", shortcut: Settings.tt-ghk, ghk: GHKShortcuts.toggle-timer},
+                    {lbl: "Reset Timer", shortcut: Settings.rst-ghk, ghk: GHKShortcuts.reset-timer},
+                    {lbl: "Skip Round", shortcut: Settings.skp-ghk, ghk: GHKShortcuts.skip-round},
                 ] : ConfigBar {
                     label: setting.lbl;
                     ShortCutTag {

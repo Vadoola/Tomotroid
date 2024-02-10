@@ -55,7 +55,17 @@ export global Settings {
     in-out property <bool> auto-start-break-timer;
     in-out property <bool> auto-start-work-timer;
     in-out property <bool> break-always-on-top;
+
     //in-out property<...shortcuts...> global-shortcuts;
+    //I'm thinking instead of strings, I need to set this to a struct
+    //that can match the json variant I seralize/deserialize
+    //then have a slint function to convert it to a string format?
+    //or would I need to store both properties here? A string version
+    //generated in rust and the struct version?
+    in-out property<string> tt_ghk;
+    in-out property<string> rst_ghk;
+    in-out property<string> skp_ghk;
+
     in-out property <bool> min-to-tray;
     in-out property <bool> min-to-tray-on-close;
     in-out property <bool> notifications;

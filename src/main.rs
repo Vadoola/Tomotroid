@@ -10,20 +10,19 @@ use std::io::Cursor;
 
 use anyhow::Result;
 use hex_color::HexColor;
-use notify_rust::{Hint, Notification};
+use i_slint_backend_winit::winit::event::Event;
+use i_slint_backend_winit::winit::keyboard::KeyCode;
+use notify_rust::{Notification, Hint};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use settings::{GlobalShortcuts, JsonSettings};
+use settings::{get_non_print_key_txt, GlobalShortcuts, JsonHotKey, JsonSettings};
 use single_instance::SingleInstance;
-use slint::{Color, JoinHandle, Model, ModelRc, PlatformError, Timer, TimerMode, VecModel};
+use slint::{platform::Key, SharedString, Color, JoinHandle, ModelRc, Timer, TimerMode, VecModel, Model, PlatformError};
+use slint::private_unstable_api::re_exports::EventResult;
 use std::{
-    fs::File,
-    io::{BufReader, Read},
-    rc::Rc,
-    sync::mpsc,
+    borrow::Borrow, fs::File, io::{BufReader, Read}, rc::Rc, str::FromStr, sync::mpsc
 };
 use tray_item::{IconSource, TrayItem};
-
 use global_hotkey::GlobalHotKeyEvent;
 use global_hotkey::{
     hotkey::{Code, HotKey, Modifiers},
@@ -61,7 +60,16 @@ impl Main {
             .set_auto_start_work_timer(settings.auto_start_work_timer);
         self.global::<Settings>()
             .set_break_always_on_top(settings.break_always_on_top);
+
         //Global Shortcuts
+        self.global::<Settings>()
+            .set_tt_ghk(settings.global_shortcuts.call_timer_toggle.to_string().into());
+        self.global::<Settings>()
+            .set_rst_ghk(settings.global_shortcuts.call_timer_reset.to_string().into());
+        self.global::<Settings>()
+            .set_skp_ghk(settings.global_shortcuts.call_timer_skip.to_string().into());
+
+
         self.global::<Settings>()
             .set_min_to_tray(settings.min_to_tray);
         self.global::<Settings>()
@@ -85,33 +93,34 @@ impl Main {
     }
 
     fn save_settings(&self) {
-        settings::save_settings(JsonSettings {
-            always_on_top: self.global::<Settings>().get_always_on_top(),
-            auto_start_break_timer: self.global::<Settings>().get_auto_start_break_timer(),
-            auto_start_work_timer: self.global::<Settings>().get_auto_start_work_timer(),
-            break_always_on_top: self.global::<Settings>().get_break_always_on_top(),
+        settings::save_settings(
+            JsonSettings {
+                always_on_top: self.global::<Settings>().get_always_on_top(),
+                auto_start_break_timer: self.global::<Settings>().get_auto_start_break_timer(),
+                auto_start_work_timer: self.global::<Settings>().get_auto_start_work_timer(),
+                break_always_on_top: self.global::<Settings>().get_break_always_on_top(),
 
-            //don't have the global shortcuts working yet...just temporarily create some defaults
-            global_shortcuts: GlobalShortcuts {
-                call_timer_reset: String::from("Control+F2"),
-                call_timer_skip: String::from("Control+F3"),
-                call_timer_toggle: String::from("Control+F1"),
-            },
+                global_shortcuts: GlobalShortcuts {
+                    call_timer_reset: JsonHotKey::from_str(self.global::<Settings>().get_rst_ghk().to_string().as_str()).expect("a valid Timer Reset GHK"),
+                    call_timer_skip: JsonHotKey::from_str(self.global::<Settings>().get_skp_ghk().to_string().as_str()).expect("a valid Timer Skip GHK"),
+                    call_timer_toggle: JsonHotKey::from_str(self.global::<Settings>().get_tt_ghk().to_string().as_str()).expect("a valid Timer Toggle GHK"),
+                },
 
-            min_to_tray: self.global::<Settings>().get_min_to_tray(),
-            min_to_tray_on_close: self.global::<Settings>().get_min_to_tray_on_close(),
-            notifications: self.global::<Settings>().get_notifications(),
+                min_to_tray: self.global::<Settings>().get_min_to_tray(),
+                min_to_tray_on_close: self.global::<Settings>().get_min_to_tray_on_close(),
+                notifications: self.global::<Settings>().get_notifications(),
 
-            theme: self.global::<Settings>().get_theme().to_string(),
+                theme: self.global::<Settings>().get_theme().to_string(),
 
-            tick_sounds: self.global::<Settings>().get_tick_sounds(),
-            tick_sounds_during_break: self.global::<Settings>().get_tick_sounds_during_break(),
-            time_long_break: self.global::<Settings>().get_time_long_break(),
-            time_short_break: self.global::<Settings>().get_time_short_break(),
-            time_work: self.global::<Settings>().get_time_work(),
-            volume: self.global::<Settings>().get_volume(),
-            work_rounds: self.global::<Settings>().get_work_rounds(),
-        });
+                tick_sounds: self.global::<Settings>().get_tick_sounds(),
+                tick_sounds_during_break: self.global::<Settings>().get_tick_sounds_during_break(),
+                time_long_break: self.global::<Settings>().get_time_long_break(),
+                time_short_break: self.global::<Settings>().get_time_short_break(),
+                time_work: self.global::<Settings>().get_time_work(),
+                volume: self.global::<Settings>().get_volume(),
+                work_rounds: self.global::<Settings>().get_work_rounds(),
+            }
+        );
     }
 }
 
@@ -130,21 +139,19 @@ impl Tomotroid {
         let themes = settings::load_themes();
 
         let ghk_manager = GlobalHotKeyManager::new().unwrap();
-        let toggle = HotKey::new(Some(Modifiers::CONTROL), Code::F1);
-        let reset = HotKey::new(Some(Modifiers::CONTROL), Code::F2);
-        let skip = HotKey::new(Some(Modifiers::CONTROL), Code::F3);
+        let toggle = &settings.global_shortcuts.call_timer_toggle.borrow().into();
+        let reset = &settings.global_shortcuts.call_timer_reset.borrow().into();
+        let skip = &settings.global_shortcuts.call_timer_skip.borrow().into();
 
-        let toggle = ghk_manager.register(toggle).map_or(None, |_| Some(toggle));
-        let reset = ghk_manager.register(reset).map_or(None, |_| Some(reset));
-        let skip = ghk_manager.register(skip).map_or(None, |_| Some(skip));
+        let toggle = ghk_manager.register(*toggle).map_or(None, |_|Some(*toggle));
+        let reset = ghk_manager.register(*reset).map_or(None, |_|Some(*reset));
+        let skip = ghk_manager.register(*skip).map_or(None, |_|Some(*skip));
 
         let window = Main::new().unwrap();
         window.set_settings(&settings);
 
         let model: Rc<VecModel<JsonTheme>> = Rc::new(VecModel::from(themes));
-        window
-            .global::<ThemeCallbacks>()
-            .set_themes(ModelRc::from(model.clone()));
+        window.global::<ThemeCallbacks>().set_themes(ModelRc::from(model.clone()));
 
         Self {
             window,
@@ -184,9 +191,7 @@ impl Tomotroid {
             .enumerate()
             .find(|(_, thm)| thm.name == thm_name)
             .unwrap();
-        self.window
-            .global::<ThemeCallbacks>()
-            .invoke_theme_changed(idx as i32, cur_theme.clone());
+        self.window.global::<ThemeCallbacks>().invoke_theme_changed(idx as i32, cur_theme.clone());
 
         self.window.run()
     }
@@ -429,6 +434,7 @@ fn main() -> Result<()> {
         .window
         .global::<ThemeCallbacks>()
         .on_theme_changed(move |idx, theme| {
+            //how the hell have my changes to enable GHK support broken the ThemeChanged callback?
             let thm_handle = thm_handle.upgrade().unwrap();
             thm_handle.global::<Settings>().set_theme(theme.name);
             thm_handle.save_settings();
@@ -587,9 +593,7 @@ fn main() -> Result<()> {
         let chg_tmr_handle = chg_tmr_handle.upgrade().unwrap();
         match chg_tmr_handle.get_active_timer() {
             ActiveTimer::Focus => {
-                let body_str = if chg_tmr_handle.get_active_round()
-                    == chg_tmr_handle.get_tmr_config().rounds
-                {
+                let body_str = if chg_tmr_handle.get_active_round() == chg_tmr_handle.get_tmr_config().rounds {
                     let lgbrk_time = chg_tmr_handle.get_tmr_config().lgbrk_time;
 
                     chg_tmr_handle.set_active_round(1);
@@ -610,8 +614,7 @@ fn main() -> Result<()> {
                     //.icon("../assets/logo.png")
                     .summary("Focus Round Complete")
                     .body(&body_str)
-                    .show()
-                    .unwrap();
+                    .show().unwrap();
             }
             ActiveTimer::ShortBreak => {
                 let focus_time = chg_tmr_handle.get_tmr_config().focus_time;
@@ -625,12 +628,8 @@ fn main() -> Result<()> {
                     //.appname("Tomotroid")
                     //.icon("../assets/logo.png")
                     .summary("Break Finished")
-                    .body(&format!(
-                        "Begin focusing for {} minutes.",
-                        focus_time / 60000
-                    ))
-                    .show()
-                    .unwrap();
+                    .body(&format!("Begin focusing for {} minutes.", focus_time / 60000))
+                    .show().unwrap();
             }
             ActiveTimer::LongBreak => {
                 let focus_time = chg_tmr_handle.get_tmr_config().focus_time;
@@ -644,12 +643,8 @@ fn main() -> Result<()> {
                     //.appname("Tomotroid")
                     //.icon("../assets/logo.png")
                     .summary("Break Finished")
-                    .body(&format!(
-                        "Begin focusing for {} minutes.",
-                        focus_time / 60000
-                    ))
-                    .show()
-                    .unwrap();
+                    .body(&format!("Begin focusing for {} minutes.", focus_time / 60000))
+                    .show().unwrap();
             }
         }
     });
@@ -678,21 +673,80 @@ fn main() -> Result<()> {
             //IE if the text isn't a-z, F-keys, etc reject it....but I could end up rejecting valid combinations easily
             //especially perhaps if someone has an international keyboard I would assume I would miss also sorts of valid
             //key combinations that I'm just unaware of for other language keyboards.
+            
+            //Ok this current code may not have as many issues as I thought
+            //I added in some crude support for a setting string tied to each global shortcut, and assigned that to the
+            //text on the Config page. This mostly seems to work, The Focus Scope even looses focus after I accept the input
+            //There are some odities
+            //  * If I use the F1 keys I get a unicode replacement character...fair enough, that will probably need special handling
+            //      * It looks like all the Function keys come back as "xEF" though....Might need to open a discussion
+            //      * or ticket with Slint about how this would work?
+            //  * Ctrl+Shift+Char works, Shift+Alt+Char works, but Ctrl+Alt seems to add other characters...this could be a windows
+            //      * thing for example Ctrl-Alt+A inserts á...but if I hit Ctrl+Alt+A in VSCodium here I also get a á, so that must
+            //      * be something Windows 11 is doing for alternate character support.
+            //      * I haven't tested any of this on Linux yets
+
+            //I guess it's reasonable to assume a global hotkey is going to be 1 or more modifiers + 1 non-modifier key?
+            //which would eliminate this problem (by eliminate it I mean sweep it under the rug)
+            //I guess that would also make it reasonable for the FocusScope to just reject anything where a modifier wasn't pressed
+
             let ghk_handle = ghk_handle.upgrade().unwrap();
-            let mut text = String::new();
-            if event.modifiers.control {
-                text = "Ctrl+".to_string();
+            if (!event.modifiers.control && !event.modifiers.alt && !event.modifiers.shift && !event.modifiers.meta) || event.text == SharedString::from(Key::Tab) {
+                //this below seems wasteful resource wise. I'm setting the string to blank, and then setting it back
+                //to the original string. In the FocusScope the focused property is out, so I can't edit it, I can only read it
+                //which means I can't tell the FocusScope to loose focus after a new GHK is accepted, or the Esc key is pressed.
+                //It seems to loose focus when I set new text....but it has to be NEW text. If I just call set and use the current
+                //value it actually doesn't work...so I have to blank the string then reset it to what it was.
+                //I tried moving the EventResult return from inside the slint code to here, and rejecting it if Esc was pressed
+                //etc thinking that would work...but it didn't.
+                //While wastefull from an execution and performance perspective as of right now this is the only way I can get it
+                //working the way I want. I Might need to dig deeper into how the Focus Handling works, I'm sure there is
+                //a better way to do this
+                match ghk {
+                    GHKShortcuts::ToggleTimer => {
+                        let pre = ghk_handle.global::<Settings>().get_tt_ghk();
+                        ghk_handle.global::<Settings>().set_tt_ghk(SharedString::new());
+                        ghk_handle.global::<Settings>().set_tt_ghk(pre);
+                    },
+                    GHKShortcuts::ResetTimer => {
+                        let pre = ghk_handle.global::<Settings>().get_rst_ghk();
+                        ghk_handle.global::<Settings>().set_rst_ghk(SharedString::new());
+                        ghk_handle.global::<Settings>().set_rst_ghk(pre)
+                    },
+                    GHKShortcuts::SkipRound => {
+                        let pre = ghk_handle.global::<Settings>().get_skp_ghk();
+                        ghk_handle.global::<Settings>().set_skp_ghk(SharedString::new());
+                        ghk_handle.global::<Settings>().set_skp_ghk(pre);
+                    },
+                }
+            } else {
+                let mut text = String::new();
+                if event.modifiers.control {
+                    text = "Control+".to_string();
+                }
+                if event.modifiers.alt {
+                    text.push_str("Alt+");
+                }
+                if event.modifiers.shift {
+                    text.push_str("Shift+");
+                }
+                if event.modifiers.meta {
+                    text.push_str("Super+");
+                }
+
+                if let Some(non_pr_char) = get_non_print_key_txt(event.text.clone()) {
+                    text.push_str(non_pr_char);
+                } else {
+                    text.push_str(&event.text.to_uppercase());
+                }
+
+                match ghk {
+                    GHKShortcuts::ToggleTimer => ghk_handle.global::<Settings>().set_tt_ghk(text.into()),
+                    GHKShortcuts::ResetTimer => ghk_handle.global::<Settings>().set_rst_ghk(text.into()),
+                    GHKShortcuts::SkipRound => ghk_handle.global::<Settings>().set_skp_ghk(text.into()),
+                }
+                ghk_handle.save_settings();
             }
-            if event.modifiers.alt {
-                text = format!("{text}Alt+").to_string();
-            }
-            if event.modifiers.shift {
-                text = format!("{text}Shft+").to_string();
-            }
-            if event.modifiers.meta {
-                text = format!("{text}Meta+").to_string();
-            }
-            text = format!("{text}{}", event.text).to_string();
         });
 
     tomotroid.run()?;

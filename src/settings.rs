@@ -1,15 +1,202 @@
 use directories::ProjectDirs;
 use hex_color::HexColor;
 use serde::{Deserialize, Serialize};
-use slint::Color;
+use slint::platform::Key;
+use core::fmt;
 use std::cell::OnceCell;
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, BufWriter, Write};
-use std::path::Path;
+use std::iter;
+use std::ops::Deref;
+use std::path::{Display, Path};
+use std::str::FromStr;
 use std::sync::{Arc, OnceLock};
+use slint::{Color, SharedString};
 use walkdir::WalkDir;
-
+use global_hotkey::hotkey::{Code, HotKey, Modifiers};
 use crate::JsonTheme;
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct GKeyCode(Code);
+
+impl From<Code> for GKeyCode {
+    fn from(value: Code) -> Self {
+        GKeyCode(value)
+    }
+}
+
+impl From<GKeyCode> for Code {
+    fn from(value: GKeyCode) -> Self {
+        value.0
+    }
+}
+
+//So this massive match block to convert to a string is to keep compatibility with the Pomotroid
+//preferences / settings json file. Part of me was tempted to break compatibility, then I thought
+//well maybe break compatibility but allow for importing the Pomotroid file and converting
+//which would still require me manually addjusting the string format of the Code struct instead of
+//using the built in version...so I might as well just keep compatibility. Perhaps for a v2 if I add
+//other features I'll strip this and break compatibility. Honestly since there is a lot of overlap
+//the match block isn't even that big, because for the values that overlap I can just fallback
+//to use the Code's built in to/from string functions.
+impl fmt::Display for GKeyCode {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        use global_hotkey::hotkey::Code::*;
+        let tmp_str = self.0.to_string();
+        //https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_key_values
+        write!(
+            f,
+            "{}",
+            match self.0 {
+                Backslash => "\\",
+                BracketLeft => "[", //I've always known [ ] as brackets, but after coming to NZ I realize this is not universal, so I need to make sure this is the correct char for this enum value
+                BracketRight => "]", //I've always known [ ] as brackets, but after coming to NZ I realize this is not universal, so I need to make sure this is the correct char for this enum value
+                Comma => ",",
+                Digit0 => "0",
+                Digit1 => "1",
+                Digit2 => "2",
+                Digit3 => "3",
+                Digit4 => "4",
+                Digit5 => "5",
+                Digit6 => "6",
+                Digit7 => "7",
+                Digit8 => "8",
+                Digit9 => "9",
+                Equal => "=",
+                KeyA => "A",
+                KeyB => "B",
+                KeyC => "C",
+                KeyD => "D",
+                KeyE => "E",
+                KeyF => "F",
+                KeyG => "G",
+                KeyH => "H",
+                KeyI => "I",
+                KeyJ => "J",
+                KeyK => "K",
+                KeyL => "L",
+                KeyM => "M",
+                KeyN => "N",
+                KeyO => "O",
+                KeyP => "P",
+                KeyQ => "Q",
+                KeyR => "R",
+                KeyS => "S",
+                KeyT => "T",
+                KeyU => "U",
+                KeyV => "V",
+                KeyW => "W",
+                KeyX => "X",
+                KeyY => "Y",
+                KeyZ => "Z",
+                Minus => "-",
+                Period => ".",
+                Quote => "\"",
+                Semicolon => ";",
+                Slash => "/",
+                Space => " ",
+                NumpadAdd => "Add",
+                NumpadClear => "Clear",
+                NumpadDivide => "Divide",
+                NumpadSubtract => "Subtract",
+                LaunchApp1 => "LaunchApplication1",
+                LaunchApp2 => "LaunchApplication2",
+                MediaSelect => "LaunchMediaPlayer",
+                MicrophoneMuteToggle => "MicrophoneToggle",
+
+                //If I don't have a custom mapping because it wasn't found in the list
+                //of key codes from Electron, or the Electron mapping and the default Code
+                //mapping are the same just use the default to string for the Global KeyCode
+                _ => &tmp_str,
+            }
+        )
+    }
+}
+
+impl std::str::FromStr for GKeyCode {
+    type Err = &'static str;//Todo: Get a better Error type
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        use crate::Code::*;
+        Ok(
+            match s {
+                "\\" => Backslash,
+                "[" => BracketLeft,
+                "]" => BracketRight,
+                "," => Comma,
+                "0" => Digit0,
+                "1" => Digit1,
+                "2" => Digit2,
+                "3" => Digit3,
+                "4" => Digit4,
+                "5" => Digit5,
+                "6" => Digit6,
+                "7" => Digit7,
+                "8" => Digit8,
+                "9" => Digit9,
+                "=" => Equal,
+                "A" => KeyA,
+                "B" => KeyB,
+                "C" => KeyC,
+                "D" => KeyD,
+                "E" => KeyE,
+                "F" => KeyF,
+                "G" => KeyG,
+                "H" => KeyH,
+                "I" => KeyI,
+                "J" => KeyJ,
+                "K" => KeyK,
+                "L" => KeyL,
+                "M" => KeyM,
+                "N" => KeyN,
+                "O" => KeyO,
+                "P" => KeyP,
+                "Q" => KeyQ,
+                "R" => KeyR,
+                "S" => KeyS,
+                "T" => KeyT,
+                "U" => KeyU,
+                "V" => KeyV,
+                "W" => KeyW,
+                "X" => KeyX,
+                "Y" => KeyY,
+                "Z" => KeyZ,
+                "-" => Minus,
+                "." => Period,
+                "\"" => Quote,
+                ";" => Semicolon,
+                "/" => Slash,
+                " " => Space,
+                "Add" => NumpadAdd,
+                "Clear" => NumpadClear,
+                "Divide" => NumpadDivide,
+                "Subtract" => NumpadSubtract,
+                "LaunchApplication1" => LaunchApp1,
+                "LaunchApplication2" => LaunchApp2,
+                "MicrophoneToggle" => MicrophoneMuteToggle,
+
+                _ => Code::from_str(s).map_err(|_|"Failure to convert Key Code")?,
+            }.into()
+        )
+    }
+}
+
+impl Serialize for GKeyCode {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer {
+                serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl<'de> Deserialize<'de> for GKeyCode {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de> {
+                let s = String::deserialize(deserializer)?;
+                Ok(s.parse().unwrap())
+    }
+}
 
 //Right now serde support in Slint is new and crude, some of the types in the Slint version
 //of this struct like Brush don't support serde yet. So for now I'm creating 2 versions
@@ -53,7 +240,7 @@ pub struct JsonThemeTemp {
     colors: ThemeColors,
 }
 
-//I realize implemeting From is more idomatic, but that would require creating a newtype for JsonThemeTemp,
+//I realize implemeting From is more idomatic, but that would require creating a newtype for JsonTheme,
 //due to the orphan rule, and then having to convert that (or maybe deref) that into JsonThemeTemp. I think this is a
 //good and straight forward stop gap, until slint adds support for Serde to more types
 impl Into<JsonTheme> for JsonThemeTemp {
@@ -124,7 +311,130 @@ impl Into<JsonTheme> for JsonThemeTemp {
     }
 }
 
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq)]
+pub struct JsonHotKey {
+    pub modifiers: Modifiers,
+    pub key: GKeyCode,
+}
+
+impl fmt::Display for JsonHotKey {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if self.modifiers.ctrl() {
+            write!(f, "Control+")?;
+        }
+        if self.modifiers.alt() {
+            write!(f, "Alt+")?;
+        }
+        if self.modifiers.shift() {
+            write!(f, "Shift+")?;
+        }
+        if self.modifiers.meta() {
+            write!(f, "Super+")?;
+        }
+
+        write!(f, "{}", &self.key)
+    }
+}
+
+impl std::str::FromStr for JsonHotKey {
+    type Err = &'static str;//Todo: Get a better Error type
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let mut mods = Modifiers::empty();
+        let mut tokens_it = s.split('+').peekable();
+        while let Some(key) = tokens_it.next() {
+            if tokens_it.peek().is_some() {
+                match key {
+                    "Control" => mods.set(Modifiers::CONTROL, true),
+                    "Alt" => mods.set(Modifiers::ALT, true),
+                    "Shift" => mods.set(Modifiers::SHIFT, true),
+                    "Super" => mods.set(Modifiers::META, true),
+                    _ => panic!("No Other modifier keys currently supported"),
+                };
+            } else {
+                return Ok(JsonHotKey {
+                    modifiers: mods,
+                    key: key.parse().unwrap(),
+                })
+            }
+        }
+        Err("Something failed")
+    }
+}
+
+impl Serialize for JsonHotKey {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+        where
+            S: serde::Serializer {
+                serializer.serialize_str(&self.to_string())
+    }
+}
+
+impl<'de> Deserialize<'de> for JsonHotKey {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+        where
+            D: serde::Deserializer<'de> {
+                let s = String::deserialize(deserializer)?;
+                JsonHotKey::from_str(&s).map_err(serde::de::Error::custom)
+    }
+}
+
+//I realize implemeting From is more idomatic, but that would require creating a newtype for HotKey,
+//due to the orphan rule, and then having to convert that (or maybe deref) that into JsonHotKey.
+//I feel like there is a better way to do this...but for now just to get the GlobalHotkeys up and working
+//I'll put this in.
+impl Into<HotKey> for JsonHotKey {
+    fn into(self) -> HotKey {
+        let mods = if self.modifiers.is_empty() {
+            None
+        } else {
+            Modifiers::from_bits(self.modifiers.iter().fold(0, |acc, val| {
+                acc | val.bits()
+            }))
+        };
+
+        HotKey::new(mods, self.key.0)
+    }
+}
+
+impl Into<HotKey> for &JsonHotKey {
+    fn into(self) -> HotKey {
+        let mods = if self.modifiers.is_empty() {
+            None
+        } else {
+            Modifiers::from_bits(self.modifiers.iter().fold(0, |acc, val| {
+                acc | val.bits()
+            }))
+        };
+
+        HotKey::new(mods, self.key.0)
+    }
+}
+
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OldSettings {
+    pub always_on_top: bool,
+    pub auto_start_break_timer: bool,
+    pub auto_start_work_timer: bool,
+    pub break_always_on_top: bool,
+    pub global_shortcuts: OldGlobalShortcuts,
+    pub min_to_tray: bool,
+    pub min_to_tray_on_close: bool,
+    pub notifications: bool,
+    pub theme: String,
+    pub tick_sounds: bool,
+    pub tick_sounds_during_break: bool,
+    pub time_long_break: i32,
+    pub time_short_break: i32,
+    pub time_work: i32,
+    pub volume: i32,
+    pub work_rounds: i32,
+}
+
+
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct JsonSettings {
     pub always_on_top: bool,
@@ -171,12 +481,10 @@ pub struct JsonSettings {
     }
 }*/
 
-//I'm thinking later, I probably need to store this in some sort of specific struct?
-//Maybe 2 key type enums or something?
-//A Modifier key, and a main key?...not really sure
-#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+//#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct GlobalShortcuts {
+pub struct OldGlobalShortcuts {
     #[serde(rename = "call-timer-reset")]
     pub call_timer_reset: String,
     #[serde(rename = "call-timer-skip")]
@@ -185,12 +493,21 @@ pub struct GlobalShortcuts {
     pub call_timer_toggle: String,
 }
 
+//#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct GlobalShortcuts {
+    #[serde(rename = "call-timer-reset")]
+    pub call_timer_reset: JsonHotKey,
+    #[serde(rename = "call-timer-skip")]
+    pub call_timer_skip: JsonHotKey,
+    #[serde(rename = "call-timer-toggle")]
+    pub call_timer_toggle: JsonHotKey,
+}
+
 static CFG_DIR: OnceLock<Option<ProjectDirs>> = OnceLock::new();
 static DEF_THEME: OnceLock<JsonThemeTemp> = OnceLock::new();
 
-//This really probably shouldn't be public. But for now as a quick way to get the theme loading
-//working from the correct directory I'm making it public. I need to move the theme loading
-//from the main.rs file into the settings module, then I can make this private again
 fn get_dir() -> Option<&'static Path> {
     if let Some(dirs) = CFG_DIR.get_or_init(|| ProjectDirs::from("org", "Vadoola", "Tomotroid")) {
         return Some(dirs.config_dir());
@@ -238,7 +555,7 @@ pub fn load_settings() -> JsonSettings {
         let file = cfg_dir.join("preferences.json");
         if let Ok(set_file) = File::open(file) {
             let reader = BufReader::new(set_file);
-            serde_json::from_reader(reader).unwrap()
+            serde_json::from_reader(reader).expect("To be able to load the settings from json")
         } else {
             default_settings()
         }
@@ -285,6 +602,73 @@ pub fn load_themes() -> Vec<JsonTheme> {
 fn default_settings() -> JsonSettings {
     let def_set = include_bytes!("../assets/default-preferences.json");
     serde_json::from_reader(&def_set[..]).unwrap()
+
+    //JsonSettings using keycode
+    /*JsonSettings {
+        always_on_top: false,
+        auto_start_break_timer: true,
+        auto_start_work_timer: true,
+        break_always_on_top: false,
+        global_shortcuts: GlobalShortcuts {
+            call_timer_reset: JsonHotKey {
+                modifiers: vec![KeyCode::ControlLeft],
+                key: KeyCode::F2,
+            },
+            call_timer_skip: JsonHotKey {
+                modifiers: vec![KeyCode::ControlLeft],
+                key: KeyCode::F3,
+            },
+            call_timer_toggle: JsonHotKey {
+                modifiers: vec![KeyCode::ControlLeft],
+                key: KeyCode::F1,
+            },
+        },
+        min_to_tray: false,
+        min_to_tray_on_close: false,
+        notifications: true,
+        theme: "Rangitoto".to_string(),
+        tick_sounds: true,
+        tick_sounds_during_break: true,
+        time_long_break: 1,
+        time_short_break: 1,
+        time_work: 1,
+        volume: 100,
+        work_rounds: 2,
+    }*/
+
+    //JsonSettings using Code
+    /*JsonSettings {
+        always_on_top: false,
+        auto_start_break_timer: true,
+        auto_start_work_timer: true,
+        break_always_on_top: false,
+        global_shortcuts: GlobalShortcuts {
+            call_timer_reset: JsonHotKey {
+                modifiers: Modifiers::CONTROL,
+                key: Code::F2.into(),
+            },
+            call_timer_skip: JsonHotKey {
+                modifiers: Modifiers::CONTROL,
+                key: Code::F3.into(),
+            },
+            call_timer_toggle: JsonHotKey {
+                modifiers: Modifiers::CONTROL,
+                //key: Code::F1,
+                key: Code::KeyD.into(),
+            },
+        },
+        min_to_tray: false,
+        min_to_tray_on_close: false,
+        notifications: true,
+        theme: "Rangitoto".to_string(),
+        tick_sounds: true,
+        tick_sounds_during_break: true,
+        time_long_break: 1,
+        time_short_break: 1,
+        time_work: 1,
+        volume: 100,
+        work_rounds: 2,
+    }*/
 }
 
 //Use https://docs.rs/serde_json/latest/serde_json/fn.to_writer_pretty.html
@@ -320,6 +704,115 @@ pub fn save_settings(settings: JsonSettings) {
             .unwrap();
         let writer = BufWriter::new(set_file);
 
-        serde_json::to_writer_pretty(writer, &settings).unwrap();
+        serde_json::to_writer_pretty(writer, &settings).expect("To be able to write the settings back out to json");
+    }
+}
+
+pub fn get_non_print_key_txt(text: SharedString) -> Option<&'static str> {
+    //the way Slint returns the key pressed is as a SharedString
+    //For non-printable characters they do some sort of unicode encoding
+    //and you can compare it against the Key enum, by converting the Key
+    //enum to a Shared String or a char. It looks like the idea is this is
+    //to be used when creating a slint platform, and sending key events to the window
+    //It's not really designed for what I'm using it for it seems.
+    //I can't convert the shared string from the key event into a Key enum it seems,
+    //and then match against the Key enum...so that means I need to convert every
+    //instance of Key enum into a SharedString and then match against that....except I
+    //can't actually "match" a SharedString against a variable SharedString...so this becomes a
+    //massive if / else if block....
+    //I have to be missing something...there has to be a better way than this massive if/else if block
+
+    if text == SharedString::from(Key::Backspace) {
+        Some("Bcksp")
+    } else if text == SharedString::from(Key::Tab) {
+        Some("Tab")
+    } else if text == SharedString::from(Key::Return) {
+        Some("Return")
+    } else if text == SharedString::from(Key::Escape) {
+        Some("Esc")
+    } else if text == SharedString::from(Key::Backtab) {
+        Some("BckTab")
+    } else if text == SharedString::from(Key::Delete) {
+        Some("Del")
+    } else if text == SharedString::from(Key::CapsLock) {
+        Some("CapsLk")
+    } else if text == SharedString::from(Key::UpArrow) {
+        Some("↑")
+    } else if text == SharedString::from(Key::DownArrow) {
+        Some("↓")
+    } else if text == SharedString::from(Key::LeftArrow) {
+        Some("→")
+    } else if text == SharedString::from(Key::RightArrow) {
+        Some("←")
+    } else if text == SharedString::from(Key::F1) {
+        Some("F1")
+    } else if text == SharedString::from(Key::F2) {
+        Some("F2")
+    } else if text == SharedString::from(Key::F3) {
+        Some("F3")
+    } else if text == SharedString::from(Key::F4) {
+        Some("F4")
+    } else if text == SharedString::from(Key::F5) {
+        Some("F5")
+    } else if text == SharedString::from(Key::F6) {
+        Some("F6")
+    } else if text == SharedString::from(Key::F7) {
+        Some("F7")
+    } else if text == SharedString::from(Key::F8) {
+        Some("F8")
+    } else if text == SharedString::from(Key::F9) {
+        Some("F9")
+    } else if text == SharedString::from(Key::F10) {
+        Some("F10")
+    } else if text == SharedString::from(Key::F11) {
+        Some("F11")
+    } else if text == SharedString::from(Key::F12) {
+        Some("F12")
+    } else if text == SharedString::from(Key::F13) {
+        Some("F13")
+    } else if text == SharedString::from(Key::F14) {
+        Some("F14")
+    } else if text == SharedString::from(Key::F15) {
+        Some("F15")
+    } else if text == SharedString::from(Key::F16) {
+        Some("F16")
+    } else if text == SharedString::from(Key::F17) {
+        Some("F17")
+    } else if text == SharedString::from(Key::F18) {
+        Some("F18")
+    } else if text == SharedString::from(Key::F19) {
+        Some("F19")
+    } else if text == SharedString::from(Key::F20) {
+        Some("F20")
+    } else if text == SharedString::from(Key::F21) {
+        Some("F21")
+    } else if text == SharedString::from(Key::F22) {
+        Some("F22")
+    } else if text == SharedString::from(Key::F23) {
+        Some("F23")
+    } else if text == SharedString::from(Key::F24) {
+        Some("F24")
+    } else if text == SharedString::from(Key::Insert) {
+        Some("Ins")
+    } else if text == SharedString::from(Key::Home) {
+        Some("Home")
+    } else if text == SharedString::from(Key::End) {
+        Some("End")
+    } else if text == SharedString::from(Key::PageUp) {
+        Some("PgUp")
+    } else if text == SharedString::from(Key::PageDown) {
+        Some("PgDwn")
+    } else if text == SharedString::from(Key::ScrollLock) {
+        Some("ScrLk")
+    } else if text == SharedString::from(Key::Pause) {
+        Some("Pause")
+    } else if text == SharedString::from(Key::SysReq) {
+        Some("SysReq")
+    } else if text == SharedString::from(Key::Stop) {
+        Some("Stop")
+    } else if text == SharedString::from(Key::Menu) {
+        Some("Menu")
+    } else {
+        None
     }
 }
