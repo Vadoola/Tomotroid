@@ -11,8 +11,6 @@ export component BorderlessWindow inherits Window{
     in property <string> parent;
     out property<bool> menu-open <=> menu-btn.toggled;
 
-    out property <bool> title-bar-pressed: false;
-
     callback close();
     callback minimize();
     callback move();
@@ -136,12 +134,9 @@ export component BorderlessWindow inherits Window{
                     horizontal-alignment: center;
                     TouchArea {
                         moved => {
-                            if (root.title-bar-pressed) {
+                            if (self.pressed && self.enabled) {
                                 root.move();
                             }
-                        }
-                        pointer-event(ev) => {
-                            root.title-bar-pressed = (ev.kind == PointerEventKind.down) && (ev.button == PointerEventButton.left);
                         }
                     }
                 }
