@@ -27,6 +27,7 @@ export component Main inherits BorderlessWindow {
     title: "Tomotroid";
     width: 360px;
     height: 480px;
+    always-on-top: on_top();
 
     in-out property<image> logo <=> slideover.logo;
 
@@ -87,6 +88,18 @@ export component Main inherits BorderlessWindow {
         } else {
             "LONG BREAK"
         }
+    }
+
+    function on_top() -> bool {
+        Settings.always-on-top
+            &&
+            (
+                active-timer == ActiveTimer.focus
+                ||
+                (
+                    !Settings.break-always-on-top
+                )
+            )
     }
 
     vol-popup := PopupWindow {
