@@ -593,6 +593,9 @@ fn main() -> Result<()> {
         let chg_tmr_handle = chg_tmr_handle.upgrade().unwrap();
         match chg_tmr_handle.get_active_timer() {
             ActiveTimer::Focus => {
+                if !chg_tmr_handle.global::<Settings>().get_auto_start_break_timer() {
+                    chg_tmr_handle.invoke_action_timer(TimerAction::Stop);
+                }
                 let body_str = if chg_tmr_handle.get_active_round() == chg_tmr_handle.get_tmr_config().rounds {
                     let lgbrk_time = chg_tmr_handle.get_tmr_config().lgbrk_time;
 
@@ -616,27 +619,20 @@ fn main() -> Result<()> {
                     .body(&body_str)
                     .show().unwrap();
             }
-            ActiveTimer::ShortBreak => {
+            brk_type => {
+                if !chg_tmr_handle.global::<Settings>().get_auto_start_work_timer() {
+                    chg_tmr_handle.invoke_action_timer(TimerAction::Stop);
+                }
+
                 let focus_time = chg_tmr_handle.get_tmr_config().focus_time;
-
-                chg_tmr_handle.set_active_round(chg_tmr_handle.get_active_round() + 1);
+                chg_tmr_handle.set_active_round(
+                    if brk_type == ActiveTimer::ShortBreak {
+                        chg_tmr_handle.get_active_round() + 1
+                    } else {
+                        1
+                    }
+                );
                 chg_tmr_handle.set_active_timer(ActiveTimer::Focus);
-
-                chg_tmr_handle.set_target_time(focus_time);
-                chg_tmr_handle.set_remaining_time(focus_time);
-                Notification::new()
-                    //.appname("Tomotroid")
-                    //.icon("../assets/logo.png")
-                    .summary("Break Finished")
-                    .body(&format!("Begin focusing for {} minutes.", focus_time / 60000))
-                    .show().unwrap();
-            }
-            ActiveTimer::LongBreak => {
-                let focus_time = chg_tmr_handle.get_tmr_config().focus_time;
-
-                chg_tmr_handle.set_active_round(1);
-                chg_tmr_handle.set_active_timer(ActiveTimer::Focus);
-
                 chg_tmr_handle.set_target_time(focus_time);
                 chg_tmr_handle.set_remaining_time(focus_time);
                 Notification::new()
