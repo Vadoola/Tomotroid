@@ -78,6 +78,8 @@ export global Settings {
     in-out property <int> volume;
     in-out property <int> work-rounds;
 
+    in property<bool> is-wayland;
+
     //hmm so maybe an enum with each setting in it, and can pass the enum to the callback?
     //but I guess I would a callback for each type, ie a bool-changed, int-changed, etc?
     //Is there a cleaner way? I'm trying to avoid one call back for each setting

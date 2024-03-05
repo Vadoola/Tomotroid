@@ -90,6 +90,8 @@ impl Main {
         self.global::<Settings>().set_volume(settings.volume);
         self.global::<Settings>()
             .set_work_rounds(settings.work_rounds);
+
+        self.global::<Settings>().set_is_wayland(settings::is_wayland());
     }
 
     fn save_settings(&self) {

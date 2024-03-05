@@ -15,6 +15,7 @@ use slint::{Color, SharedString};
 use walkdir::WalkDir;
 use global_hotkey::hotkey::{Code, HotKey, Modifiers};
 use crate::JsonTheme;
+use std::env;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GKeyCode(Code);
@@ -507,6 +508,26 @@ pub struct GlobalShortcuts {
 
 static CFG_DIR: OnceLock<Option<ProjectDirs>> = OnceLock::new();
 static DEF_THEME: OnceLock<JsonThemeTemp> = OnceLock::new();
+
+//I'm not finding a lot of information to determine if I'm running under Wayland or not
+//this article seems to offer the most suggestions: https://www.baeldung.com/linux/display-server-xorg-wayland
+//This is needed to disable features that currently don't work under Wayland, such as Global Hot Keys
+//and Always on Top
+#[cfg(unix)]
+pub fn is_wayland() -> bool {
+    match env::var("XDG_SESSION_TYPE") {
+        Ok(val) => val.contains("wayland"),
+        Err(_) => {
+            match env::var("WAYLAND_DISPLAY") {
+                Ok(val) =>val.contains("wayland"),
+                Err(_) => false,
+            }
+        }
+    }
+}
+
+#[cfg(not(unix))]
+pub fn is_wayland() -> bool {false}
 
 fn get_dir() -> Option<&'static Path> {
     if let Some(dirs) = CFG_DIR.get_or_init(|| ProjectDirs::from("org", "Vadoola", "Tomotroid")) {

@@ -11,9 +11,45 @@ export global ConfigCallbacks {
     pure callback new-ghk(GHKShortcuts, KeyEvent);
 }
 
+component ToolTip {
+    preferred-height: 100%;
+    preferred-width: 100%;
+
+    in property <string> text;
+
+    ta := TouchArea {}
+    Rectangle {
+        states [
+            visible when ta.has-hover: {
+                opacity: 0.8;
+                in {
+                    animate opacity {
+                        duration: 175ms; delay: 700ms;
+                    }
+                }
+            }
+        ]
+        x: ta.mouse-x + 1rem;
+        y: ta.mouse-y + 1rem;
+        background: Theme.foreground;
+        opacity: 0;
+        width: layout.preferred-width;
+        height: layout.preferred-height;
+        layout := HorizontalLayout {
+            padding: 3px;
+            Text {
+                text <=> root.text;
+                color: Theme.background-lightest;
+            }
+        }
+    }
+}
+
 export component CheckBox {
-    callback clicked <=> ta.clicked;
+    //callback clicked <=> ta.clicked;
+    callback clicked;
     in-out property <bool> checked;
+    in property <bool> enabled: true;
 
     width: self.height;
 
@@ -28,9 +64,18 @@ export component CheckBox {
     }
 
     ta := TouchArea {
+        mouse-cursor: parent.enabled ? default : not-allowed;
+        clicked => {
+            if (parent.enabled) {
+                parent.clicked()
+            }
+        }
     }
 
     states [
+        disabled when !root.enabled : {
+            checkbox.border-color: Theme.background-light;
+        }
         checked-no-hv when root.checked && !ta.has-hover : {
             checkbox.border-width: 0;
             checkbox.background: Theme.accent;
@@ -56,11 +101,11 @@ export component CheckBox {
 component ShortCutTag inherits HorizontalLayout {
     in property<string> label;
     out property<bool> editing;
+    in property<bool> enabled: true;
 
     callback new-ghk(KeyEvent);
 
     Rectangle {
-        //forward-focus: ghk-focus;
         height: 20px;
         y: (parent.height - self.height)/2;
         width: 120px;
@@ -72,17 +117,19 @@ component ShortCutTag inherits HorizontalLayout {
         ghk-txt := Text {
             text: root.label;
             font-family: "Roboto Mono";
-            color: Theme.accent;
+            color: root.enabled ? Theme.accent : Theme.background;
         }
 
         ta := TouchArea {
-            mouse-cursor: self.has-hover ? text : default;
+            mouse-cursor: root.enabled ? (self.has-hover ? text : default) : not-allowed;
             clicked => {
-                if (!ghk-focus.enabled) {
-                    ghk-focus.enabled = true;
-                    ghk-focus.focus();
-                } else {
-                    ghk-focus.enabled = false;
+                if (enabled) {
+                    if (!ghk-focus.enabled) {
+                        ghk-focus.enabled = true;
+                        ghk-focus.focus();
+                    } else {
+                        ghk-focus.enabled = false;
+                    }
                 }
             }
 
@@ -105,6 +152,7 @@ component ShortCutTag inherits HorizontalLayout {
 component ConfigBar inherits Rectangle {
     in property<string> label;
     in-out property<bool> hidden: false;
+    in property<bool> enabled: true;
 
     height: 44px;
     width: 321px;
@@ -116,10 +164,21 @@ component ConfigBar inherits Rectangle {
             vertical-alignment: center;
             text: root.label;
             font-size: 11pt;
-            color: Theme.background-lightest;
+
+            states [
+                disabled when !root.enabled : {
+                    color: Theme.background-light;
+                }
+                enabled when root.enabled : {
+                    color: Theme.background-lightest;
+                }
+            ]
         }
 
         @children
+        if Settings.is-wayland : ToolTip {
+            text: "Unsupported under Wayland";
+        }
     }
 }
 
@@ -138,20 +197,22 @@ export component ConfigPage inherits Rectangle {
                 }
 
                 for setting[idx] in [
-                    {name: "Always On Top", state: Settings.always-on-top, sett-param: BoolSettTypes.AlwOnTop},
-                    {name: "Deactivate Always On Top on Breaks", state: Settings.break-always-on-top, sett-param: BoolSettTypes.BrkAlwOnTop},//only shown when "Always On Top" is selected
-                    {name: "Auto-start Work Timer", state: Settings.auto-start-work-timer, sett-param: BoolSettTypes.AutoStrtWrkTim},
-                    {name: "Auto-start Break Timer", state: Settings.auto-start-break-timer, sett-param: BoolSettTypes.AutoStrtBreakTim},
-                    {name: "Tick Sounds - Work", state: Settings.tick-sounds, sett-param: BoolSettTypes.TickSounds},
-                    {name: "Tick Sounds - Break", state: Settings.tick-sounds-during-break, sett-param: BoolSettTypes.TickSoundsBreak},
-                    {name: "Desktop Notifications", state: Settings.notifications, sett-param: BoolSettTypes.Notifications},
-                    {name: "Minimize to Tray", state: Settings.min-to-tray, sett-param: BoolSettTypes.MinToTray},
-                    {name: "Minimize to Tray on Close", state: Settings.min-to-tray-on-close, sett-param: BoolSettTypes.MinToTryCls},
+                    {name: "Always On Top", state: Settings.always-on-top, sett-param: BoolSettTypes.AlwOnTop, enabled: !Settings.is-wayland},
+                    {name: "Deactivate Always On Top on Breaks", state: Settings.break-always-on-top, sett-param: BoolSettTypes.BrkAlwOnTop, enabled: !Settings.is-wayland},//only shown when "Always On Top" is selected
+                    {name: "Auto-start Work Timer", state: Settings.auto-start-work-timer, sett-param: BoolSettTypes.AutoStrtWrkTim, enabled: true},
+                    {name: "Auto-start Break Timer", state: Settings.auto-start-break-timer, sett-param: BoolSettTypes.AutoStrtBreakTim, enabled: true},
+                    {name: "Tick Sounds - Work", state: Settings.tick-sounds, sett-param: BoolSettTypes.TickSounds, enabled: true},
+                    {name: "Tick Sounds - Break", state: Settings.tick-sounds-during-break, sett-param: BoolSettTypes.TickSoundsBreak, enabled: true},
+                    {name: "Desktop Notifications", state: Settings.notifications, sett-param: BoolSettTypes.Notifications, enabled: true},
+                    {name: "Minimize to Tray", state: Settings.min-to-tray, sett-param: BoolSettTypes.MinToTray, enabled: true},
+                    {name: "Minimize to Tray on Close", state: Settings.min-to-tray-on-close, sett-param: BoolSettTypes.MinToTryCls, enabled: true},
                 ] : ConfigBar {
                     label: setting.name;
                     hidden: false;
+                    enabled: setting.enabled;
                     CheckBox {
                         checked: setting.state;
+                        enabled: parent.enabled;
                         clicked => {
                             Settings.bool-changed(setting.sett-param, self.checked);
                         }
@@ -166,13 +227,14 @@ export component ConfigPage inherits Rectangle {
                 }
 
                 for setting[idx] in [
-                    {lbl: "Toggle Timer", shortcut: Settings.tt-ghk, ghk: GHKShortcuts.toggle-timer},
-                    {lbl: "Reset Timer", shortcut: Settings.rst-ghk, ghk: GHKShortcuts.reset-timer},
-                    {lbl: "Skip Round", shortcut: Settings.skp-ghk, ghk: GHKShortcuts.skip-round},
+                    {lbl: "Toggle Timer", shortcut: Settings.tt-ghk, ghk: GHKShortcuts.toggle-timer, enabled: !Settings.is-wayland},
+                    {lbl: "Reset Timer", shortcut: Settings.rst-ghk, ghk: GHKShortcuts.reset-timer, enabled: !Settings.is-wayland},
+                    {lbl: "Skip Round", shortcut: Settings.skp-ghk, ghk: GHKShortcuts.skip-round, enabled: !Settings.is-wayland},
                 ] : ConfigBar {
                     label: setting.lbl;
                     ShortCutTag {
                         label: setting.shortcut;
+                        enabled: setting.enabled;
                         new-ghk(event) => {ConfigCallbacks.new-ghk(setting.ghk, event)}
                     }
                 }
