@@ -247,7 +247,23 @@ fn main() -> Result<()> {
     })
     .unwrap();
 
-    slint::platform::set_platform(Box::new(i_slint_backend_winit::Backend::new().unwrap()))
+    let backend = {
+        #[cfg(target_os = "macos")]
+        {
+            use i_slint_backend_winit::winit::platform::macos::WindowBuilderExtMacOS;
+
+            let mut backend = i_slint_backend_winit::Backend::new().unwrap();
+            backend.window_builder_hook = Some(Box::new(|builder| {
+                builder.with_decorations(false)
+            }));
+            backend
+        }
+
+        #[cfg(not(target_os = "macos"))]
+        i_slint_backend_winit::Backend::new().unwrap()
+    };
+    
+    slint::platform::set_platform(Box::new(backend))
         .unwrap();
 
     let tomotroid = Tomotroid::new();
