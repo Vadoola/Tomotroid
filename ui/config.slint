@@ -1,5 +1,6 @@
 import { Theme, Settings, BoolSettTypes } from "globals.slint";
 import { VerticalBox, HorizontalBox, ScrollView, TextEdit } from "std-widgets.slint";
+import { ToolTip } from "tooltip.slint";
 
 enum GHKShortcuts {
     toggle-timer,
@@ -9,40 +10,6 @@ enum GHKShortcuts {
 
 export global ConfigCallbacks {
     pure callback new-ghk(GHKShortcuts, KeyEvent);
-}
-
-component ToolTip {
-    preferred-height: 100%;
-    preferred-width: 100%;
-
-    in property <string> text;
-
-    ta := TouchArea {}
-    Rectangle {
-        states [
-            visible when ta.has-hover: {
-                opacity: 0.8;
-                in {
-                    animate opacity {
-                        duration: 175ms; delay: 700ms;
-                    }
-                }
-            }
-        ]
-        x: ta.mouse-x + 1rem;
-        y: ta.mouse-y + 1rem;
-        background: Theme.foreground;
-        opacity: 0;
-        width: layout.preferred-width;
-        height: layout.preferred-height;
-        layout := HorizontalLayout {
-            padding: 3px;
-            Text {
-                text <=> root.text;
-                color: Theme.background-lightest;
-            }
-        }
-    }
 }
 
 export component CheckBox {

@@ -6,6 +6,7 @@ import { ConfigPage } from "config.slint";
 
 component BottomBarIcon inherits Rectangle {
     in-out property <bool> active;
+    out property<bool> hover: bbi-ta.has-hover;
     callback activate;
 
     Rectangle {
@@ -24,7 +25,9 @@ component BottomBarIcon inherits Rectangle {
     }
 
     bbi-ta := TouchArea {
-        clicked => { root.activate();}
+        clicked => {
+            root.activate();
+        }
     }
 
     animate background {
@@ -60,13 +63,14 @@ component BottomBar inherits Rectangle {
     height: 35px;
     background: Theme.background;
     out property<int> active-page: 0;
+    //out property<int> hovered-tab: 0;
 
     Rectangle {
-        for page-icon[idx] in [
-            @image-url("../assets/icons/clock.svg"),
-            @image-url("../assets/icons/gear.svg"),
-            @image-url("../assets/icons/pallette.svg"),
-            @image-url("../assets/icons/info.svg"),
+        for btn-info[idx] in [
+            { page-icon: @image-url("../assets/icons/clock.svg"), tooltip: "Timer Configuraiton" },
+            { page-icon: @image-url("../assets/icons/gear.svg"), tooltip: "Options" },
+            { page-icon: @image-url("../assets/icons/pallette.svg"), tooltip: "Themes" },
+            { page-icon: @image-url("../assets/icons/info.svg"), tooltip: "About" },
         ] : BottomBarIcon {
             y: 0px;
             x: self.width * idx;
@@ -79,7 +83,7 @@ component BottomBar inherits Rectangle {
                 animate colorize {
                     duration: 125ms;
                 }
-                source: page-icon;
+                source: btn-info.page-icon;
                 image-fit: contain;
                 width: 60%;
                 height: 60%;
@@ -158,4 +162,22 @@ export component TabContainer inherits VerticalLayout {
         ]
     }
     bb := BottomBar {}
+
+    //not sure this is the best way to do it...I feel like I'm duplicating the logic here a bit, but since I can't
+    //access the individual elements of the BottomBarIcon's outside of the for loop, I'm not sure how else to do this
+    //actually how do I get the hover state to bubble up properly....
+    /*for btn-info[idx] in [
+        { page-icon: @image-url("../assets/icons/clock.svg"), tooltip: "Timer Configuraiton" },
+        { page-icon: @image-url("../assets/icons/gear.svg"), tooltip: "Options" },
+        { page-icon: @image-url("../assets/icons/pallette.svg"), tooltip: "Themes" },
+        { page-icon: @image-url("../assets/icons/info.svg"), tooltip: "About" },
+    ] : ToolTip {
+        x: BottomBar.absolute-position.x + (BottomBar.width / 4 * idx);
+        y: BottomBar.absolute-position.y;
+        owner-height: 35px;
+        owner-width: BottomBar.width / 4;
+        position: TTPosition.Top;
+        show: ??;
+        text: btn-info.tooltip;
+    }*/
 }

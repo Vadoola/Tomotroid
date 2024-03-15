@@ -1,0 +1,13 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=1.0
+Type=Application
+Terminal=false
+Exec=/usr/bin/tomotroid
+Path=/usr/bin/
+Name=Tomotroid
+GenericName=Pomodoro Timer
+#Icon=/where/do/icons/go/logo.png
+Hidden=false
+Categories=Office; Utility
+SingleMainWindow=true

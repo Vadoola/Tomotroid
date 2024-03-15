@@ -1,8 +1,10 @@
 import "../assets/fonts/RobotoMono-Light.ttf";
 import "../assets/fonts/Lato-Regular.ttf";
 import {Theme} from "globals.slint";
+import { ToolTip, TTPosition } from "tooltip.slint";
 
-export component BorderlessWindow inherits Window{
+
+export component BorderlessWindow inherits Window {
     no-frame: true;
     default-font-family: "Lato";
     min-width: 200px;
@@ -52,6 +54,7 @@ export component BorderlessWindow inherits Window{
                     y: parent.height/2 - self.height/2;
                     width: parent.height * 0.75;
                     height: parent.height * 0.75;
+
                     menuBtn-ta := TouchArea {
                         clicked => {
                             toggled = !toggled;
@@ -84,6 +87,7 @@ export component BorderlessWindow inherits Window{
                             y: lt-2-y;
                         }
                     }
+
                     states [
                         open when self.toggled: {
                             mt-1-x: menu-btn.width * 0.2/1px;//top left
@@ -190,5 +194,15 @@ export component BorderlessWindow inherits Window{
             background: Theme.background;
             @children
         }
+    }
+
+    settings-tt := ToolTip {
+        x: menuBtn-ta.absolute-position.x;
+        y: menuBtn-ta.absolute-position.y;
+        owner-height: menuBtn-ta.height;
+        owner-width: menuBtn-ta.width;
+        position: TTPosition.Right;
+        show: menuBtn-ta.has-hover;
+        text: "Settings";
     }
 }

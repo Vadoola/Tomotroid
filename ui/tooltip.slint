@@ -1,0 +1,71 @@
+import { Theme } from "globals.slint";
+
+export enum TTPosition {
+    Bottom,
+    Left,
+    Right,
+    Top,
+}
+
+export component ToolTip {
+    preferred-height: 100%;
+    preferred-width: 100%;
+    in-out property <bool> show: false;
+
+    in property <TTPosition> position: TTPosition.Bottom;
+    in property <length> owner-height;
+    in property <length> owner-width;
+    in property <string> text;
+
+    pure public function pos-x(wid: length) -> length {
+        if (root.position == TTPosition.Right) {
+            return root.owner-width + 8px;
+        } else if (root.position == TTPosition.Left) {
+            return -wid - 8px;
+        } else {
+            return (root.owner-width - wid) / 2;
+        }
+    }
+
+    pure public function pos-y(hght: length) -> length {
+        if (root.position == TTPosition.Top) {
+            return  -root.owner-height - hght;
+        } else if (root.position == TTPosition.Bottom) {
+            return 0;
+        } else {
+            //return root.owner-height - hght; //Why does this one align the settings tool tip correctly
+            return  -root.owner-height - hght/2; //and this one align the reset button tooltip correctly...what am I missing.
+        }
+    }
+
+    tool-tip := Rectangle {
+        x: pos-x(self.width);
+        y: pos-y(self.height);
+        clip: false;
+        background: black;//Theme.foreground;
+        border-color: white;
+        border-width: 1px;
+        opacity: 0;
+        visible: show;
+        width: layout.preferred-width;
+        height: layout.preferred-height;
+        layout := HorizontalLayout {
+            padding: 5px;
+            Text {
+                text: root.text;
+                color: white;//Theme.background-lightest;
+            }
+        }
+
+        states [
+            visible when show: {
+                opacity: 1.0;
+                in {
+                    animate opacity {
+                        duration: 175ms; delay: 700ms;
+                    }
+                }
+            }
+        ]
+    }
+}

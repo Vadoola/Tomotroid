@@ -7,6 +7,7 @@ import { ThemeCallbacks } from "themeconfig.slint";
 import { Slider } from "slider.slint";
 import { TimerConfig } from "timerconfig.slint";
 import { ConfigCallbacks } from "config.slint";
+import { ToolTip, TTPosition } from "tooltip.slint";
 
 export { HLClick, Theme, JsonTheme, Settings, ThemeCallbacks, ConfigCallbacks }
 
@@ -307,7 +308,9 @@ export component Main inherits BorderlessWindow {
                 Rectangle {
                     y: parent.height/2 - self.height/2;
                     SkipBtn-ta := TouchArea {
-                        clicked => { action-timer(TimerAction.skip) }
+                        clicked => {
+                            action-timer(TimerAction.skip)
+                        }
                     }
                     Image {
                         source: @image-url("../assets/icons/skip.svg");
@@ -328,6 +331,7 @@ export component Main inherits BorderlessWindow {
                         ]
                     }
                 }
+
                 Rectangle {
                     y: parent.height/2 - self.height/2;
                     MuteBtn-ta := TouchArea {
@@ -373,7 +377,9 @@ export component Main inherits BorderlessWindow {
             alignment: start;
             Text {
                 ResetBtn-ta := TouchArea {
-                    clicked => { action-timer(TimerAction.reset) }
+                    clicked => { 
+                        action-timer(TimerAction.reset)
+                    }
                 }
                 font-weight: 900;
                 text: "Reset";
@@ -390,6 +396,36 @@ export component Main inherits BorderlessWindow {
                 ]
             }
         }
+    }
+
+    skip-tt := ToolTip {
+        x: SkipBtn-ta.absolute-position.x;
+        y: SkipBtn-ta.absolute-position.y;
+        owner-height: SkipBtn-ta.height;
+        owner-width: SkipBtn-ta.width;
+        position: TTPosition.Bottom;
+        show: SkipBtn-ta.has-hover;
+        text: "Skip the Current Round";
+    }
+
+    mute-tt := ToolTip {
+        x: MuteBtn-ta.absolute-position.x;
+        y: MuteBtn-ta.absolute-position.y;
+        owner-height: MuteBtn-ta.height;
+        owner-width: MuteBtn-ta.width;
+        position: TTPosition.Bottom;
+        show: MuteBtn-ta.has-hover;
+        text: "Mute";
+    }
+
+    reset-tt := ToolTip {
+        x: ResetBtn-ta.absolute-position.x;
+        y: ResetBtn-ta.absolute-position.y;
+        owner-height: ResetBtn-ta.height;
+        owner-width: ResetBtn-ta.width;
+        position: TTPosition.Right;
+        show: ResetBtn-ta.has-hover;
+        text: "Reset Current Round";
     }
 
     slideover := SlideOver {
