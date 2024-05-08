@@ -91,7 +91,7 @@ export component TimerConfigPage inherits Rectangle {
             label: "Focus";
             min: 1;
             max: 90;
-            value: Settings.time-work;
+            value <=> Settings.time-work;
             tail: ":00";
             sl-color: Theme.focus-round;
             value-changed(int) => {
@@ -102,7 +102,7 @@ export component TimerConfigPage inherits Rectangle {
             label: "Short Break";
             min: 1;
             max: 90;
-            value: Settings.time-short-break;
+            value <=> Settings.time-short-break;
             tail: ":00";
             sl-color: Theme.short-round;
             value-changed(int) => {
@@ -113,7 +113,7 @@ export component TimerConfigPage inherits Rectangle {
             label: "Long Break";
             min: 1;
             max: 90;
-            value: Settings.time-long-break;
+            value <=> Settings.time-long-break;
             tail: ":00";
             sl-color: Theme.long-round;
             value-changed(int) => {
@@ -124,8 +124,7 @@ export component TimerConfigPage inherits Rectangle {
             label: "Round";
             min: 1;
             max: 12;
-            value: Settings.work-rounds;
-            //tail: "";
+            value <=> Settings.work-rounds;
             sl-color: Theme.background-lightest;
             value-changed(int) => {
                 Settings.int-changed(IntSettTypes.Rounds, int);
@@ -135,7 +134,14 @@ export component TimerConfigPage inherits Rectangle {
             text: "Reset Defaults";
             font-size: 11pt;
             horizontal-alignment: center;
-            rd-ta := TouchArea {}
+            rd-ta := TouchArea {
+                clicked => {
+                    Settings.int-changed(IntSettTypes.Work, 25);
+                    Settings.int-changed(IntSettTypes.ShortBreak, 5);
+                    Settings.int-changed(IntSettTypes.LongBreak, 15);
+                    Settings.int-changed(IntSettTypes.Rounds, 4);
+                }
+            }
 
             states [
                 on-hvr when rd-ta.has-hover: {
