@@ -1831,12 +1831,15 @@ checksum = "d2fabcfbdc87f4758337ca535fb41a6d701b65693ce38287d856d1674551ec9b"
 
 [[package]]
 name = "global-hotkey"
-version = "0.4.2"
+version = "0.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "927a00fd7c31d82029f99ce2481a8de1ae974758017d6a55ebbe7f22edcd1617"
+checksum = "daf13ae557ac61fa8f6fa949c33616e9680f0f04a9dd0195cd210770ba643f1a"
 dependencies = [
+ "bitflags 2.5.0",
+ "cocoa",
  "crossbeam-channel",
  "keyboard-types",
+ "objc",
  "once_cell",
  "thiserror",
  "windows-sys 0.52.0",
@@ -1969,9 +1972,9 @@ checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
 name = "hex_color"
-version = "2.1.0"
+version = "3.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f48f4a77387174b3150765b66fbd04067799372afdb5099848a721578dac1f9"
+checksum = "d37f101bf4c633f7ca2e4b5e136050314503dd198e78e325ea602c327c484ef0"
 dependencies = [
  "arrayvec",
  "rand",
@@ -4319,9 +4322,9 @@ dependencies = [
 
 [[package]]
 name = "tray-item"
-version = "0.9.0"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "769e7742cb5a21191a151ca1d7d61730f2a6832ae57d574b038389ce5e3bf80e"
+checksum = "59d4bd406170690dc30eabb3badc67a085beaf9b2c3b1923afcc9c26a2191353"
 dependencies = [
  "cocoa",
  "core-graphics",
@@ -4331,7 +4334,7 @@ dependencies = [
  "objc-foundation",
  "objc_id",
  "padlock",
- "windows-sys 0.48.0",
+ "windows-sys 0.52.0",
 ]
 
 [[package]]
