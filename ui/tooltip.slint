@@ -19,7 +19,8 @@ export component ToolTip {
     in property <length> owner-y;
     in property <string> text;
 
-    x: owner-x + pos-x(self.width); //or should this be pos-x(tool-tip.width)
+    //setting this X started erroring when I updated from Slint 1.4.1 to 1.6
+    //x: owner-x + pos-x(self.width); //or should this be pos-x(tool-tip.width)
     y: owner-y + pos-y(self.height);
 
     pure public function pos-x(wid: length) -> length {

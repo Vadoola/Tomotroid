@@ -143,9 +143,14 @@ component ConfigBar inherits Rectangle {
         }
 
         @children
-        if Settings.is-wayland : ToolTip {
+        //So in Slint 1.6 the modification to the way children are added this now is causing the layout
+        //to alter, and pushing the "check box" to the left even though the tool tip isn't visible.
+        //I initially had the tooltip after @children so it would end up above them in the Z order.
+        //Might need to look into some other options, but since the tooltips aren't fully functional
+        //right now I'll just comment this out.
+        /*if Settings.is-wayland : ToolTip {
             text: "Unsupported under Wayland";
-        }
+        }*/
     }
 }
 
