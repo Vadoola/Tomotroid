@@ -1,9 +1,13 @@
+use crate::JsonTheme;
+use core::fmt;
 use directories::ProjectDirs;
+use global_hotkey::hotkey::{Code, HotKey, Modifiers};
 use hex_color::HexColor;
 use serde::{Deserialize, Serialize};
 use slint::platform::Key;
-use core::fmt;
+use slint::{Color, SharedString};
 use std::cell::OnceCell;
+use std::env;
 use std::fs::{File, OpenOptions};
 use std::io::{BufReader, BufWriter, Write};
 use std::iter;
@@ -11,11 +15,7 @@ use std::ops::Deref;
 use std::path::{Display, Path};
 use std::str::FromStr;
 use std::sync::{Arc, OnceLock};
-use slint::{Color, SharedString};
 use walkdir::WalkDir;
-use global_hotkey::hotkey::{Code, HotKey, Modifiers};
-use crate::JsonTheme;
-use std::env;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GKeyCode(Code);
@@ -115,87 +115,88 @@ impl fmt::Display for GKeyCode {
 }
 
 impl std::str::FromStr for GKeyCode {
-    type Err = &'static str;//Todo: Get a better Error type
+    type Err = &'static str; //Todo: Get a better Error type
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         use crate::Code::*;
-        Ok(
-            match s {
-                "\\" => Backslash,
-                "[" => BracketLeft,
-                "]" => BracketRight,
-                "," => Comma,
-                "0" => Digit0,
-                "1" => Digit1,
-                "2" => Digit2,
-                "3" => Digit3,
-                "4" => Digit4,
-                "5" => Digit5,
-                "6" => Digit6,
-                "7" => Digit7,
-                "8" => Digit8,
-                "9" => Digit9,
-                "=" => Equal,
-                "A" => KeyA,
-                "B" => KeyB,
-                "C" => KeyC,
-                "D" => KeyD,
-                "E" => KeyE,
-                "F" => KeyF,
-                "G" => KeyG,
-                "H" => KeyH,
-                "I" => KeyI,
-                "J" => KeyJ,
-                "K" => KeyK,
-                "L" => KeyL,
-                "M" => KeyM,
-                "N" => KeyN,
-                "O" => KeyO,
-                "P" => KeyP,
-                "Q" => KeyQ,
-                "R" => KeyR,
-                "S" => KeyS,
-                "T" => KeyT,
-                "U" => KeyU,
-                "V" => KeyV,
-                "W" => KeyW,
-                "X" => KeyX,
-                "Y" => KeyY,
-                "Z" => KeyZ,
-                "-" => Minus,
-                "." => Period,
-                "\"" => Quote,
-                ";" => Semicolon,
-                "/" => Slash,
-                " " => Space,
-                "Add" => NumpadAdd,
-                "Clear" => NumpadClear,
-                "Divide" => NumpadDivide,
-                "Subtract" => NumpadSubtract,
-                "LaunchApplication1" => LaunchApp1,
-                "LaunchApplication2" => LaunchApp2,
-                "MicrophoneToggle" => MicrophoneMuteToggle,
+        Ok(match s {
+            "\\" => Backslash,
+            "[" => BracketLeft,
+            "]" => BracketRight,
+            "," => Comma,
+            "0" => Digit0,
+            "1" => Digit1,
+            "2" => Digit2,
+            "3" => Digit3,
+            "4" => Digit4,
+            "5" => Digit5,
+            "6" => Digit6,
+            "7" => Digit7,
+            "8" => Digit8,
+            "9" => Digit9,
+            "=" => Equal,
+            "A" => KeyA,
+            "B" => KeyB,
+            "C" => KeyC,
+            "D" => KeyD,
+            "E" => KeyE,
+            "F" => KeyF,
+            "G" => KeyG,
+            "H" => KeyH,
+            "I" => KeyI,
+            "J" => KeyJ,
+            "K" => KeyK,
+            "L" => KeyL,
+            "M" => KeyM,
+            "N" => KeyN,
+            "O" => KeyO,
+            "P" => KeyP,
+            "Q" => KeyQ,
+            "R" => KeyR,
+            "S" => KeyS,
+            "T" => KeyT,
+            "U" => KeyU,
+            "V" => KeyV,
+            "W" => KeyW,
+            "X" => KeyX,
+            "Y" => KeyY,
+            "Z" => KeyZ,
+            "-" => Minus,
+            "." => Period,
+            "\"" => Quote,
+            ";" => Semicolon,
+            "/" => Slash,
+            " " => Space,
+            "Add" => NumpadAdd,
+            "Clear" => NumpadClear,
+            "Divide" => NumpadDivide,
+            "Subtract" => NumpadSubtract,
+            "LaunchApplication1" => LaunchApp1,
+            "LaunchApplication2" => LaunchApp2,
+            "MicrophoneToggle" => MicrophoneMuteToggle,
 
-                _ => Code::from_str(s).map_err(|_|"Failure to convert Key Code")?,
-            }.into()
-        )
+            _ => Code::from_str(s).map_err(|_| "Failure to convert Key Code")?,
+        }
+        .into())
     }
 }
 
 impl Serialize for GKeyCode {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: serde::Serializer {
-                serializer.serialize_str(&self.to_string())
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
     }
 }
 
 impl<'de> Deserialize<'de> for GKeyCode {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: serde::Deserializer<'de> {
-                let s = String::deserialize(deserializer)?;
-                Ok(s.parse().unwrap())
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        Ok(s.parse().unwrap())
     }
 }
 
@@ -338,7 +339,7 @@ impl fmt::Display for JsonHotKey {
 }
 
 impl std::str::FromStr for JsonHotKey {
-    type Err = &'static str;//Todo: Get a better Error type
+    type Err = &'static str; //Todo: Get a better Error type
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut mods = Modifiers::empty();
@@ -356,7 +357,7 @@ impl std::str::FromStr for JsonHotKey {
                 return Ok(JsonHotKey {
                     modifiers: mods,
                     key: key.parse().unwrap(),
-                })
+                });
             }
         }
         Err("Something failed")
@@ -365,18 +366,20 @@ impl std::str::FromStr for JsonHotKey {
 
 impl Serialize for JsonHotKey {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: serde::Serializer {
-                serializer.serialize_str(&self.to_string())
+    where
+        S: serde::Serializer,
+    {
+        serializer.serialize_str(&self.to_string())
     }
 }
 
 impl<'de> Deserialize<'de> for JsonHotKey {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: serde::Deserializer<'de> {
-                let s = String::deserialize(deserializer)?;
-                JsonHotKey::from_str(&s).map_err(serde::de::Error::custom)
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let s = String::deserialize(deserializer)?;
+        JsonHotKey::from_str(&s).map_err(serde::de::Error::custom)
     }
 }
 
@@ -389,9 +392,7 @@ impl Into<HotKey> for JsonHotKey {
         let mods = if self.modifiers.is_empty() {
             None
         } else {
-            Modifiers::from_bits(self.modifiers.iter().fold(0, |acc, val| {
-                acc | val.bits()
-            }))
+            Modifiers::from_bits(self.modifiers.iter().fold(0, |acc, val| acc | val.bits()))
         };
 
         HotKey::new(mods, self.key.0)
@@ -403,15 +404,12 @@ impl Into<HotKey> for &JsonHotKey {
         let mods = if self.modifiers.is_empty() {
             None
         } else {
-            Modifiers::from_bits(self.modifiers.iter().fold(0, |acc, val| {
-                acc | val.bits()
-            }))
+            Modifiers::from_bits(self.modifiers.iter().fold(0, |acc, val| acc | val.bits()))
         };
 
         HotKey::new(mods, self.key.0)
     }
 }
-
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -433,7 +431,6 @@ pub struct OldSettings {
     pub volume: i32,
     pub work_rounds: i32,
 }
-
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -517,17 +514,17 @@ static DEF_THEME: OnceLock<JsonThemeTemp> = OnceLock::new();
 pub fn is_wayland() -> bool {
     match env::var("XDG_SESSION_TYPE") {
         Ok(val) => val.contains("wayland"),
-        Err(_) => {
-            match env::var("WAYLAND_DISPLAY") {
-                Ok(val) =>val.contains("wayland"),
-                Err(_) => false,
-            }
-        }
+        Err(_) => match env::var("WAYLAND_DISPLAY") {
+            Ok(val) => val.contains("wayland"),
+            Err(_) => false,
+        },
     }
 }
 
 #[cfg(not(unix))]
-pub fn is_wayland() -> bool {false}
+pub fn is_wayland() -> bool {
+    false
+}
 
 fn get_dir() -> Option<&'static Path> {
     if let Some(dirs) = CFG_DIR.get_or_init(|| ProjectDirs::from("org", "Vadoola", "Tomotroid")) {
@@ -725,7 +722,8 @@ pub fn save_settings(settings: JsonSettings) {
             .unwrap();
         let writer = BufWriter::new(set_file);
 
-        serde_json::to_writer_pretty(writer, &settings).expect("To be able to write the settings back out to json");
+        serde_json::to_writer_pretty(writer, &settings)
+            .expect("To be able to write the settings back out to json");
     }
 }
 

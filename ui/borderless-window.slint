@@ -197,12 +197,16 @@ export component BorderlessWindow inherits Window {
     }
 
     settings-tt := ToolTip {
-        x: menuBtn-ta.absolute-position.x;
-        y: menuBtn-ta.absolute-position.y;
+        //x: menuBtn-ta.absolute-position.x;
+        owner-x: menuBtn-ta.absolute-position.x;
+        //y: menuBtn-ta.absolute-position.y;
+        owner-y: menuBtn-ta.absolute-position.y;
         owner-height: menuBtn-ta.height;
         owner-width: menuBtn-ta.width;
         position: TTPosition.Right;
         show: menuBtn-ta.has-hover;
         text: "Settings";
+        //text: "x:\{menuBtn-ta.absolute-position.x/1px} / y:\{menuBtn-ta.absolute-position.y/1px}";
+        //text: "OH: \{menuBtn-ta.height/1px} / OW: \{menuBtn-ta.width/1px}";
     }
 }

@@ -9,25 +9,34 @@
 use std::io::Cursor;
 
 use anyhow::Result;
-use hex_color::HexColor;
-use i_slint_backend_winit::winit::event::Event;
-use i_slint_backend_winit::winit::keyboard::KeyCode;
-use notify_rust::{Notification, Hint};
-use serde::{Deserialize, Serialize};
-use serde_json::json;
-use settings::{get_non_print_key_txt, GlobalShortcuts, JsonHotKey, JsonSettings};
-use single_instance::SingleInstance;
-use slint::{platform::Key, SharedString, Color, JoinHandle, ModelRc, Timer, TimerMode, VecModel, Model, PlatformError};
-use slint::private_unstable_api::re_exports::EventResult;
-use std::{
-    borrow::Borrow, fs::File, io::{BufReader, Read}, rc::Rc, str::FromStr, sync::mpsc
-};
-use tray_item::{IconSource, TrayItem};
 use global_hotkey::GlobalHotKeyEvent;
 use global_hotkey::{
     hotkey::{Code, HotKey, Modifiers},
     GlobalHotKeyManager,
 };
+use hex_color::HexColor;
+use i_slint_backend_winit::winit::event::Event;
+use i_slint_backend_winit::winit::keyboard::KeyCode;
+use notify_rust::{Hint, Notification};
+use rodio::{OutputStream, OutputStreamHandle, Sink};
+use serde::{Deserialize, Serialize};
+use serde_json::json;
+use settings::{get_non_print_key_txt, GlobalShortcuts, JsonHotKey, JsonSettings};
+use single_instance::SingleInstance;
+use slint::private_unstable_api::re_exports::EventResult;
+use slint::{
+    platform::Key, Color, JoinHandle, Model, ModelRc, PlatformError, SharedString, Timer,
+    TimerMode, VecModel,
+};
+use std::{
+    borrow::Borrow,
+    fs::File,
+    io::{BufReader, Read},
+    rc::Rc,
+    str::FromStr,
+    sync::mpsc,
+};
+use tray_item::{IconSource, TrayItem};
 
 mod settings;
 
@@ -35,6 +44,11 @@ slint::include_modules!();
 
 pub const LOGO_BYTES: &str = include_str!("../assets/logo.svg");
 pub const PROG_BYTES: &str = include_str!("../assets/ProgressCircle.svg");
+
+pub const ALERT_LONG_BREAK: &[u8] = include_bytes!("../assets/audio/alert-long-break.ogg");
+pub const ALERT_SHORT_BREAK: &[u8] = include_bytes!("../assets/audio/alert-short-break.ogg");
+pub const ALERT_WORK: &[u8] = include_bytes!("../assets/audio/alert-work.ogg");
+pub const TICK: &[u8] = include_bytes!("../assets/audio/tick.ogg");
 
 enum TrayMsg {
     MinRes,
@@ -62,13 +76,22 @@ impl Main {
             .set_break_always_on_top(settings.break_always_on_top);
 
         //Global Shortcuts
-        self.global::<Settings>()
-            .set_tt_ghk(settings.global_shortcuts.call_timer_toggle.to_string().into());
-        self.global::<Settings>()
-            .set_rst_ghk(settings.global_shortcuts.call_timer_reset.to_string().into());
+        self.global::<Settings>().set_tt_ghk(
+            settings
+                .global_shortcuts
+                .call_timer_toggle
+                .to_string()
+                .into(),
+        );
+        self.global::<Settings>().set_rst_ghk(
+            settings
+                .global_shortcuts
+                .call_timer_reset
+                .to_string()
+                .into(),
+        );
         self.global::<Settings>()
             .set_skp_ghk(settings.global_shortcuts.call_timer_skip.to_string().into());
-
 
         self.global::<Settings>()
             .set_min_to_tray(settings.min_to_tray);
@@ -91,38 +114,46 @@ impl Main {
         self.global::<Settings>()
             .set_work_rounds(settings.work_rounds);
 
-        self.global::<Settings>().set_is_wayland(settings::is_wayland());
+        self.global::<Settings>()
+            .set_is_wayland(settings::is_wayland());
     }
 
     fn save_settings(&self) {
-        settings::save_settings(
-            JsonSettings {
-                always_on_top: self.global::<Settings>().get_always_on_top(),
-                auto_start_break_timer: self.global::<Settings>().get_auto_start_break_timer(),
-                auto_start_work_timer: self.global::<Settings>().get_auto_start_work_timer(),
-                break_always_on_top: self.global::<Settings>().get_break_always_on_top(),
+        settings::save_settings(JsonSettings {
+            always_on_top: self.global::<Settings>().get_always_on_top(),
+            auto_start_break_timer: self.global::<Settings>().get_auto_start_break_timer(),
+            auto_start_work_timer: self.global::<Settings>().get_auto_start_work_timer(),
+            break_always_on_top: self.global::<Settings>().get_break_always_on_top(),
 
-                global_shortcuts: GlobalShortcuts {
-                    call_timer_reset: JsonHotKey::from_str(self.global::<Settings>().get_rst_ghk().to_string().as_str()).expect("a valid Timer Reset GHK"),
-                    call_timer_skip: JsonHotKey::from_str(self.global::<Settings>().get_skp_ghk().to_string().as_str()).expect("a valid Timer Skip GHK"),
-                    call_timer_toggle: JsonHotKey::from_str(self.global::<Settings>().get_tt_ghk().to_string().as_str()).expect("a valid Timer Toggle GHK"),
-                },
+            global_shortcuts: GlobalShortcuts {
+                call_timer_reset: JsonHotKey::from_str(
+                    self.global::<Settings>().get_rst_ghk().to_string().as_str(),
+                )
+                .expect("a valid Timer Reset GHK"),
+                call_timer_skip: JsonHotKey::from_str(
+                    self.global::<Settings>().get_skp_ghk().to_string().as_str(),
+                )
+                .expect("a valid Timer Skip GHK"),
+                call_timer_toggle: JsonHotKey::from_str(
+                    self.global::<Settings>().get_tt_ghk().to_string().as_str(),
+                )
+                .expect("a valid Timer Toggle GHK"),
+            },
 
-                min_to_tray: self.global::<Settings>().get_min_to_tray(),
-                min_to_tray_on_close: self.global::<Settings>().get_min_to_tray_on_close(),
-                notifications: self.global::<Settings>().get_notifications(),
+            min_to_tray: self.global::<Settings>().get_min_to_tray(),
+            min_to_tray_on_close: self.global::<Settings>().get_min_to_tray_on_close(),
+            notifications: self.global::<Settings>().get_notifications(),
 
-                theme: self.global::<Settings>().get_theme().to_string(),
+            theme: self.global::<Settings>().get_theme().to_string(),
 
-                tick_sounds: self.global::<Settings>().get_tick_sounds(),
-                tick_sounds_during_break: self.global::<Settings>().get_tick_sounds_during_break(),
-                time_long_break: self.global::<Settings>().get_time_long_break(),
-                time_short_break: self.global::<Settings>().get_time_short_break(),
-                time_work: self.global::<Settings>().get_time_work(),
-                volume: self.global::<Settings>().get_volume(),
-                work_rounds: self.global::<Settings>().get_work_rounds(),
-            }
-        );
+            tick_sounds: self.global::<Settings>().get_tick_sounds(),
+            tick_sounds_during_break: self.global::<Settings>().get_tick_sounds_during_break(),
+            time_long_break: self.global::<Settings>().get_time_long_break(),
+            time_short_break: self.global::<Settings>().get_time_short_break(),
+            time_work: self.global::<Settings>().get_time_work(),
+            volume: self.global::<Settings>().get_volume(),
+            work_rounds: self.global::<Settings>().get_work_rounds(),
+        });
     }
 }
 
@@ -133,6 +164,9 @@ struct Tomotroid {
     skip: Option<HotKey>,
     toggle: Option<HotKey>,
     ghk_manager: GlobalHotKeyManager,
+    audio_stream: OutputStream,
+    audio_handle: OutputStreamHandle,
+    audio_sink: Rc<Sink>,
 }
 
 impl Tomotroid {
@@ -145,15 +179,22 @@ impl Tomotroid {
         let reset = &settings.global_shortcuts.call_timer_reset.borrow().into();
         let skip = &settings.global_shortcuts.call_timer_skip.borrow().into();
 
-        let toggle = ghk_manager.register(*toggle).map_or(None, |_|Some(*toggle));
-        let reset = ghk_manager.register(*reset).map_or(None, |_|Some(*reset));
-        let skip = ghk_manager.register(*skip).map_or(None, |_|Some(*skip));
+        let toggle = ghk_manager
+            .register(*toggle)
+            .map_or(None, |_| Some(*toggle));
+        let reset = ghk_manager.register(*reset).map_or(None, |_| Some(*reset));
+        let skip = ghk_manager.register(*skip).map_or(None, |_| Some(*skip));
+
+        let (audio_stream, audio_handle) = rodio::OutputStream::try_default().unwrap();
+        let audio_sink = Rc::new(rodio::Sink::try_new(&audio_handle).unwrap());
 
         let window = Main::new().unwrap();
         window.set_settings(&settings);
 
         let model: Rc<VecModel<JsonTheme>> = Rc::new(VecModel::from(themes));
-        window.global::<ThemeCallbacks>().set_themes(ModelRc::from(model.clone()));
+        window
+            .global::<ThemeCallbacks>()
+            .set_themes(ModelRc::from(model.clone()));
 
         Self {
             window,
@@ -162,6 +203,9 @@ impl Tomotroid {
             skip,
             toggle,
             ghk_manager,
+            audio_stream,
+            audio_handle,
+            audio_sink,
         }
     }
 
@@ -193,7 +237,9 @@ impl Tomotroid {
             .enumerate()
             .find(|(_, thm)| thm.name == thm_name)
             .unwrap();
-        self.window.global::<ThemeCallbacks>().invoke_theme_changed(idx as i32, cur_theme.clone());
+        self.window
+            .global::<ThemeCallbacks>()
+            .invoke_theme_changed(idx as i32, cur_theme.clone());
 
         self.window.run()
     }
@@ -255,18 +301,15 @@ fn main() -> Result<()> {
             use i_slint_backend_winit::winit::platform::macos::WindowBuilderExtMacOS;
 
             let mut backend = i_slint_backend_winit::Backend::new().unwrap();
-            backend.window_builder_hook = Some(Box::new(|builder| {
-                builder.with_decorations(false)
-            }));
+            backend.window_builder_hook = Some(Box::new(|builder| builder.with_decorations(false)));
             backend
         }
 
         #[cfg(not(target_os = "macos"))]
         i_slint_backend_winit::Backend::new().unwrap()
     };
-    
-    slint::platform::set_platform(Box::new(backend))
-        .unwrap();
+
+    slint::platform::set_platform(Box::new(backend)).unwrap();
 
     let tomotroid = Tomotroid::new();
 
@@ -382,9 +425,6 @@ fn main() -> Result<()> {
             //write out settings?...not the most effecient way every change..but for now should be fine
             set_handle.save_settings();
         });
-
-    // settings not currently being saved
-    //    * Global Shortcuts (which can't even be set currently)
 
     let close_handle = tomotroid.window.as_weak();
     tomotroid.window.on_close_window(move || {
@@ -529,11 +569,25 @@ fn main() -> Result<()> {
         });
 
     let timer = Timer::default();
+
+    //This tick count is a quick hacky way to keep track of how many times
+    //the timer has been called...it's really not ideal, but I need to know
+    //so I can call the tick sound every 20 calls of the timer (ie 1s)
+    //If slint ever adds the rounded line caps, and I update the progress circle
+    //to be a Slint component instead of an SVG I can use animation
+    //to make this circle animate smoothly but only have the time trigger
+    //once per second. Until then I need to track how many times the timer
+    //is called. I will use this quick hacky method for now to get the basic
+    //sound logic in and working. There is probably a better way to handle this even
+    //before Slint adds support for line caps in paths, but I'll come back to it.
+    let mut tick_count = 0u32;
+    let tick_sink = tomotroid.audio_sink.clone();
     let timer_handle = tomotroid.window.as_weak();
     tomotroid.window.on_action_timer(move |action| {
         //Notification::new().summary("Performing an Action").show().unwrap();
         let tmrstrt_handle = timer_handle.clone();
         let timer_handle = timer_handle.upgrade().unwrap();
+        let tick_sink = tick_sink.clone();
         match action {
             TimerAction::Start => {
                 timer_handle.set_running(true);
@@ -542,6 +596,28 @@ fn main() -> Result<()> {
                     std::time::Duration::from_millis(50),
                     move || {
                         let tmrstrt_handle = tmrstrt_handle.unwrap();
+
+                        if tick_count >= 20 {
+                            tick_count = 0;
+                            let is_work_timer =
+                                tmrstrt_handle.get_active_timer() == ActiveTimer::Focus;
+                            if tmrstrt_handle.global::<Settings>().get_tick_sounds()
+                                && is_work_timer
+                            {
+                                let source = rodio::Decoder::new(Cursor::new(TICK)).unwrap();
+                                tick_sink.append(source);
+                            } else if tmrstrt_handle
+                                .global::<Settings>()
+                                .get_tick_sounds_during_break()
+                                && !is_work_timer
+                            {
+                                let source = rodio::Decoder::new(Cursor::new(TICK)).unwrap();
+                                tick_sink.append(source);
+                            }
+                        } else {
+                            tick_count += 1;
+                        }
+
                         tmrstrt_handle.invoke_tick(50);
                         let rem_per = tmrstrt_handle.get_remaining_time() as f32
                             / tmrstrt_handle.get_target_time() as f32
@@ -606,15 +682,23 @@ fn main() -> Result<()> {
         }
     });
 
+    let tmr_change_sink = tomotroid.audio_sink.clone();
     let chg_tmr_handle = tomotroid.window.as_weak();
     tomotroid.window.on_change_timer(move || {
         let chg_tmr_handle = chg_tmr_handle.upgrade().unwrap();
         match chg_tmr_handle.get_active_timer() {
             ActiveTimer::Focus => {
-                if !chg_tmr_handle.global::<Settings>().get_auto_start_break_timer() {
+                if !chg_tmr_handle
+                    .global::<Settings>()
+                    .get_auto_start_break_timer()
+                {
                     chg_tmr_handle.invoke_action_timer(TimerAction::Stop);
                 }
-                let body_str = if chg_tmr_handle.get_active_round() == chg_tmr_handle.get_tmr_config().rounds {
+                let body_str = if chg_tmr_handle.get_active_round()
+                    == chg_tmr_handle.get_tmr_config().rounds
+                {
+                    let source = rodio::Decoder::new(Cursor::new(ALERT_LONG_BREAK)).unwrap();
+                    tmr_change_sink.append(source);
                     let lgbrk_time = chg_tmr_handle.get_tmr_config().lgbrk_time;
 
                     chg_tmr_handle.set_active_round(1);
@@ -624,6 +708,8 @@ fn main() -> Result<()> {
                     chg_tmr_handle.set_remaining_time(lgbrk_time);
                     format!("Begin a {} minute long break.", lgbrk_time / 60000)
                 } else {
+                    let source = rodio::Decoder::new(Cursor::new(ALERT_SHORT_BREAK)).unwrap();
+                    tmr_change_sink.append(source);
                     let shbrk_time = chg_tmr_handle.get_tmr_config().shbrk_time;
                     chg_tmr_handle.set_active_timer(ActiveTimer::ShortBreak);
                     chg_tmr_handle.set_target_time(shbrk_time);
@@ -635,21 +721,25 @@ fn main() -> Result<()> {
                     //.icon("../assets/logo.png")
                     .summary("Focus Round Complete")
                     .body(&body_str)
-                    .show().unwrap();
+                    .show()
+                    .unwrap();
             }
             brk_type => {
-                if !chg_tmr_handle.global::<Settings>().get_auto_start_work_timer() {
+                if !chg_tmr_handle
+                    .global::<Settings>()
+                    .get_auto_start_work_timer()
+                {
                     chg_tmr_handle.invoke_action_timer(TimerAction::Stop);
                 }
 
                 let focus_time = chg_tmr_handle.get_tmr_config().focus_time;
-                chg_tmr_handle.set_active_round(
-                    if brk_type == ActiveTimer::ShortBreak {
-                        chg_tmr_handle.get_active_round() + 1
-                    } else {
-                        1
-                    }
-                );
+                let source = rodio::Decoder::new(Cursor::new(ALERT_WORK)).unwrap();
+                tmr_change_sink.append(source);
+                chg_tmr_handle.set_active_round(if brk_type == ActiveTimer::ShortBreak {
+                    chg_tmr_handle.get_active_round() + 1
+                } else {
+                    1
+                });
                 chg_tmr_handle.set_active_timer(ActiveTimer::Focus);
                 chg_tmr_handle.set_target_time(focus_time);
                 chg_tmr_handle.set_remaining_time(focus_time);
@@ -657,8 +747,12 @@ fn main() -> Result<()> {
                     //.appname("Tomotroid")
                     //.icon("../assets/logo.png")
                     .summary("Break Finished")
-                    .body(&format!("Begin focusing for {} minutes.", focus_time / 60000))
-                    .show().unwrap();
+                    .body(&format!(
+                        "Begin focusing for {} minutes.",
+                        focus_time / 60000
+                    ))
+                    .show()
+                    .unwrap();
             }
         }
     });
@@ -687,7 +781,7 @@ fn main() -> Result<()> {
             //IE if the text isn't a-z, F-keys, etc reject it....but I could end up rejecting valid combinations easily
             //especially perhaps if someone has an international keyboard I would assume I would miss also sorts of valid
             //key combinations that I'm just unaware of for other language keyboards.
-            
+
             //Ok this current code may not have as many issues as I thought
             //I added in some crude support for a setting string tied to each global shortcut, and assigned that to the
             //text on the Config page. This mostly seems to work, The Focus Scope even looses focus after I accept the input
@@ -705,7 +799,12 @@ fn main() -> Result<()> {
             //I guess that would also make it reasonable for the FocusScope to just reject anything where a modifier wasn't pressed
 
             let ghk_handle = ghk_handle.upgrade().unwrap();
-            if (!event.modifiers.control && !event.modifiers.alt && !event.modifiers.shift && !event.modifiers.meta) || event.text == SharedString::from(Key::Tab) {
+            if (!event.modifiers.control
+                && !event.modifiers.alt
+                && !event.modifiers.shift
+                && !event.modifiers.meta)
+                || event.text == SharedString::from(Key::Tab)
+            {
                 //this below seems wasteful resource wise. I'm setting the string to blank, and then setting it back
                 //to the original string. In the FocusScope the focused property is out, so I can't edit it, I can only read it
                 //which means I can't tell the FocusScope to loose focus after a new GHK is accepted, or the Esc key is pressed.
@@ -719,19 +818,25 @@ fn main() -> Result<()> {
                 match ghk {
                     GHKShortcuts::ToggleTimer => {
                         let pre = ghk_handle.global::<Settings>().get_tt_ghk();
-                        ghk_handle.global::<Settings>().set_tt_ghk(SharedString::new());
+                        ghk_handle
+                            .global::<Settings>()
+                            .set_tt_ghk(SharedString::new());
                         ghk_handle.global::<Settings>().set_tt_ghk(pre);
-                    },
+                    }
                     GHKShortcuts::ResetTimer => {
                         let pre = ghk_handle.global::<Settings>().get_rst_ghk();
-                        ghk_handle.global::<Settings>().set_rst_ghk(SharedString::new());
+                        ghk_handle
+                            .global::<Settings>()
+                            .set_rst_ghk(SharedString::new());
                         ghk_handle.global::<Settings>().set_rst_ghk(pre)
-                    },
+                    }
                     GHKShortcuts::SkipRound => {
                         let pre = ghk_handle.global::<Settings>().get_skp_ghk();
-                        ghk_handle.global::<Settings>().set_skp_ghk(SharedString::new());
+                        ghk_handle
+                            .global::<Settings>()
+                            .set_skp_ghk(SharedString::new());
                         ghk_handle.global::<Settings>().set_skp_ghk(pre);
-                    },
+                    }
                 }
             } else {
                 let mut text = String::new();
@@ -755,9 +860,15 @@ fn main() -> Result<()> {
                 }
 
                 match ghk {
-                    GHKShortcuts::ToggleTimer => ghk_handle.global::<Settings>().set_tt_ghk(text.into()),
-                    GHKShortcuts::ResetTimer => ghk_handle.global::<Settings>().set_rst_ghk(text.into()),
-                    GHKShortcuts::SkipRound => ghk_handle.global::<Settings>().set_skp_ghk(text.into()),
+                    GHKShortcuts::ToggleTimer => {
+                        ghk_handle.global::<Settings>().set_tt_ghk(text.into())
+                    }
+                    GHKShortcuts::ResetTimer => {
+                        ghk_handle.global::<Settings>().set_rst_ghk(text.into())
+                    }
+                    GHKShortcuts::SkipRound => {
+                        ghk_handle.global::<Settings>().set_skp_ghk(text.into())
+                    }
                 }
                 ghk_handle.save_settings();
             }

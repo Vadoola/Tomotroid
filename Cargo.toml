@@ -21,6 +21,7 @@ directories = "5.0.1"
 single-instance = "0.3.3"
 global-hotkey = "0.4.1"
 notify-rust = "4.10.0"
+rodio = "0.18.0"
 
 
 [target.'cfg(windows)'.dependencies]

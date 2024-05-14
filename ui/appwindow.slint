@@ -39,7 +39,7 @@ export component Main inherits BorderlessWindow {
 
     out property<int> volume: Settings.volume;
     out property<TimerConfig> tmr-config: slideover.tmr-config;
-    in property<ActiveTimer> active-timer: focus;
+    in-out property<ActiveTimer> active-timer: focus;
     in property<int> active-round: 1;
     in-out property<bool> running: false;
 
@@ -377,7 +377,7 @@ export component Main inherits BorderlessWindow {
             alignment: start;
             Text {
                 ResetBtn-ta := TouchArea {
-                    clicked => { 
+                    clicked => {
                         action-timer(TimerAction.reset)
                     }
                 }
@@ -398,7 +398,7 @@ export component Main inherits BorderlessWindow {
         }
     }
 
-    skip-tt := ToolTip {
+    /*skip-tt := ToolTip {
         x: SkipBtn-ta.absolute-position.x;
         y: SkipBtn-ta.absolute-position.y;
         owner-height: SkipBtn-ta.height;
@@ -416,16 +416,20 @@ export component Main inherits BorderlessWindow {
         position: TTPosition.Bottom;
         show: MuteBtn-ta.has-hover;
         text: "Mute";
-    }
+    }*/
 
     reset-tt := ToolTip {
-        x: ResetBtn-ta.absolute-position.x;
-        y: ResetBtn-ta.absolute-position.y;
+        //x: ResetBtn-ta.absolute-position.x;
+        owner-x: ResetBtn-ta.absolute-position.x;
+        //y: ResetBtn-ta.absolute-position.y;
+        owner-y: ResetBtn-ta.absolute-position.y;
         owner-height: ResetBtn-ta.height;
         owner-width: ResetBtn-ta.width;
         position: TTPosition.Right;
         show: ResetBtn-ta.has-hover;
         text: "Reset Current Round";
+        //text: "x:\{ResetBtn-ta.absolute-position.x/1px} / y: \{ResetBtn-ta.absolute-position.y/1px}";
+        //text: "OH: \{ResetBtn-ta.height/1px} / OW: \{ResetBtn-ta.width/1px}";
     }
 
     slideover := SlideOver {
