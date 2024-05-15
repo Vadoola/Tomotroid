@@ -5,7 +5,7 @@
 )]*/
 #![windows_subsystem = "windows"]
 
-#[cfg(unix)]
+use std::cmp::min;
 use std::io::Cursor;
 
 use anyhow::Result;
@@ -441,9 +441,7 @@ fn main() -> Result<()> {
     let min_handle = tomotroid.window.as_weak();
     tomotroid.window.on_minimize_window(move || {
         let min_handle = min_handle.upgrade().unwrap();
-        i_slint_backend_winit::WinitWindowAccessor::with_winit_window(min_handle.window(), |win| {
-            win.set_minimized(true);
-        });
+        min_handle.window().set_minimized(true);
     });
 
     let move_handle = tomotroid.window.as_weak();
@@ -462,13 +460,15 @@ fn main() -> Result<()> {
                 let tray_handle_copy = tray_handle.clone();
                 slint::invoke_from_event_loop(move || {
                     let main = tray_handle_copy.upgrade().unwrap();
+                    main.window().set_minimized(false);
                     i_slint_backend_winit::WinitWindowAccessor::with_winit_window(
                         main.window(),
                         |win| {
-                            win.set_minimized(!win.is_minimized().unwrap());
+                            //win.set_minimized(!win.is_minimized().unwrap());
                             win.focus_window();
                         },
                     );
+                    
                 })
                 .unwrap();
             }
