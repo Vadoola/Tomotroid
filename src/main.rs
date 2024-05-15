@@ -187,6 +187,7 @@ impl Tomotroid {
 
         let (audio_stream, audio_handle) = rodio::OutputStream::try_default().unwrap();
         let audio_sink = Rc::new(rodio::Sink::try_new(&audio_handle).unwrap());
+        audio_sink.set_volume(settings.volume as f32 / 100.0);
 
         let window = Main::new().unwrap();
         window.set_settings(&settings);
@@ -398,6 +399,7 @@ fn main() -> Result<()> {
         std::thread::sleep(std::time::Duration::from_millis(500));
     });
 
+    let vol_sink = tomotroid.audio_sink.clone();
     let set_int_handle = tomotroid.window.as_weak();
     tomotroid
         .window
@@ -416,6 +418,8 @@ fn main() -> Result<()> {
                 }
                 IntSettTypes::Volume => {
                     set_handle.global::<Settings>().set_volume(val);
+                    vol_sink.set_volume(val as f32 / 100.0);
+
                 }
                 IntSettTypes::Rounds => {
                     set_handle.global::<Settings>().set_work_rounds(val);
