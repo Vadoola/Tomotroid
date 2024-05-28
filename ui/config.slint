@@ -1,4 +1,4 @@
-import { Theme, Settings, BoolSettTypes } from "globals.slint";
+import { Theme, Settings, BoolSettTypes, ConfigData } from "globals.slint";
 import { VerticalBox, HorizontalBox, ScrollView, TextEdit } from "std-widgets.slint";
 import { ToolTip } from "tooltip.slint";
 
@@ -10,6 +10,8 @@ enum GHKShortcuts {
 
 export global ConfigCallbacks {
     pure callback new-ghk(GHKShortcuts, KeyEvent);
+
+    in property<[ConfigData]> configs;
 }
 
 export component CheckBox {
@@ -146,8 +148,8 @@ component ConfigBar inherits Rectangle {
         //So in Slint 1.6 the modification to the way children are added this now is causing the layout
         //to alter, and pushing the "check box" to the left even though the tool tip isn't visible.
         //I initially had the tooltip after @children so it would end up above them in the Z order.
-        //Might need to look into some other options, but since the tooltips aren't fully functional
-        //right now I'll just comment this out.
+        //Might need to look into some other options like manually setting the Z-order, but since
+        //the tooltips aren't fully functional right now I'll just comment this out.
         /*if Settings.is-wayland : ToolTip {
             text: "Unsupported under Wayland";
         }*/
@@ -157,6 +159,7 @@ component ConfigBar inherits Rectangle {
 export component ConfigPage inherits Rectangle {
     background: Theme.background-light;
     out property<int> active-theme: 0;
+    in property <[ConfigData]> configs: ConfigCallbacks.configs;
 
     VerticalBox {
         ScrollView {
@@ -168,7 +171,7 @@ export component ConfigPage inherits Rectangle {
                     color: Theme.foreground;
                 }
 
-                for setting[idx] in [
+                /*for setting[idx] in [
                     {name: "Always On Top", state: Settings.always-on-top, sett-param: BoolSettTypes.AlwOnTop, enabled: !Settings.is-wayland},
                     {name: "Deactivate Always On Top on Breaks", state: Settings.break-always-on-top, sett-param: BoolSettTypes.BrkAlwOnTop, enabled: !Settings.is-wayland},//only shown when "Always On Top" is selected
                     {name: "Auto-start Work Timer", state: Settings.auto-start-work-timer, sett-param: BoolSettTypes.AutoStrtWrkTim, enabled: true},
@@ -178,7 +181,8 @@ export component ConfigPage inherits Rectangle {
                     {name: "Desktop Notifications", state: Settings.notifications, sett-param: BoolSettTypes.Notifications, enabled: true},
                     {name: "Minimize to Tray", state: Settings.min-to-tray, sett-param: BoolSettTypes.MinToTray, enabled: true},
                     {name: "Minimize to Tray on Close", state: Settings.min-to-tray-on-close, sett-param: BoolSettTypes.MinToTryCls, enabled: true},
-                ] : ConfigBar {
+                ] : ConfigBar {*/
+                for setting[idx] in root.configs : ConfigBar {
                     label: setting.name;
                     hidden: false;
                     enabled: setting.enabled;

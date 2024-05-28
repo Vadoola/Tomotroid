@@ -5,6 +5,8 @@
 )]*/
 #![windows_subsystem = "windows"]
 
+use std::borrow::BorrowMut;
+use std::cell::RefCell;
 use std::cmp::min;
 use std::io::Cursor;
 
@@ -18,7 +20,7 @@ use hex_color::HexColor;
 use i_slint_backend_winit::winit::event::Event;
 use i_slint_backend_winit::winit::keyboard::KeyCode;
 use notify_rust::{Hint, Notification};
-use rodio::{OutputStream, OutputStreamHandle, Sink};
+use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use settings::{get_non_print_key_txt, GlobalShortcuts, JsonHotKey, JsonSettings};
@@ -167,6 +169,7 @@ struct Tomotroid {
     audio_stream: OutputStream,
     audio_handle: OutputStreamHandle,
     audio_sink: Rc<Sink>,
+    config_model: ModelRc<ConfigData>,
 }
 
 impl Tomotroid {
@@ -181,21 +184,82 @@ impl Tomotroid {
 
         let toggle = ghk_manager
             .register(*toggle)
-            .map_or(None, |_| Some(*toggle));
-        let reset = ghk_manager.register(*reset).map_or(None, |_| Some(*reset));
-        let skip = ghk_manager.register(*skip).map_or(None, |_| Some(*skip));
+            .map_or(None, |()| Some(*toggle));
+        let reset = ghk_manager.register(*reset).map_or(None, |()| Some(*reset));
+        let skip = ghk_manager.register(*skip).map_or(None, |()| Some(*skip));
 
-        let (audio_stream, audio_handle) = rodio::OutputStream::try_default().unwrap();
-        let audio_sink = Rc::new(rodio::Sink::try_new(&audio_handle).unwrap());
+        let (audio_stream, audio_handle) = OutputStream::try_default().unwrap();
+        let audio_sink = Rc::new(Sink::try_new(&audio_handle).unwrap());
         audio_sink.set_volume(settings.volume as f32 / 100.0);
 
         let window = Main::new().unwrap();
         window.set_settings(&settings);
 
-        let model: Rc<VecModel<JsonTheme>> = Rc::new(VecModel::from(themes));
+        let theme_model: Rc<VecModel<JsonTheme>> = Rc::new(VecModel::from(themes));
         window
             .global::<ThemeCallbacks>()
-            .set_themes(ModelRc::from(model.clone()));
+            .set_themes(ModelRc::from(theme_model.clone()));
+
+        let config_model: Rc<VecModel<ConfigData>> = Rc::new(VecModel::from(vec![
+            ConfigData {
+                name: "Always On Top".into(),
+                state: settings.always_on_top,
+                sett_param: BoolSettTypes::AlwOnTop,
+                enabled: !settings::is_wayland(),
+            },
+            ConfigData {
+                name: "Deactivate Always On Top on Breaks".into(),
+                state: settings.break_always_on_top,
+                sett_param: BoolSettTypes::BrkAlwOnTop,
+                enabled: !settings::is_wayland(),
+            }, //only shown when "Always On Top" is selected
+            ConfigData {
+                name: "Auto-start Work Timer".into(),
+                state: settings.auto_start_work_timer,
+                sett_param: BoolSettTypes::AutoStrtWrkTim,
+                enabled: true,
+            },
+            ConfigData {
+                name: "Auto-start Break Timer".into(),
+                state: settings.auto_start_break_timer,
+                sett_param: BoolSettTypes::AutoStrtBreakTim,
+                enabled: true,
+            },
+            ConfigData {
+                name: "Tick Sounds - Work".into(),
+                state: settings.tick_sounds,
+                sett_param: BoolSettTypes::TickSounds,
+                enabled: true,
+            },
+            ConfigData {
+                name: "Tick Sounds - Break".into(),
+                state: settings.tick_sounds_during_break,
+                sett_param: BoolSettTypes::TickSoundsBreak,
+                enabled: true,
+            },
+            ConfigData {
+                name: "Desktop Notifications".into(),
+                state: settings.notifications,
+                sett_param: BoolSettTypes::Notifications,
+                enabled: true,
+            },
+            ConfigData {
+                name: "Minimize to Tray".into(),
+                state: settings.min_to_tray,
+                sett_param: BoolSettTypes::MinToTray,
+                enabled: true,
+            },
+            ConfigData {
+                name: "Minimize to Tray on Close".into(),
+                state: settings.min_to_tray_on_close,
+                sett_param: BoolSettTypes::MinToTryCls,
+                enabled: true,
+            },
+        ]));
+        let config_model = ModelRc::from(config_model);
+        window
+            .global::<ConfigCallbacks>()
+            .set_configs(config_model.clone());
 
         Self {
             window,
@@ -207,6 +271,7 @@ impl Tomotroid {
             audio_stream,
             audio_handle,
             audio_sink,
+            config_model,
         }
     }
 
@@ -223,7 +288,7 @@ impl Tomotroid {
                 )
                 .replace(
                     "stroke-dasharray=\"100, 100\"",
-                    &format!("stroke-dasharray=\"{}, 100\"", rem_per),
+                    &format!("stroke-dasharray=\"{rem_per}, 100\""),
                 )
                 .as_bytes(),
         )
@@ -243,6 +308,22 @@ impl Tomotroid {
             .invoke_theme_changed(idx as i32, cur_theme.clone());
 
         self.window.run()
+    }
+}
+
+impl BoolSettTypes {
+    pub fn to_usize(&self) -> usize {
+        match self {
+            BoolSettTypes::AlwOnTop => 0,
+            BoolSettTypes::BrkAlwOnTop => 1,
+            BoolSettTypes::AutoStrtWrkTim => 2,
+            BoolSettTypes::AutoStrtBreakTim => 3,
+            BoolSettTypes::TickSounds => 4,
+            BoolSettTypes::TickSoundsBreak => 5,
+            BoolSettTypes::Notifications => 6,
+            BoolSettTypes::MinToTray => 7,
+            BoolSettTypes::MinToTryCls => 8,
+        }
     }
 }
 
@@ -315,6 +396,7 @@ fn main() -> Result<()> {
     let tomotroid = Tomotroid::new();
 
     let set_bool_handle = tomotroid.window.as_weak();
+    let config_handle = tomotroid.config_model.clone();
     //if this is being called when the value changes....why is it passing me the old value?
     //I guess this is being called instead of the Touch Area's callback? So the value isn't updating
     //until I do it here? But how will that work with the sliders? I can't just invert the value
@@ -324,47 +406,59 @@ fn main() -> Result<()> {
         .global::<Settings>()
         .on_bool_changed(move |set_type, val| {
             let set_handle = set_bool_handle.upgrade().unwrap();
-            match set_type {
-                BoolSettTypes::AlwOnTop => {
-                    set_handle.global::<Settings>().set_always_on_top(!val);
+
+            if let Some(conf_data) = config_handle.row_data(set_type.to_usize()) {
+                config_handle.set_row_data(
+                    set_type.to_usize(),
+                    ConfigData {
+                        state: !val,
+                        ..conf_data
+                    },
+                );
+                match set_type {
+                    BoolSettTypes::AlwOnTop => {
+                        set_handle.global::<Settings>().set_always_on_top(!val);
+                    }
+                    BoolSettTypes::AutoStrtBreakTim => {
+                        set_handle
+                            .global::<Settings>()
+                            .set_auto_start_break_timer(!val);
+                    }
+                    BoolSettTypes::AutoStrtWrkTim => {
+                        set_handle
+                            .global::<Settings>()
+                            .set_auto_start_work_timer(!val);
+                    }
+                    BoolSettTypes::BrkAlwOnTop => {
+                        set_handle
+                            .global::<Settings>()
+                            .set_break_always_on_top(!val);
+                    }
+                    BoolSettTypes::MinToTray => {
+                        set_handle.global::<Settings>().set_min_to_tray(!val);
+                    }
+                    BoolSettTypes::MinToTryCls => {
+                        set_handle
+                            .global::<Settings>()
+                            .set_min_to_tray_on_close(!val);
+                    }
+                    BoolSettTypes::Notifications => {
+                        set_handle.global::<Settings>().set_notifications(!val);
+                    }
+                    BoolSettTypes::TickSounds => {
+                        set_handle.global::<Settings>().set_tick_sounds(!val);
+                    }
+                    BoolSettTypes::TickSoundsBreak => {
+                        set_handle
+                            .global::<Settings>()
+                            .set_tick_sounds_during_break(!val);
+                    }
                 }
-                BoolSettTypes::AutoStrtBreakTim => {
-                    set_handle
-                        .global::<Settings>()
-                        .set_auto_start_break_timer(!val);
-                }
-                BoolSettTypes::AutoStrtWrkTim => {
-                    set_handle
-                        .global::<Settings>()
-                        .set_auto_start_work_timer(!val);
-                }
-                BoolSettTypes::BrkAlwOnTop => {
-                    set_handle
-                        .global::<Settings>()
-                        .set_break_always_on_top(!val);
-                }
-                BoolSettTypes::MinToTray => {
-                    set_handle.global::<Settings>().set_min_to_tray(!val);
-                }
-                BoolSettTypes::MinToTryCls => {
-                    set_handle
-                        .global::<Settings>()
-                        .set_min_to_tray_on_close(!val);
-                }
-                BoolSettTypes::Notifications => {
-                    set_handle.global::<Settings>().set_notifications(!val);
-                }
-                BoolSettTypes::TickSounds => {
-                    set_handle.global::<Settings>().set_tick_sounds(!val);
-                }
-                BoolSettTypes::TickSoundsBreak => {
-                    set_handle
-                        .global::<Settings>()
-                        .set_tick_sounds_during_break(!val);
-                }
+                //write out settings?...not the most effecient way every change..but for now should be fine
+                set_handle.save_settings();
+            } else {
+                //error getting row data
             }
-            //write out settings?...not the most effecient way every change..but for now should be fine
-            set_handle.save_settings();
         });
 
     let ghk_handle = tomotroid.window.as_weak();
@@ -419,7 +513,6 @@ fn main() -> Result<()> {
                 IntSettTypes::Volume => {
                     set_handle.global::<Settings>().set_volume(val);
                     vol_sink.set_volume(val as f32 / 100.0);
-
                 }
                 IntSettTypes::Rounds => {
                     set_handle.global::<Settings>().set_work_rounds(val);
@@ -453,7 +546,7 @@ fn main() -> Result<()> {
         let move_handle = move_handle.upgrade().unwrap();
         i_slint_backend_winit::WinitWindowAccessor::with_winit_window(
             move_handle.window(),
-            |win| win.drag_window(),
+            i_slint_backend_winit::winit::window::Window::drag_window,
         );
     });
 
@@ -472,7 +565,6 @@ fn main() -> Result<()> {
                             win.focus_window();
                         },
                     );
-                    
                 })
                 .unwrap();
             }
@@ -608,14 +700,14 @@ fn main() -> Result<()> {
                             if tmrstrt_handle.global::<Settings>().get_tick_sounds()
                                 && is_work_timer
                             {
-                                let source = rodio::Decoder::new(Cursor::new(TICK)).unwrap();
+                                let source = Decoder::new(Cursor::new(TICK)).unwrap();
                                 tick_sink.append(source);
                             } else if tmrstrt_handle
                                 .global::<Settings>()
                                 .get_tick_sounds_during_break()
                                 && !is_work_timer
                             {
-                                let source = rodio::Decoder::new(Cursor::new(TICK)).unwrap();
+                                let source = Decoder::new(Cursor::new(TICK)).unwrap();
                                 tick_sink.append(source);
                             }
                         } else {
@@ -648,7 +740,7 @@ fn main() -> Result<()> {
                             rem_per,
                         ));
                     },
-                )
+                );
             }
             TimerAction::Stop => {
                 timer_handle.set_running(false);
@@ -701,7 +793,7 @@ fn main() -> Result<()> {
                 let body_str = if chg_tmr_handle.get_active_round()
                     == chg_tmr_handle.get_tmr_config().rounds
                 {
-                    let source = rodio::Decoder::new(Cursor::new(ALERT_LONG_BREAK)).unwrap();
+                    let source = Decoder::new(Cursor::new(ALERT_LONG_BREAK)).unwrap();
                     tmr_change_sink.append(source);
                     let lgbrk_time = chg_tmr_handle.get_tmr_config().lgbrk_time;
 
@@ -712,7 +804,7 @@ fn main() -> Result<()> {
                     chg_tmr_handle.set_remaining_time(lgbrk_time);
                     format!("Begin a {} minute long break.", lgbrk_time / 60000)
                 } else {
-                    let source = rodio::Decoder::new(Cursor::new(ALERT_SHORT_BREAK)).unwrap();
+                    let source = Decoder::new(Cursor::new(ALERT_SHORT_BREAK)).unwrap();
                     tmr_change_sink.append(source);
                     let shbrk_time = chg_tmr_handle.get_tmr_config().shbrk_time;
                     chg_tmr_handle.set_active_timer(ActiveTimer::ShortBreak);
@@ -737,7 +829,7 @@ fn main() -> Result<()> {
                 }
 
                 let focus_time = chg_tmr_handle.get_tmr_config().focus_time;
-                let source = rodio::Decoder::new(Cursor::new(ALERT_WORK)).unwrap();
+                let source = Decoder::new(Cursor::new(ALERT_WORK)).unwrap();
                 tmr_change_sink.append(source);
                 chg_tmr_handle.set_active_round(if brk_type == ActiveTimer::ShortBreak {
                     chg_tmr_handle.get_active_round() + 1
@@ -832,7 +924,7 @@ fn main() -> Result<()> {
                         ghk_handle
                             .global::<Settings>()
                             .set_rst_ghk(SharedString::new());
-                        ghk_handle.global::<Settings>().set_rst_ghk(pre)
+                        ghk_handle.global::<Settings>().set_rst_ghk(pre);
                     }
                     GHKShortcuts::SkipRound => {
                         let pre = ghk_handle.global::<Settings>().get_skp_ghk();
@@ -865,13 +957,13 @@ fn main() -> Result<()> {
 
                 match ghk {
                     GHKShortcuts::ToggleTimer => {
-                        ghk_handle.global::<Settings>().set_tt_ghk(text.into())
+                        ghk_handle.global::<Settings>().set_tt_ghk(text.into());
                     }
                     GHKShortcuts::ResetTimer => {
-                        ghk_handle.global::<Settings>().set_rst_ghk(text.into())
+                        ghk_handle.global::<Settings>().set_rst_ghk(text.into());
                     }
                     GHKShortcuts::SkipRound => {
-                        ghk_handle.global::<Settings>().set_skp_ghk(text.into())
+                        ghk_handle.global::<Settings>().set_skp_ghk(text.into());
                     }
                 }
                 ghk_handle.save_settings();

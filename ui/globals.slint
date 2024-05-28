@@ -32,14 +32,14 @@ export struct JsonTheme {
 
 export enum BoolSettTypes {
     AlwOnTop,
-    AutoStrtBreakTim,
-    AutoStrtWrkTim,
     BrkAlwOnTop,
-    MinToTray,
-    MinToTryCls,
-    Notifications,
+    AutoStrtWrkTim,
+    AutoStrtBreakTim,
     TickSounds,
     TickSoundsBreak,
+    Notifications,
+    MinToTray,
+    MinToTryCls,
 }
 
 export enum IntSettTypes {
@@ -48,6 +48,21 @@ export enum IntSettTypes {
     Work,
     Volume,
     Rounds,
+}
+
+//@rust-attr(derive(serde::Deserialize))
+export struct ConfigData {
+    name: string,
+    state: bool,
+    sett-param: BoolSettTypes,
+    
+    //Do I actually need this in the model?
+    //It was added for the purpose of disabling a setting
+    //that wasn't supported on Wayland, however if I hide
+    //the settings instead using the filter model
+    //This will just be handled in Rust, and shouldn't
+    //need to be here
+    enabled: bool,
 }
 
 export global Settings {
