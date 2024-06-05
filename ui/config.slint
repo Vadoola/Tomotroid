@@ -15,7 +15,6 @@ export global ConfigCallbacks {
 }
 
 export component CheckBox {
-    //callback clicked <=> ta.clicked;
     callback clicked;
     in-out property <bool> checked;
     in property <bool> enabled: true;
@@ -128,33 +127,71 @@ component ConfigBar inherits Rectangle {
     background: Theme.background;
     border-radius: 5px;
 
-    HorizontalBox {
-        Text {
-            vertical-alignment: center;
-            text: root.label;
-            font-size: 11pt;
+   Rectangle {
+        height: parent.height;
+        width: parent.width;
+        background: parent.background;
+        border-radius: parent.border-radius;
+        HorizontalBox {
+            Text {
+                vertical-alignment: center;
+                text: root.label;
+                font-size: 11pt;
 
-            states [
-                disabled when !root.enabled : {
-                    color: Theme.background-light;
-                }
-                enabled when root.enabled : {
-                    color: Theme.background-lightest;
-                }
-            ]
+                states [
+                    disabled when !root.enabled : {
+                        color: Theme.background-light;
+                    }
+                    enabled when root.enabled : {
+                        color: Theme.background-lightest;
+                    }
+
+                ]
+            }
+
+            @children
+            //So in Slint 1.6 the modification to the way children are added this now is causing the layout
+            //to alter, and pushing the "check box" to the left even though the tool tip isn't visible.
+            //I initially had the tooltip after @children so it would end up above them in the Z order.
+            //Might need to look into some other options like manually setting the Z-order, but since
+            //the tooltips aren't fully functional right now I'll just comment this out.
+            /*if Settings.is-wayland : ToolTip {
+                text: "Unsupported under Wayland";
+            }*/
         }
+        
+        //what am I missing...what have I done differently then in my test program?
+        //the filter is working, but it's not animating.
+        states [
+            hd when !enabled : {
+                //x: -self.width;
+                x: -100*1px;
+                //opacity: 0;
+            }
 
-        @children
-        //So in Slint 1.6 the modification to the way children are added this now is causing the layout
-        //to alter, and pushing the "check box" to the left even though the tool tip isn't visible.
-        //I initially had the tooltip after @children so it would end up above them in the Z order.
-        //Might need to look into some other options like manually setting the Z-order, but since
-        //the tooltips aren't fully functional right now I'll just comment this out.
-        /*if Settings.is-wayland : ToolTip {
-            text: "Unsupported under Wayland";
-        }*/
+            nhd when enabled : {
+                //x: data.hidden ? anim_x : 0;
+                x:0;
+                //opacity: 100;
+
+                in {
+                    animate x {
+                        delay: 250ms;
+                        duration: 250ms;
+                        easing: ease-in-out;
+                    }
+                }
+                out {
+                    animate x {
+                        duration: 250ms;
+                        easing: ease-in-out;
+                    }
+                }
+            }
+        ]
     }
 }
+
 
 export component ConfigPage inherits Rectangle {
     background: Theme.background-light;

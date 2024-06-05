@@ -26,6 +26,7 @@ use serde_json::json;
 use settings::{get_non_print_key_txt, GlobalShortcuts, JsonHotKey, JsonSettings};
 use single_instance::SingleInstance;
 use slint::private_unstable_api::re_exports::EventResult;
+use slint::FilterModel;
 use slint::{
     platform::Key, Color, JoinHandle, Model, ModelRc, PlatformError, SharedString, Timer,
     TimerMode, VecModel,
@@ -169,7 +170,7 @@ struct Tomotroid {
     audio_stream: OutputStream,
     audio_handle: OutputStreamHandle,
     audio_sink: Rc<Sink>,
-    config_model: ModelRc<ConfigData>,
+    config_model: Rc<VecModel<ConfigData>>,
 }
 
 impl Tomotroid {
@@ -200,7 +201,7 @@ impl Tomotroid {
             .global::<ThemeCallbacks>()
             .set_themes(ModelRc::from(theme_model.clone()));
 
-        let config_model: Rc<VecModel<ConfigData>> = Rc::new(VecModel::from(vec![
+        let config_model = Rc::new(VecModel::from(vec![
             ConfigData {
                 name: "Always On Top".into(),
                 state: settings.always_on_top,
@@ -211,7 +212,7 @@ impl Tomotroid {
                 name: "Deactivate Always On Top on Breaks".into(),
                 state: settings.break_always_on_top,
                 sett_param: BoolSettTypes::BrkAlwOnTop,
-                enabled: !settings::is_wayland(),
+                enabled: !settings::is_wayland() && settings.always_on_top,
             }, //only shown when "Always On Top" is selected
             ConfigData {
                 name: "Auto-start Work Timer".into(),
@@ -256,10 +257,8 @@ impl Tomotroid {
                 enabled: true,
             },
         ]));
-        let config_model = ModelRc::from(config_model);
-        window
-            .global::<ConfigCallbacks>()
-            .set_configs(config_model.clone());
+        
+        //window.global::<ConfigCallbacks>().set_configs(ModelRc::new(config_model.clone().filter(|cf| cf.enabled)));
 
         Self {
             window,
@@ -394,9 +393,12 @@ fn main() -> Result<()> {
     slint::platform::set_platform(Box::new(backend)).unwrap();
 
     let tomotroid = Tomotroid::new();
-
-    let set_bool_handle = tomotroid.window.as_weak();
-    let config_handle = tomotroid.config_model.clone();
+    let config_model = tomotroid.config_model.clone();
+    let set_handle = tomotroid.window.as_weak();
+    let filt_mod = Rc::new(ModelRc::from(tomotroid.config_model.clone()).filter(|cf| cf.enabled));
+    let flt_timer = Timer::default();
+    tomotroid.window.global::<ConfigCallbacks>().set_configs(ModelRc::from(filt_mod.clone()));
+    
     //if this is being called when the value changes....why is it passing me the old value?
     //I guess this is being called instead of the Touch Area's callback? So the value isn't updating
     //until I do it here? But how will that work with the sliders? I can't just invert the value
@@ -405,16 +407,50 @@ fn main() -> Result<()> {
         .window
         .global::<Settings>()
         .on_bool_changed(move |set_type, val| {
-            let set_handle = set_bool_handle.upgrade().unwrap();
+            //let filt_mod = filt_mod.clone();
+            let set_handle = set_handle.upgrade().unwrap();
 
-            if let Some(conf_data) = config_handle.row_data(set_type.to_usize()) {
-                config_handle.set_row_data(
+            if let Some(conf_data) = config_model.row_data(set_type.to_usize()) {
+                config_model.set_row_data(
                     set_type.to_usize(),
                     ConfigData {
                         state: !val,
                         ..conf_data
                     },
                 );
+                
+                /*match set_type {
+                    BoolSettTypes::AlwOnTop => {
+                        let aot_break = config_model.row_data(BoolSettTypes::BrkAlwOnTop.to_usize()).unwrap();
+                        config_model.set_row_data(BoolSettTypes::BrkAlwOnTop.to_usize(),
+                        ConfigData {
+                            enabled: !val,
+                            ..aot_break
+                        });
+                    }
+                    _ => {},
+                };*/
+                //filt_mod.reset();
+                let conf_modl2 = config_model.clone();
+                flt_timer.start(
+                    slint::TimerMode::SingleShot,
+                    std::time::Duration::from_millis(1000),
+                    move || {
+                        match set_type {
+                            BoolSettTypes::AlwOnTop => {
+                                let aot_break = conf_modl2.row_data(BoolSettTypes::BrkAlwOnTop.to_usize()).unwrap();
+                                conf_modl2.set_row_data(BoolSettTypes::BrkAlwOnTop.to_usize(),
+                                ConfigData {
+                                    enabled: !val,
+                                    ..aot_break
+                                });
+                            }
+                            _ => {},
+                        };
+                        //filt_mod.reset();
+                    },
+                );
+                
                 match set_type {
                     BoolSettTypes::AlwOnTop => {
                         set_handle.global::<Settings>().set_always_on_top(!val);
