@@ -121,17 +121,20 @@ component ConfigBar inherits Rectangle {
     in property<string> label;
     in-out property<bool> hidden: false;
     in property<bool> enabled: true;
+    in property<bool> animate-in;
+    in property<bool> animate-out;
 
     height: 44px;
-    width: 321px;
-    background: Theme.background;
+    width: 100%;
+    background: Theme.background-light;
     border-radius: 5px;
 
-   Rectangle {
+    Rectangle {
         height: parent.height;
         width: parent.width;
-        background: parent.background;
+        background: Theme.background;
         border-radius: parent.border-radius;
+
         HorizontalBox {
             Text {
                 vertical-alignment: center;
@@ -160,30 +163,28 @@ component ConfigBar inherits Rectangle {
             }*/
         }
         
-        //what am I missing...what have I done differently then in my test program?
-        //the filter is working, but it's not animating.
         states [
-            hd when !enabled : {
-                //x: -self.width;
-                x: -100*1px;
-                //opacity: 0;
-            }
-
-            nhd when enabled : {
-                //x: data.hidden ? anim_x : 0;
-                x:0;
-                //opacity: 100;
+            ani_out when animate-out : {
+                x: -parent.width * 1.1;
 
                 in {
                     animate x {
-                        delay: 250ms;
-                        duration: 250ms;
+                        duration: 350ms;
                         easing: ease-in-out;
                     }
                 }
-                out {
+            }
+
+            ani_in when animate-in && enabled : {
+                x: -parent.width * 1.1;
+            }
+
+            stable when enabled : {
+                x: 0;
+
+                in {
                     animate x {
-                        duration: 250ms;
+                        duration: 350ms;
                         easing: ease-in-out;
                     }
                 }
@@ -208,21 +209,12 @@ export component ConfigPage inherits Rectangle {
                     color: Theme.foreground;
                 }
 
-                /*for setting[idx] in [
-                    {name: "Always On Top", state: Settings.always-on-top, sett-param: BoolSettTypes.AlwOnTop, enabled: !Settings.is-wayland},
-                    {name: "Deactivate Always On Top on Breaks", state: Settings.break-always-on-top, sett-param: BoolSettTypes.BrkAlwOnTop, enabled: !Settings.is-wayland},//only shown when "Always On Top" is selected
-                    {name: "Auto-start Work Timer", state: Settings.auto-start-work-timer, sett-param: BoolSettTypes.AutoStrtWrkTim, enabled: true},
-                    {name: "Auto-start Break Timer", state: Settings.auto-start-break-timer, sett-param: BoolSettTypes.AutoStrtBreakTim, enabled: true},
-                    {name: "Tick Sounds - Work", state: Settings.tick-sounds, sett-param: BoolSettTypes.TickSounds, enabled: true},
-                    {name: "Tick Sounds - Break", state: Settings.tick-sounds-during-break, sett-param: BoolSettTypes.TickSoundsBreak, enabled: true},
-                    {name: "Desktop Notifications", state: Settings.notifications, sett-param: BoolSettTypes.Notifications, enabled: true},
-                    {name: "Minimize to Tray", state: Settings.min-to-tray, sett-param: BoolSettTypes.MinToTray, enabled: true},
-                    {name: "Minimize to Tray on Close", state: Settings.min-to-tray-on-close, sett-param: BoolSettTypes.MinToTryCls, enabled: true},
-                ] : ConfigBar {*/
                 for setting[idx] in root.configs : ConfigBar {
                     label: setting.name;
                     hidden: false;
                     enabled: setting.enabled;
+                    animate-in: setting.animate-in;
+                    animate-out: setting.animate-out;
                     CheckBox {
                         checked: setting.state;
                         enabled: parent.enabled;
