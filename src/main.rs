@@ -207,54 +207,72 @@ impl Tomotroid {
                 state: settings.always_on_top,
                 sett_param: BoolSettTypes::AlwOnTop,
                 enabled: !settings::is_wayland(),
+                animate_in: false,
+                animate_out: false,
             },
             ConfigData {
                 name: "Deactivate Always On Top on Breaks".into(),
                 state: settings.break_always_on_top,
                 sett_param: BoolSettTypes::BrkAlwOnTop,
                 enabled: !settings::is_wayland() && settings.always_on_top,
+                animate_in: false,
+                animate_out: false,
             }, //only shown when "Always On Top" is selected
             ConfigData {
                 name: "Auto-start Work Timer".into(),
                 state: settings.auto_start_work_timer,
                 sett_param: BoolSettTypes::AutoStrtWrkTim,
                 enabled: true,
+                animate_in: false,
+                animate_out: false,
             },
             ConfigData {
                 name: "Auto-start Break Timer".into(),
                 state: settings.auto_start_break_timer,
                 sett_param: BoolSettTypes::AutoStrtBreakTim,
                 enabled: true,
+                animate_in: false,
+                animate_out: false,
             },
             ConfigData {
                 name: "Tick Sounds - Work".into(),
                 state: settings.tick_sounds,
                 sett_param: BoolSettTypes::TickSounds,
                 enabled: true,
+                animate_in: false,
+                animate_out: false,
             },
             ConfigData {
                 name: "Tick Sounds - Break".into(),
                 state: settings.tick_sounds_during_break,
                 sett_param: BoolSettTypes::TickSoundsBreak,
                 enabled: true,
+                animate_in: false,
+                animate_out: false,
             },
             ConfigData {
                 name: "Desktop Notifications".into(),
                 state: settings.notifications,
                 sett_param: BoolSettTypes::Notifications,
                 enabled: true,
+                animate_in: false,
+                animate_out: false,
             },
             ConfigData {
                 name: "Minimize to Tray".into(),
                 state: settings.min_to_tray,
                 sett_param: BoolSettTypes::MinToTray,
                 enabled: true,
+                animate_in: false,
+                animate_out: false,
             },
             ConfigData {
                 name: "Minimize to Tray on Close".into(),
                 state: settings.min_to_tray_on_close,
                 sett_param: BoolSettTypes::MinToTryCls,
                 enabled: true,
+                animate_in: false,
+                animate_out: false,
             },
         ]));
         
@@ -418,39 +436,50 @@ fn main() -> Result<()> {
                         ..conf_data
                     },
                 );
-                
-                /*match set_type {
-                    BoolSettTypes::AlwOnTop => {
-                        let aot_break = config_model.row_data(BoolSettTypes::BrkAlwOnTop.to_usize()).unwrap();
-                        config_model.set_row_data(BoolSettTypes::BrkAlwOnTop.to_usize(),
+
+                if set_type == BoolSettTypes::AlwOnTop {
+                    let conf_modl2 = config_model.clone();
+                    let aot_break = conf_modl2.row_data(BoolSettTypes::BrkAlwOnTop.to_usize()).unwrap();
+                    
+                    if val {
+                        conf_modl2.set_row_data(BoolSettTypes::BrkAlwOnTop.to_usize(),
                         ConfigData {
-                            enabled: !val,
+                            animate_out: true,
                             ..aot_break
                         });
+                    } else {
+                        conf_modl2.set_row_data(BoolSettTypes::BrkAlwOnTop.to_usize(),
+                            ConfigData {
+                                enabled: !val,
+                                animate_in: true,
+                                ..aot_break
+                            });
                     }
-                    _ => {},
-                };*/
-                //filt_mod.reset();
-                let conf_modl2 = config_model.clone();
-                flt_timer.start(
-                    slint::TimerMode::SingleShot,
-                    std::time::Duration::from_millis(1000),
-                    move || {
-                        match set_type {
-                            BoolSettTypes::AlwOnTop => {
-                                let aot_break = conf_modl2.row_data(BoolSettTypes::BrkAlwOnTop.to_usize()).unwrap();
+                    
+                    flt_timer.start(
+                        slint::TimerMode::SingleShot,
+                        std::time::Duration::from_millis(350),
+                        move || {
+                            let aot_break = conf_modl2.row_data(BoolSettTypes::BrkAlwOnTop.to_usize()).unwrap();
+                            
+                            if val {
                                 conf_modl2.set_row_data(BoolSettTypes::BrkAlwOnTop.to_usize(),
                                 ConfigData {
                                     enabled: !val,
+                                    animate_out: false,
+                                    ..aot_break
+                                });
+                            } else {
+                                conf_modl2.set_row_data(BoolSettTypes::BrkAlwOnTop.to_usize(),
+                                ConfigData {
+                                    animate_in: false,
                                     ..aot_break
                                 });
                             }
-                            _ => {},
-                        };
-                        //filt_mod.reset();
-                    },
-                );
-                
+                        },
+                    );
+                }
+
                 match set_type {
                     BoolSettTypes::AlwOnTop => {
                         set_handle.global::<Settings>().set_always_on_top(!val);
