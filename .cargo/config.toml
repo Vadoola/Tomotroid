@@ -1,0 +1,7 @@
+#this below change to the windows stack size is to work around a bug in Slint
+#which causes a stack overflow on Windows in debug builds
+#See Tomotroid Issue #82 for further details
+[target.x86_64-pc-windows-msvc]
+rustflags = [
+    "-C", "link-arg=/STACK:2000000"
+]
