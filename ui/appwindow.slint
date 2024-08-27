@@ -398,9 +398,9 @@ export component Main inherits BorderlessWindow {
         }
     }
 
-    /*skip-tt := ToolTip {
-        x: SkipBtn-ta.absolute-position.x;
-        y: SkipBtn-ta.absolute-position.y;
+    skip-tt := ToolTip {
+        owner-x: SkipBtn-ta.absolute-position.x;
+        owner-y: SkipBtn-ta.absolute-position.y - 38px/*title bar height*/;
         owner-height: SkipBtn-ta.height;
         owner-width: SkipBtn-ta.width;
         position: TTPosition.Bottom;
@@ -409,27 +409,23 @@ export component Main inherits BorderlessWindow {
     }
 
     mute-tt := ToolTip {
-        x: MuteBtn-ta.absolute-position.x;
-        y: MuteBtn-ta.absolute-position.y;
+        owner-x: MuteBtn-ta.absolute-position.x;
+        owner-y: MuteBtn-ta.absolute-position.y - 38px/*title bar height*/;
         owner-height: MuteBtn-ta.height;
         owner-width: MuteBtn-ta.width;
         position: TTPosition.Bottom;
         show: MuteBtn-ta.has-hover;
         text: "Mute";
-    }*/
+    }
 
     reset-tt := ToolTip {
-        //x: ResetBtn-ta.absolute-position.x;
         owner-x: ResetBtn-ta.absolute-position.x;
-        //y: ResetBtn-ta.absolute-position.y;
-        owner-y: ResetBtn-ta.absolute-position.y;
+        owner-y: ResetBtn-ta.absolute-position.y - 38px/*title bar height*/;
         owner-height: ResetBtn-ta.height;
         owner-width: ResetBtn-ta.width;
         position: TTPosition.Right;
         show: ResetBtn-ta.has-hover;
         text: "Reset Current Round";
-        //text: "x:\{ResetBtn-ta.absolute-position.x/1px} / y: \{ResetBtn-ta.absolute-position.y/1px}";
-        //text: "OH: \{ResetBtn-ta.height/1px} / OW: \{ResetBtn-ta.width/1px}";
     }
 
     slideover := SlideOver {

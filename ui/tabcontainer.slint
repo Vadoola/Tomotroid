@@ -3,6 +3,7 @@ import { TimerConfig, TimerConfigPage } from "timerconfig.slint";
 import { AboutPage } from "about.slint";
 import { ThemePage } from "themeconfig.slint";
 import { ConfigPage } from "config.slint";
+import { ToolTip, TTPosition } from "tooltip.slint";
 
 component BottomBarIcon inherits Rectangle {
     in-out property <bool> active;
@@ -162,6 +163,8 @@ export component TabContainer inherits VerticalLayout {
         ]
     }
     bb := BottomBar {}
+    //hmm ideally I want the tooltips here on the Tabcontainer....but I need to get the owner info to show them...how to buble this info up?
+
 
     //not sure this is the best way to do it...I feel like I'm duplicating the logic here a bit, but since I can't
     //access the individual elements of the BottomBarIcon's outside of the for loop, I'm not sure how else to do this

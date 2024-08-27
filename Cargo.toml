@@ -8,20 +8,20 @@ license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.83"
-open = "5.1.2"
+anyhow = "1.0.86"
+open = "5.3"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-slint = { version = "1.6.0", default-features = false, features = [ "compat-1-2", "std", "accessibility", "backend-winit", "renderer-femtovg", "renderer-software", "serde"] }
-i-slint-backend-winit = "=1.6.0"
+slint = { version = "1.7.2", default-features = false, features = [ "compat-1-2", "std", "accessibility", "backend-winit", "renderer-femtovg", "renderer-software", "serde"] }
+i-slint-backend-winit = "=1.7.2"
 hex_color = { version = "3.0.0", features = [ "serde" ] }
 walkdir = "2.5"
 etcetera = "0.8.0"
 directories = "5.0.1"
 single-instance = "0.3.3"
-global-hotkey = "0.5.3"
+global-hotkey = "0.5"
 notify-rust = "4.11.0"
-rodio = "0.18.0"
+rodio = "0.19"
 
 
 [target.'cfg(windows)'.dependencies]
@@ -32,7 +32,7 @@ tray-item = { version = "0.10", features = [ "ksni" ] }
 png = "0.17"
 
 [build-dependencies]
-slint-build = "1.6.0"
+slint-build = "1.7.2"
 
 [target.'cfg(windows)'.build-dependencies]
 windres = "0.2.2"

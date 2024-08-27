@@ -19,51 +19,35 @@ export component ToolTip {
     in property <length> owner-y;
     in property <string> text;
 
-    //setting this X started erroring when I updated from Slint 1.4.1 to 1.6
-    //x: owner-x + pos-x(self.width); //or should this be pos-x(tool-tip.width)
-    y: owner-y + pos-y(self.height);
+    x: pos-x(self.width);
+    y: pos-y(self.height);
+    z: 1;
+    width: layout.preferred-width;
+    height: layout.preferred-height;
 
     pure public function pos-x(wid: length) -> length {
-        //debug(wid);
-        //debug(root.owner-width);
         if (root.position == TTPosition.Right) {
-            //debug(root.owner-width + 8px);
-            return root.owner-width + 8px;
+            root.owner-x + root.owner-width + 8px;
         } else if (root.position == TTPosition.Left) {
-            return -wid - 8px;
+            root.owner-x - wid - 8px;
         } else {
-            //debug((root.owner-width - wid) / 2);
-            return (root.owner-width - wid) / 2;
+            root.owner-x + (root.owner-width - wid) / 2;
         }
     }
 
     pure public function pos-y(hght: length) -> length {
-        //debug(hght);
-        debug(root.owner-height);
         if (root.position == TTPosition.Top) {
-            //return  -root.owner-height - hght;
-            return -hght - 8px;
-            //return -root.owner-height - hght - 8px;
+            root.owner-y - 8px - hght;
         } else if (root.position == TTPosition.Bottom) {
-            root.owner-height + 8px;
+            root.owner-y + root.owner-height + 8px;
         } else {
-            return -hght;
-            //return -(root.owner-height + (hght/2));
-            //so for the Reset tooltip a y of -40 seems good. This above formula gives -41.5 and works well
-            //for the settings buton...a value of 0 works well
-            //why the fuck would that be so different, I don't get it they should ultimately be the same
-            //the reset button has a height of 29, the settings button a height of 28.5, the tooltips have the same
-            //height, they shouldn't need such drastically different y values....why a 0 for one, and a -40 for the
-            //other...it makes no fucking sense. What stupid little thing am I over looking?
+            root.owner-y + ((root.owner-height - hght) / 2);
         }
     }
 
     tool-tip := Rectangle {
         x: 0;
         y: 0;
-        //x: pos-x(self.width);
-        //y: pos-y(self.height);
-        //y: 0px;
         clip: false;
         background: black;//Theme.foreground;
         border-color: white;
@@ -75,8 +59,8 @@ export component ToolTip {
         layout := HorizontalLayout {
             padding: 5px;
             Text {
-                //text: root.text;
-                text: "Reset";
+                text: root.text;
+                //text: "Reset";
                 color: white;//Theme.background-lightest;
             }
         }
