@@ -275,7 +275,7 @@ impl Tomotroid {
                 animate_out: false,
             },
         ]));
-        
+
         //window.global::<ConfigCallbacks>().set_configs(ModelRc::new(config_model.clone().filter(|cf| cf.enabled)));
 
         Self {
@@ -416,7 +416,7 @@ fn main() -> Result<()> {
     let filt_mod = Rc::new(ModelRc::from(tomotroid.config_model.clone()).filter(|cf| cf.enabled));
     let flt_timer = Timer::default();
     tomotroid.window.global::<ConfigCallbacks>().set_configs(ModelRc::from(filt_mod.clone()));
-    
+
     //if this is being called when the value changes....why is it passing me the old value?
     //I guess this is being called instead of the Touch Area's callback? So the value isn't updating
     //until I do it here? But how will that work with the sliders? I can't just invert the value
@@ -436,7 +436,7 @@ fn main() -> Result<()> {
                         ..conf_data
                     },
                 );
-
+                
                 if set_type == BoolSettTypes::AlwOnTop {
                     let conf_modl2 = config_model.clone();
                     let aot_break = conf_modl2.row_data(BoolSettTypes::BrkAlwOnTop.to_usize()).unwrap();
@@ -741,45 +741,35 @@ fn main() -> Result<()> {
     //is called. I will use this quick hacky method for now to get the basic
     //sound logic in and working. There is probably a better way to handle this even
     //before Slint adds support for line caps in paths, but I'll come back to it.
-    let mut tick_count = 0u32;
     let tick_sink = tomotroid.audio_sink.clone();
     let timer_handle = tomotroid.window.as_weak();
+
     tomotroid.window.on_action_timer(move |action| {
-        //Notification::new().summary("Performing an Action").show().unwrap();
         let tmrstrt_handle = timer_handle.clone();
         let timer_handle = timer_handle.upgrade().unwrap();
         let tick_sink = tick_sink.clone();
+
         match action {
             TimerAction::Start => {
                 timer_handle.set_running(true);
                 timer.start(
                     TimerMode::Repeated,
-                    std::time::Duration::from_millis(50),
+                    std::time::Duration::from_secs(1), // Trigger every second
                     move || {
                         let tmrstrt_handle = tmrstrt_handle.unwrap();
 
-                        if tick_count >= 20 {
-                            tick_count = 0;
-                            let is_work_timer =
-                                tmrstrt_handle.get_active_timer() == ActiveTimer::Focus;
-                            if tmrstrt_handle.global::<Settings>().get_tick_sounds()
-                                && is_work_timer
-                            {
-                                let source = Decoder::new(Cursor::new(TICK)).unwrap();
-                                tick_sink.append(source);
-                            } else if tmrstrt_handle
+                        let is_work_timer = tmrstrt_handle.get_active_timer() == ActiveTimer::Focus;
+                        if (tmrstrt_handle.global::<Settings>().get_tick_sounds() && is_work_timer)
+                            || (tmrstrt_handle
                                 .global::<Settings>()
                                 .get_tick_sounds_during_break()
-                                && !is_work_timer
-                            {
-                                let source = Decoder::new(Cursor::new(TICK)).unwrap();
-                                tick_sink.append(source);
-                            }
-                        } else {
-                            tick_count += 1;
+                                && !is_work_timer)
+                        {
+                            let source = Decoder::new(Cursor::new(TICK)).unwrap();
+                            tick_sink.append(source);
                         }
 
-                        tmrstrt_handle.invoke_tick(50);
+                        tmrstrt_handle.invoke_tick(1000); // Update the timer every second
                         let rem_per = tmrstrt_handle.get_remaining_time() as f32
                             / tmrstrt_handle.get_target_time() as f32
                             * 100.0;
@@ -834,10 +824,8 @@ fn main() -> Result<()> {
                     fg_clr,
                     100.0,
                 ));
-                //need to be updating the running status from Rust not slint
             }
             TimerAction::Skip => {
-                //timer_handle.set_remaining_time(0);
                 timer_handle.invoke_change_timer();
             }
         }
