@@ -1,0 +1,113 @@
+import { Button, VerticalBox, Slider } from "std-widgets.slint";
+import {Theme} from "globals.slint";
+
+export component CircularPath inherits Path {
+    in property <float> inner-radius: 45;
+    in property <float> progress: 100;
+    in property <float> start : 0;
+
+    private property <float> progressClamped: clamp(progress, 0, 0.9999);
+
+    fill-rule: FillRule.nonzero;
+    viewbox-width: 100;
+    viewbox-height: 100;
+    stroke-width: 0px;
+    fill: Theme.focus-round;
+
+    MoveTo {
+        y: 50 - 50 * cos(-root.start * 360deg);
+        x: 50 - 50 * sin(-root.start * 360deg);
+    }
+
+    ArcTo {
+        y: 50 - root.inner-radius * cos(-root.start * 360deg);
+        x: 50 - root.inner-radius * sin(-root.start * 360deg);
+        radius-x: 1;
+        radius-y: 1;
+    }
+
+    ArcTo {
+        radius-x: root.inner-radius;
+        radius-y: root.inner-radius;
+        y: 50 - root.inner-radius*cos(-(root.start + root.progressClamped) * 360deg);
+        x: 50 - root.inner-radius*sin(-(root.start + root.progressClamped) * 360deg);
+        sweep: root.progressClamped > 0;
+        large-arc: root.progressClamped > 0.5;
+    }
+
+    ArcTo {
+        y: 50 - 50*cos(-(root.start + root.progressClamped) * 360deg);
+        x: 50 - 50*sin(-(root.start + root.progressClamped) * 360deg);
+        radius-x: 1;
+        radius-y: 1;
+    }
+
+    ArcTo {
+        radius-x: 50;
+        radius-y: 50;
+        y: 50 - 50 * cos(-root.start * 360deg);
+        x: 50 - 50 * sin(-root.start * 360deg);
+        sweep: root.progressClamped < 0;
+        large-arc: root.progressClamped > 0.5;
+    }
+}
+
+export component CircularProgress {
+    in property <float> progress <=> cp.progress;
+    in property <brush> color <=> cp.fill;
+    
+    Rectangle {
+        background: lightgray;
+        Rectangle {
+            border-color: Theme.background-lightest;
+            border-radius: self.height/2;
+            width: cp.width * 0.965;
+            height: cp.height * 0.965;
+            border-width: 3px;
+        }
+        cp := CircularPath {
+            width: 100%;
+            height: 100%;
+            inner-radius: 45;
+            start: 0;
+            stroke-width: 0px;
+        }
+        text := Text {
+            font-size: parent.width / 4;
+            color: darkblue;
+            text: round(progress * 100);
+        }
+        Text {
+            font-size: parent.width / 8;
+            y: text.y + text.height - self.height - self.font-size/4;
+            x: text.x + text.width;
+            text: "%";
+        }
+    }
+}
+
+
+export component Demo {
+    VerticalBox {
+        alignment: start;
+        Text {
+            text: "Hello World!";
+            font-size: 24px;
+            horizontal-alignment: center;
+        }
+       
+        HorizontalLayout { alignment: center; Button { text: "OK!"; } }
+        progress := CircularProgress {
+            height: self.width;
+            progress: slider.value * 1%;
+
+            animate progress {
+                duration: 1s;
+            }
+        }
+        slider := Slider {
+            value: 75;
+            maximum: 100;
+        }
+    }
+}
