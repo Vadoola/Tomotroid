@@ -35,7 +35,7 @@ export component Main inherits BorderlessWindow {
     in property<duration> target-time: root.tmr-config.focus-time;
     in-out property<duration> remaining-time: root.target-time;
 
-    in property<image> circ-progress: @image-url("../assets/ProgressCircle.svg");
+    //in property<image> circ-progress: @image-url("../assets/ProgressCircle.svg");
 
     out property<int> volume: Settings.volume;
     out property<TimerConfig> tmr-config: slideover.tmr-config;
@@ -74,6 +74,16 @@ export component Main inherits BorderlessWindow {
 
         if (root.remaining-time == 0) {
             change-timer();
+        }
+    }
+
+    function get_prog_color() -> color {
+        if (root.active-timer == ActiveTimer.focus) {
+            Theme.focus-round
+        } else if (root.active-timer == ActiveTimer.short-break) {
+            Theme.short-round
+        } else {
+            Theme.long-round
         }
     }
 
@@ -159,23 +169,22 @@ export component Main inherits BorderlessWindow {
             Rectangle {
                 height: 230px;
                 width: 230px;
-                circ-prog := Image {
+                /*circ-prog := Image {
                     source: root.circ-progress;
                     width: parent.width * 0.95;
                     height: parent.height * 0.95;
-                }
-                Timer := Text {
-                    font-family: "Roboto Mono";
-                    text: root.time-remaining();
-                    color: Theme.foreground;
-                    font-size: 46px;
-                }
-                task-label := Text {
-                    text: current-timer-string();
-                    font-family: "Lato";
-                    y: parent.height * 0.70;
-                    color: Theme.foreground;
-                    font-size: 12pt;
+                }*/
+                circ-prog := CircularProgress {
+                    progress: remaining-time / target-time;
+                    /*width: parent.width * 0.95;
+                    height: parent.height * 0.95;*/
+                    width: parent.width;
+                    height: parent.height;
+                    bg_color: Theme.background-lightest;
+                    fg_color: root.get_prog_color();
+                    txt_color: Theme.foreground;
+                    prog_text: root.time-remaining();
+                    lbl_text: current-timer-string();
                 }
             }
         }

@@ -1,8 +1,8 @@
-/*#![warn(
+#![warn(
     clippy::all,
     clippy::pedantic,
     //clippy::cargo,
-)]*/
+)]
 #![windows_subsystem = "windows"]
 
 use std::borrow::BorrowMut;
@@ -46,7 +46,7 @@ mod settings;
 slint::include_modules!();
 
 pub const LOGO_BYTES: &str = include_str!("../assets/logo.svg");
-pub const PROG_BYTES: &str = include_str!("../assets/ProgressCircle.svg");
+//pub const PROG_BYTES: &str = include_str!("../assets/ProgressCircle.svg");
 
 pub const ALERT_LONG_BREAK: &[u8] = include_bytes!("../assets/audio/alert-long-break.ogg");
 pub const ALERT_SHORT_BREAK: &[u8] = include_bytes!("../assets/audio/alert-short-break.ogg");
@@ -292,7 +292,7 @@ impl Tomotroid {
         }
     }
 
-    fn update_prg_svg(bg_clr: slint::Color, fg_clr: slint::Color, rem_per: f32) -> slint::Image {
+    /*fn update_prg_svg(bg_clr: slint::Color, fg_clr: slint::Color, rem_per: f32) -> slint::Image {
         slint::Image::load_from_svg_data(
             PROG_BYTES
                 .replace(
@@ -310,7 +310,7 @@ impl Tomotroid {
                 .as_bytes(),
         )
         .unwrap()
-    }
+    }*/
 
     fn run(&self) -> Result<(), PlatformError> {
         let thm_name = &self.settings.theme;
@@ -692,11 +692,11 @@ fn main() -> Result<()> {
             let rem_per = thm_handle.get_remaining_time() as f32
                 / thm_handle.get_target_time() as f32
                 * 100.0;
-            thm_handle.set_circ_progress(Tomotroid::update_prg_svg(
+            /*thm_handle.set_circ_progress(Tomotroid::update_prg_svg(
                 theme.background_lightest.color(),
                 theme.focus_round.color(),
                 rem_per,
-            ));
+            ));*/
 
             thm_handle.global::<Theme>().set_theme_idx(idx);
             thm_handle
@@ -754,7 +754,7 @@ fn main() -> Result<()> {
                 timer_handle.set_running(true);
                 timer.start(
                     TimerMode::Repeated,
-                    std::time::Duration::from_millis(50),
+                    std::time::Duration::from_millis(1000),
                     move || {
                         let tmrstrt_handle = tmrstrt_handle.unwrap();
 
@@ -779,7 +779,7 @@ fn main() -> Result<()> {
                             tick_count += 1;
                         }
 
-                        tmrstrt_handle.invoke_tick(50);
+                        tmrstrt_handle.invoke_tick(1000);
                         let rem_per = tmrstrt_handle.get_remaining_time() as f32
                             / tmrstrt_handle.get_target_time() as f32
                             * 100.0;
@@ -796,14 +796,14 @@ fn main() -> Result<()> {
                             }
                         };
 
-                        tmrstrt_handle.set_circ_progress(Tomotroid::update_prg_svg(
+                        /*tmrstrt_handle.set_circ_progress(Tomotroid::update_prg_svg(
                             tmrstrt_handle
                                 .global::<Theme>()
                                 .get_background_lightest()
                                 .color(),
                             fg_clr,
                             rem_per,
-                        ));
+                        ));*/
                     },
                 );
             }
@@ -826,14 +826,14 @@ fn main() -> Result<()> {
                     }
                 };
 
-                timer_handle.set_circ_progress(Tomotroid::update_prg_svg(
+                /*timer_handle.set_circ_progress(Tomotroid::update_prg_svg(
                     timer_handle
                         .global::<Theme>()
                         .get_background_lightest()
                         .color(),
                     fg_clr,
                     100.0,
-                ));
+                ));*/
                 //need to be updating the running status from Rust not slint
             }
             TimerAction::Skip => {
