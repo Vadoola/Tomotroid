@@ -1,18 +1,18 @@
-import { Button, VerticalBox, Slider } from "std-widgets.slint";
-import {Theme} from "globals.slint";
+import { AboutSlint, Button, VerticalBox, Palette, Slider } from "std-widgets.slint";
 
-export component CircularPath inherits Path {
-    in property <float> inner-radius: 45;
+component CircularPath inherits Path {
     in property <float> progress: 100;
+    in property <color> fg_color: green;
+    in property <float> inner-radius: 45;
     in property <float> start : 0;
-
+    
     private property <float> progressClamped: clamp(progress, 0, 0.9999);
 
     fill-rule: FillRule.nonzero;
     viewbox-width: 100;
     viewbox-height: 100;
     stroke-width: 0px;
-    fill: Theme.focus-round;
+    fill: fg_color;
 
     MoveTo {
         y: 50 - 50 * cos(-root.start * 360deg);
@@ -54,12 +54,15 @@ export component CircularPath inherits Path {
 
 export component CircularProgress {
     in property <float> progress <=> cp.progress;
-    in property <brush> color <=> cp.fill;
+    in property <color> bg_color;
+    in property <color> fg_color <=> cp.fg_color;
+    in property <color> txt_color;
+    in property <string> prog_text;
+    in property <string> lbl_text;
     
     Rectangle {
-        background: lightgray;
         Rectangle {
-            border-color: Theme.background-lightest;
+            border-color: bg_color;
             border-radius: self.height/2;
             width: cp.width * 0.965;
             height: cp.height * 0.965;
@@ -71,43 +74,24 @@ export component CircularProgress {
             inner-radius: 45;
             start: 0;
             stroke-width: 0px;
-        }
-        text := Text {
-            font-size: parent.width / 4;
-            color: darkblue;
-            text: round(progress * 100);
-        }
-        Text {
-            font-size: parent.width / 8;
-            y: text.y + text.height - self.height - self.font-size/4;
-            x: text.x + text.width;
-            text: "%";
-        }
-    }
-}
-
-
-export component Demo {
-    VerticalBox {
-        alignment: start;
-        Text {
-            text: "Hello World!";
-            font-size: 24px;
-            horizontal-alignment: center;
-        }
-       
-        HorizontalLayout { alignment: center; Button { text: "OK!"; } }
-        progress := CircularProgress {
-            height: self.width;
-            progress: slider.value * 1%;
+            fg_color: red;
 
             animate progress {
                 duration: 1s;
             }
         }
-        slider := Slider {
-            value: 75;
-            maximum: 100;
+        Timer := Text {
+            font-family: "Roboto Mono";
+            text: prog_text;
+            color: txt_color;
+            font-size: 46px;
+        }
+        task-label := Text {
+            text: lbl_text;
+            font-family: "Lato";
+            y: parent.height * 0.70;
+            color: txt_color;
+            font-size: 12pt;
         }
     }
 }
