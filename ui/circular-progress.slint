@@ -1,119 +1,97 @@
-//I had some code a while back testing a circular progress bar in slint, but dropped it for the SVG, due to the lack of rounded linecaps
-//I think doing it in Slint is a cleaner way, but I never had that old logic working quite right. This is a lot closer to how it should work
-//and I'm adding into the repo to hold on to it, because if rounded line caps for paths are ever added I can drop the SVG and use this
-
 import { AboutSlint, Button, VerticalBox, Palette, Slider } from "std-widgets.slint";
-import { Theme } from "globals.slint";
 
+component CircularPath inherits Path {
+    in property <float> progress: 100;
+    in property <color> fg_color: green;
+    in property <float> inner-radius: 45;
+    in property <float> start : 0;
+    
+    private property <float> progressClamped: clamp(progress, 0, 0.9999);
 
-export component CircularProgress {
-    preferred-height: 100%;
-    preferred-width: 100%;
-    in property <float> progress;
-    in property <color> bg_color;
-    in property <color> fg_color;
-    in property <color> txt_color;
-    in property <string> prog_text;
-    in property <string> lbl_text;
+    fill-rule: FillRule.nonzero;
+    viewbox-width: 100;
+    viewbox-height: 100;
+    stroke-width: 0px;
+    fill: fg_color;
 
-    Path {
-        // clamp is a workaground to get filled circle by 1.0
-        private property <angle> progress: clamp(100.0 * 1turn, 0, 0.99999turn);
-
-        viewbox-width: 1;
-        viewbox-height: 1;
-        height: path.height - (path.stroke-width - self.stroke-width);
-        width: path.width;
-
-        stroke-width: 2px;
-        stroke: bg_color;
-
-
-        MoveTo {
-            x: 0.5;
-            y: 0;
-        }
-
-        ArcTo {
-            radius-x: path.radius;
-            radius-y: path.radius;
-            x: 0.5 - path.radius * sin(-(parent.progress) );
-            y: 0.5 - path.radius * cos(-(parent.progress) );
-            sweep: false;
-            large-arc: true;
-        }
+    MoveTo {
+        y: 50 - 50 * cos(-root.start * 360deg);
+        x: 50 - 50 * sin(-root.start * 360deg);
     }
 
-
-    path := Path {
-        property <float> radius: 0.5;
-        // clamp is a workaground to get filled circle by 1.0
-        private property <angle> progress: clamp(root.progress * 1turn, 0, 0.99999turn);
-
-        viewbox-width: 1;
-        viewbox-height: 1;
-        height: parent.height;
-        width: parent.width;
-
-        stroke-width: 10px;
-        stroke: fg_color;
-        stroke-line-cap: round;
-
-        MoveTo {
-            x: 0.5;
-            y: 0;
-        }
-
-        ArcTo {
-            radius-x: path.radius;
-            radius-y: path.radius;
-            x: 0.5 - path.radius * sin(-(path.progress) );
-            y: 0.5 - path.radius * cos(-(path.progress) );
-            sweep: true;
-            large-arc: root.progress > 0.5;
-        }
-
-        /*animate progress {
-            duration: 1s;
-        }*/
+    ArcTo {
+        y: 50 - root.inner-radius * cos(-root.start * 360deg);
+        x: 50 - root.inner-radius * sin(-root.start * 360deg);
+        radius-x: 1;
+        radius-y: 1;
     }
 
-    Timer := Text {
-        font-family: "Roboto Mono";
-        text: prog_text;
-        color: txt_color;
-        font-size: 46px;
+    ArcTo {
+        radius-x: root.inner-radius;
+        radius-y: root.inner-radius;
+        y: 50 - root.inner-radius*cos(-(root.start + root.progressClamped) * 360deg);
+        x: 50 - root.inner-radius*sin(-(root.start + root.progressClamped) * 360deg);
+        sweep: root.progressClamped > 0;
+        large-arc: root.progressClamped > 0.5;
     }
-    task-label := Text {
-        text: lbl_text;
-        font-family: "Lato";
-        y: parent.height * 0.70;
-        color: txt_color;
-        font-size: 12pt;
+
+    ArcTo {
+        y: 50 - 50*cos(-(root.start + root.progressClamped) * 360deg);
+        x: 50 - 50*sin(-(root.start + root.progressClamped) * 360deg);
+        radius-x: 1;
+        radius-y: 1;
+    }
+
+    ArcTo {
+        radius-x: 50;
+        radius-y: 50;
+        y: 50 - 50 * cos(-root.start * 360deg);
+        x: 50 - 50 * sin(-root.start * 360deg);
+        sweep: root.progressClamped < 0;
+        large-arc: root.progressClamped > 0.5;
     }
 }
 
-
-
-export component Demo {
-    width: 200px;
-    VerticalBox {
-        alignment: start;
-
-        progress := CircularProgress {
-            //height: self.width;
-            height: parent.width;
-            progress: slider.value;
-            bg_color: red;
-            fg_color: green;
-            txt_color: black;
-            prog_text: ceil(slider.value);
-            lbl_text: "Label";
+export component CircularProgress {
+    in property <float> progress <=> cp.progress;
+    in property <color> bg_color;
+    in property <color> fg_color <=> cp.fg_color;
+    in property <color> txt_color;
+    in property <string> prog_text;
+    in property <string> lbl_text;
+    
+    Rectangle {
+        Rectangle {
+            border-color: bg_color;
+            border-radius: self.height/2;
+            width: cp.width * 0.965;
+            height: cp.height * 0.965;
+            border-width: 3px;
         }
+        cp := CircularPath {
+            width: 100%;
+            height: 100%;
+            inner-radius: 45;
+            start: 0;
+            stroke-width: 0px;
+            fg_color: red;
 
-        slider := Slider {
-            value: 0.75;
-            maximum: 1;
+            animate progress {
+                duration: 1s;
+            }
+        }
+        Timer := Text {
+            font-family: "Roboto Mono";
+            text: prog_text;
+            color: txt_color;
+            font-size: 46px;
+        }
+        task-label := Text {
+            text: lbl_text;
+            font-family: "Lato";
+            y: parent.height * 0.70;
+            color: txt_color;
+            font-size: 12pt;
         }
     }
 }

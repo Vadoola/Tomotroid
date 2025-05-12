@@ -166,7 +166,7 @@ export component Main inherits BorderlessWindow {
             padding-right: 50px;
 
             alignment: center;
-            Rectangle {
+            VerticalBox {
                 height: 230px;
                 width: 230px;
                 /*circ-prog := Image {
@@ -175,11 +175,8 @@ export component Main inherits BorderlessWindow {
                     height: parent.height * 0.95;
                 }*/
                 circ-prog := CircularProgress {
+                    height: self.width;
                     progress: remaining-time / target-time;
-                    /*width: parent.width * 0.95;
-                    height: parent.height * 0.95;*/
-                    width: parent.width;
-                    height: parent.height;
                     bg_color: Theme.background-lightest;
                     fg_color: root.get_prog_color();
                     txt_color: Theme.foreground;
