@@ -35,8 +35,6 @@ export component Main inherits BorderlessWindow {
     in property<duration> target-time: root.tmr-config.focus-time;
     in-out property<duration> remaining-time: root.target-time;
 
-    //in property<image> circ-progress: @image-url("../assets/ProgressCircle.svg");
-
     out property<int> volume: Settings.volume;
     out property<TimerConfig> tmr-config: slideover.tmr-config;
     in-out property<ActiveTimer> active-timer: focus;
@@ -169,11 +167,6 @@ export component Main inherits BorderlessWindow {
             VerticalBox {
                 height: 230px;
                 width: 230px;
-                /*circ-prog := Image {
-                    source: root.circ-progress;
-                    width: parent.width * 0.95;
-                    height: parent.height * 0.95;
-                }*/
                 circ-prog := CircularProgress {
                     height: self.width;
                     progress: remaining-time / target-time;
