@@ -6,15 +6,12 @@ use hex_color::HexColor;
 use serde::{Deserialize, Serialize};
 use slint::platform::Key;
 use slint::{Color, SharedString};
-use std::cell::OnceCell;
 use std::env;
 use std::fs::{File, OpenOptions};
-use std::io::{BufReader, BufWriter, Write};
-use std::iter;
-use std::ops::Deref;
-use std::path::{Display, Path};
+use std::io::{BufReader, BufWriter};
+use std::path::Path;
 use std::str::FromStr;
-use std::sync::{Arc, OnceLock};
+use std::sync::OnceLock;
 use walkdir::WalkDir;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -42,68 +39,68 @@ impl From<GKeyCode> for Code {
 //to use the Code's built in to/from string functions.
 impl fmt::Display for GKeyCode {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        use global_hotkey::hotkey::Code::*;
+        use global_hotkey::hotkey::Code;
         let tmp_str = self.0.to_string();
         //https://developer.mozilla.org/en-US/docs/Web/API/UI_Events/Keyboard_event_key_values
         write!(
             f,
             "{}",
             match self.0 {
-                Backslash => "\\",
-                BracketLeft => "[", //I've always known [ ] as brackets, but after coming to NZ I realize this is not universal, so I need to make sure this is the correct char for this enum value
-                BracketRight => "]", //I've always known [ ] as brackets, but after coming to NZ I realize this is not universal, so I need to make sure this is the correct char for this enum value
-                Comma => ",",
-                Digit0 => "0",
-                Digit1 => "1",
-                Digit2 => "2",
-                Digit3 => "3",
-                Digit4 => "4",
-                Digit5 => "5",
-                Digit6 => "6",
-                Digit7 => "7",
-                Digit8 => "8",
-                Digit9 => "9",
-                Equal => "=",
-                KeyA => "A",
-                KeyB => "B",
-                KeyC => "C",
-                KeyD => "D",
-                KeyE => "E",
-                KeyF => "F",
-                KeyG => "G",
-                KeyH => "H",
-                KeyI => "I",
-                KeyJ => "J",
-                KeyK => "K",
-                KeyL => "L",
-                KeyM => "M",
-                KeyN => "N",
-                KeyO => "O",
-                KeyP => "P",
-                KeyQ => "Q",
-                KeyR => "R",
-                KeyS => "S",
-                KeyT => "T",
-                KeyU => "U",
-                KeyV => "V",
-                KeyW => "W",
-                KeyX => "X",
-                KeyY => "Y",
-                KeyZ => "Z",
-                Minus => "-",
-                Period => ".",
-                Quote => "\"",
-                Semicolon => ";",
-                Slash => "/",
-                Space => " ",
-                NumpadAdd => "Add",
-                NumpadClear => "Clear",
-                NumpadDivide => "Divide",
-                NumpadSubtract => "Subtract",
-                LaunchApp1 => "LaunchApplication1",
-                LaunchApp2 => "LaunchApplication2",
-                MediaSelect => "LaunchMediaPlayer",
-                MicrophoneMuteToggle => "MicrophoneToggle",
+                Code::Backslash => "\\",
+                Code::BracketLeft => "[", //I've always known [ ] as brackets, but after coming to NZ I realize this is not universal, so I need to make sure this is the correct char for this enum value
+                Code::BracketRight => "]", //I've always known [ ] as brackets, but after coming to NZ I realize this is not universal, so I need to make sure this is the correct char for this enum value
+                Code::Comma => ",",
+                Code::Digit0 => "0",
+                Code::Digit1 => "1",
+                Code::Digit2 => "2",
+                Code::Digit3 => "3",
+                Code::Digit4 => "4",
+                Code::Digit5 => "5",
+                Code::Digit6 => "6",
+                Code::Digit7 => "7",
+                Code::Digit8 => "8",
+                Code::Digit9 => "9",
+                Code::Equal => "=",
+                Code::KeyA => "A",
+                Code::KeyB => "B",
+                Code::KeyC => "C",
+                Code::KeyD => "D",
+                Code::KeyE => "E",
+                Code::KeyF => "F",
+                Code::KeyG => "G",
+                Code::KeyH => "H",
+                Code::KeyI => "I",
+                Code::KeyJ => "J",
+                Code::KeyK => "K",
+                Code::KeyL => "L",
+                Code::KeyM => "M",
+                Code::KeyN => "N",
+                Code::KeyO => "O",
+                Code::KeyP => "P",
+                Code::KeyQ => "Q",
+                Code::KeyR => "R",
+                Code::KeyS => "S",
+                Code::KeyT => "T",
+                Code::KeyU => "U",
+                Code::KeyV => "V",
+                Code::KeyW => "W",
+                Code::KeyX => "X",
+                Code::KeyY => "Y",
+                Code::KeyZ => "Z",
+                Code::Minus => "-",
+                Code::Period => ".",
+                Code::Quote => "\"",
+                Code::Semicolon => ";",
+                Code::Slash => "/",
+                Code::Space => " ",
+                Code::NumpadAdd => "Add",
+                Code::NumpadClear => "Clear",
+                Code::NumpadDivide => "Divide",
+                Code::NumpadSubtract => "Subtract",
+                Code::LaunchApp1 => "LaunchApplication1",
+                Code::LaunchApp2 => "LaunchApplication2",
+                Code::MediaSelect => "LaunchMediaPlayer",
+                Code::MicrophoneMuteToggle => "MicrophoneToggle",
 
                 //If I don't have a custom mapping because it wasn't found in the list
                 //of key codes from Electron, or the Electron mapping and the default Code
@@ -118,62 +115,62 @@ impl std::str::FromStr for GKeyCode {
     type Err = &'static str; //Todo: Get a better Error type
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        use crate::Code::*;
+        use crate::Code;
         Ok(match s {
-            "\\" => Backslash,
-            "[" => BracketLeft,
-            "]" => BracketRight,
-            "," => Comma,
-            "0" => Digit0,
-            "1" => Digit1,
-            "2" => Digit2,
-            "3" => Digit3,
-            "4" => Digit4,
-            "5" => Digit5,
-            "6" => Digit6,
-            "7" => Digit7,
-            "8" => Digit8,
-            "9" => Digit9,
-            "=" => Equal,
-            "A" => KeyA,
-            "B" => KeyB,
-            "C" => KeyC,
-            "D" => KeyD,
-            "E" => KeyE,
-            "F" => KeyF,
-            "G" => KeyG,
-            "H" => KeyH,
-            "I" => KeyI,
-            "J" => KeyJ,
-            "K" => KeyK,
-            "L" => KeyL,
-            "M" => KeyM,
-            "N" => KeyN,
-            "O" => KeyO,
-            "P" => KeyP,
-            "Q" => KeyQ,
-            "R" => KeyR,
-            "S" => KeyS,
-            "T" => KeyT,
-            "U" => KeyU,
-            "V" => KeyV,
-            "W" => KeyW,
-            "X" => KeyX,
-            "Y" => KeyY,
-            "Z" => KeyZ,
-            "-" => Minus,
-            "." => Period,
-            "\"" => Quote,
-            ";" => Semicolon,
-            "/" => Slash,
-            " " => Space,
-            "Add" => NumpadAdd,
-            "Clear" => NumpadClear,
-            "Divide" => NumpadDivide,
-            "Subtract" => NumpadSubtract,
-            "LaunchApplication1" => LaunchApp1,
-            "LaunchApplication2" => LaunchApp2,
-            "MicrophoneToggle" => MicrophoneMuteToggle,
+            "\\" => Code::Backslash,
+            "[" => Code::BracketLeft,
+            "]" => Code::BracketRight,
+            "," => Code::Comma,
+            "0" => Code::Digit0,
+            "1" => Code::Digit1,
+            "2" => Code::Digit2,
+            "3" => Code::Digit3,
+            "4" => Code::Digit4,
+            "5" => Code::Digit5,
+            "6" => Code::Digit6,
+            "7" => Code::Digit7,
+            "8" => Code::Digit8,
+            "9" => Code::Digit9,
+            "=" => Code::Equal,
+            "A" => Code::KeyA,
+            "B" => Code::KeyB,
+            "C" => Code::KeyC,
+            "D" => Code::KeyD,
+            "E" => Code::KeyE,
+            "F" => Code::KeyF,
+            "G" => Code::KeyG,
+            "H" => Code::KeyH,
+            "I" => Code::KeyI,
+            "J" => Code::KeyJ,
+            "K" => Code::KeyK,
+            "L" => Code::KeyL,
+            "M" => Code::KeyM,
+            "N" => Code::KeyN,
+            "O" => Code::KeyO,
+            "P" => Code::KeyP,
+            "Q" => Code::KeyQ,
+            "R" => Code::KeyR,
+            "S" => Code::KeyS,
+            "T" => Code::KeyT,
+            "U" => Code::KeyU,
+            "V" => Code::KeyV,
+            "W" => Code::KeyW,
+            "X" => Code::KeyX,
+            "Y" => Code::KeyY,
+            "Z" => Code::KeyZ,
+            "-" => Code::Minus,
+            "." => Code::Period,
+            "\"" => Code::Quote,
+            ";" => Code::Semicolon,
+            "/" => Code::Slash,
+            " " => Code::Space,
+            "Add" => Code::NumpadAdd,
+            "Clear" => Code::NumpadClear,
+            "Divide" => Code::NumpadDivide,
+            "Subtract" => Code::NumpadSubtract,
+            "LaunchApplication1" => Code::LaunchApp1,
+            "LaunchApplication2" => Code::LaunchApp2,
+            "MicrophoneToggle" => Code::MicrophoneMuteToggle,
 
             _ => Code::from_str(s).map_err(|_| "Failure to convert Key Code")?,
         }
@@ -411,27 +408,9 @@ impl Into<HotKey> for &JsonHotKey {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct OldSettings {
-    pub always_on_top: bool,
-    pub auto_start_break_timer: bool,
-    pub auto_start_work_timer: bool,
-    pub break_always_on_top: bool,
-    pub global_shortcuts: OldGlobalShortcuts,
-    pub min_to_tray: bool,
-    pub min_to_tray_on_close: bool,
-    pub notifications: bool,
-    pub theme: String,
-    pub tick_sounds: bool,
-    pub tick_sounds_during_break: bool,
-    pub time_long_break: i32,
-    pub time_short_break: i32,
-    pub time_work: i32,
-    pub volume: i32,
-    pub work_rounds: i32,
-}
-
+//Clippy complains and suggests refactoring so there are fewer bools, but this struct matches pomotroid for
+//compaibility so I'm surpressing the warning. Perhaps in v2 I can consider a restructure.
+#[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct JsonSettings {
@@ -479,28 +458,17 @@ pub struct JsonSettings {
     }
 }*/
 
-//#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct OldGlobalShortcuts {
-    #[serde(rename = "call-timer-reset")]
-    pub call_timer_reset: String,
-    #[serde(rename = "call-timer-skip")]
-    pub call_timer_skip: String,
-    #[serde(rename = "call-timer-toggle")]
-    pub call_timer_toggle: String,
-}
 
 //#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct GlobalShortcuts {
     #[serde(rename = "call-timer-reset")]
-    pub call_timer_reset: JsonHotKey,
+    pub reset: JsonHotKey,
     #[serde(rename = "call-timer-skip")]
-    pub call_timer_skip: JsonHotKey,
+    pub skip: JsonHotKey,
     #[serde(rename = "call-timer-toggle")]
-    pub call_timer_toggle: JsonHotKey,
+    pub toggle: JsonHotKey,
 }
 
 static CFG_DIR: OnceLock<Option<ProjectDirs>> = OnceLock::new();
@@ -528,7 +496,7 @@ pub fn is_wayland() -> bool {
 
 fn get_dir() -> Option<&'static Path> {
     if let Some(dirs) = CFG_DIR.get_or_init(|| ProjectDirs::from("org", "Vadoola", "Tomotroid")) {
-        return Some(dirs.config_dir());
+        Some(dirs.config_dir())
     } else {
         None
     }
@@ -591,12 +559,11 @@ pub fn load_themes() -> Vec<JsonTheme> {
     let mut themes: Vec<JsonTheme> = WalkDir::new(theme_dir)
         .into_iter()
         .filter(|e| {
-            return e.as_ref().map_or(false, |f| {
+            e.as_ref().is_ok_and(|f| {
                 f.file_name()
                     .to_str()
-                    .map(|s| s.to_lowercase().ends_with(".json"))
-                    .unwrap_or(false)
-            });
+                    .is_some_and(|s| s.to_lowercase().ends_with(".json"))
+            })
         })
         .filter_map(|e| {
             e.map(|e| {
@@ -610,7 +577,7 @@ pub fn load_themes() -> Vec<JsonTheme> {
         })
         .collect();
     if themes.is_empty() {
-        themes.push((*default_theme()).clone().into())
+        themes.push((*default_theme()).clone().into());
     }
     themes.sort_by(|a, b| a.name.partial_cmp(&b.name).unwrap());
     themes
@@ -709,7 +676,7 @@ fn default_settings() -> JsonSettings {
 //slidover screen, ie, timer, theme, etc it only saves when the slideover goes away? The logic might be
 //a bit trickier, but might be a good middle ground of ensuring the settings get saved without
 //writing out the file quite as much.
-pub fn save_settings(settings: JsonSettings) {
+pub fn save_settings(settings: &JsonSettings) {
     if let Some(cfg_dir) = get_dir() {
         std::fs::create_dir_all(cfg_dir).unwrap();
 

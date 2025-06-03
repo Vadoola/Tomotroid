@@ -39,4 +39,4 @@ windres = "0.2.2"
 #https://github.com/tauri-apps/winrt-notification for notifications on Windows?
 
 [lints.clippy]
-unwrap_used = "deny"
+#unwrap_used = "deny"

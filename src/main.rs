@@ -5,36 +5,24 @@
 )]
 #![windows_subsystem = "windows"]
 
-use std::borrow::BorrowMut;
-use std::cell::RefCell;
-use std::cmp::min;
 use std::io::Cursor;
 
 use anyhow::Result;
 use global_hotkey::GlobalHotKeyEvent;
 use global_hotkey::{
-    hotkey::{Code, HotKey, Modifiers},
+    hotkey::{Code, HotKey},
     GlobalHotKeyManager,
 };
-use hex_color::HexColor;
-use i_slint_backend_winit::winit::event::Event;
-use i_slint_backend_winit::winit::keyboard::KeyCode;
-use notify_rust::{Hint, Notification};
+use notify_rust::Notification;
 use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
-use serde::{Deserialize, Serialize};
-use serde_json::json;
 use settings::{get_non_print_key_txt, GlobalShortcuts, JsonHotKey, JsonSettings};
 use single_instance::SingleInstance;
-use slint::private_unstable_api::re_exports::EventResult;
-use slint::FilterModel;
 use slint::{
-    platform::Key, Color, JoinHandle, Model, ModelRc, PlatformError, SharedString, Timer,
+    platform::Key, Model, ModelRc, PlatformError, SharedString, Timer,
     TimerMode, VecModel,
 };
 use std::{
     borrow::Borrow,
-    fs::File,
-    io::{BufReader, Read},
     rc::Rc,
     str::FromStr,
     sync::mpsc,
@@ -82,19 +70,19 @@ impl Main {
         self.global::<Settings>().set_tt_ghk(
             settings
                 .global_shortcuts
-                .call_timer_toggle
+                .toggle
                 .to_string()
                 .into(),
         );
         self.global::<Settings>().set_rst_ghk(
             settings
                 .global_shortcuts
-                .call_timer_reset
+                .reset
                 .to_string()
                 .into(),
         );
         self.global::<Settings>()
-            .set_skp_ghk(settings.global_shortcuts.call_timer_skip.to_string().into());
+            .set_skp_ghk(settings.global_shortcuts.skip.to_string().into());
 
         self.global::<Settings>()
             .set_min_to_tray(settings.min_to_tray);
@@ -122,22 +110,22 @@ impl Main {
     }
 
     fn save_settings(&self) {
-        settings::save_settings(JsonSettings {
+        settings::save_settings(&JsonSettings {
             always_on_top: self.global::<Settings>().get_always_on_top(),
             auto_start_break_timer: self.global::<Settings>().get_auto_start_break_timer(),
             auto_start_work_timer: self.global::<Settings>().get_auto_start_work_timer(),
             break_always_on_top: self.global::<Settings>().get_break_always_on_top(),
 
             global_shortcuts: GlobalShortcuts {
-                call_timer_reset: JsonHotKey::from_str(
+                reset: JsonHotKey::from_str(
                     self.global::<Settings>().get_rst_ghk().to_string().as_str(),
                 )
                 .expect("a valid Timer Reset GHK"),
-                call_timer_skip: JsonHotKey::from_str(
+                skip: JsonHotKey::from_str(
                     self.global::<Settings>().get_skp_ghk().to_string().as_str(),
                 )
                 .expect("a valid Timer Skip GHK"),
-                call_timer_toggle: JsonHotKey::from_str(
+                toggle: JsonHotKey::from_str(
                     self.global::<Settings>().get_tt_ghk().to_string().as_str(),
                 )
                 .expect("a valid Timer Toggle GHK"),
@@ -179,9 +167,9 @@ impl Tomotroid {
         let themes = settings::load_themes();
 
         let ghk_manager = GlobalHotKeyManager::new().unwrap();
-        let toggle = &settings.global_shortcuts.call_timer_toggle.borrow().into();
-        let reset = &settings.global_shortcuts.call_timer_reset.borrow().into();
-        let skip = &settings.global_shortcuts.call_timer_skip.borrow().into();
+        let toggle = &settings.global_shortcuts.toggle.borrow().into();
+        let reset = &settings.global_shortcuts.reset.borrow().into();
+        let skip = &settings.global_shortcuts.skip.borrow().into();
 
         let toggle = ghk_manager
             .register(*toggle)
@@ -309,6 +297,7 @@ impl Tomotroid {
 }
 
 impl BoolSettTypes {
+    #[must_use]
     pub fn to_usize(&self) -> usize {
         match self {
             BoolSettTypes::AlwOnTop => 0,
@@ -669,10 +658,6 @@ fn main() -> Result<()> {
                 .unwrap(),
             );
 
-            let rem_per = thm_handle.get_remaining_time() as f32
-                / thm_handle.get_target_time() as f32
-                * 100.0;
-
             thm_handle.global::<Theme>().set_theme_idx(idx);
             thm_handle
                 .global::<Theme>()
@@ -755,21 +740,6 @@ fn main() -> Result<()> {
                         }
 
                         tmrstrt_handle.invoke_tick(1000);
-                        let rem_per = tmrstrt_handle.get_remaining_time() as f32
-                            / tmrstrt_handle.get_target_time() as f32
-                            * 100.0;
-
-                        let fg_clr = match tmrstrt_handle.get_active_timer() {
-                            ActiveTimer::Focus => {
-                                tmrstrt_handle.global::<Theme>().get_focus_round().color()
-                            }
-                            ActiveTimer::ShortBreak => {
-                                tmrstrt_handle.global::<Theme>().get_short_round().color()
-                            }
-                            ActiveTimer::LongBreak => {
-                                tmrstrt_handle.global::<Theme>().get_long_round().color()
-                            }
-                        };
                     },
                 );
             }
@@ -781,16 +751,6 @@ fn main() -> Result<()> {
                 timer.stop();
                 timer_handle.set_running(false);
                 timer_handle.set_remaining_time(timer_handle.get_target_time());
-
-                let fg_clr = match timer_handle.get_active_timer() {
-                    ActiveTimer::Focus => timer_handle.global::<Theme>().get_focus_round().color(),
-                    ActiveTimer::ShortBreak => {
-                        timer_handle.global::<Theme>().get_short_round().color()
-                    }
-                    ActiveTimer::LongBreak => {
-                        timer_handle.global::<Theme>().get_long_round().color()
-                    }
-                };
             }
             TimerAction::Skip => {
                 //timer_handle.set_remaining_time(0);
