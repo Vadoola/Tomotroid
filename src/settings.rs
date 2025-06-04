@@ -694,7 +694,7 @@ pub fn save_settings(settings: &JsonSettings) {
     }
 }
 
-pub fn get_non_print_key_txt(text: SharedString) -> Option<&'static str> {
+pub fn get_non_print_key_txt(text: &SharedString) -> Option<&'static str> {
     //the way Slint returns the key pressed is as a SharedString
     //For non-printable characters they do some sort of unicode encoding
     //and you can compare it against the Key enum, by converting the Key
@@ -708,95 +708,95 @@ pub fn get_non_print_key_txt(text: SharedString) -> Option<&'static str> {
     //massive if / else if block....
     //I have to be missing something...there has to be a better way than this massive if/else if block
 
-    if text == SharedString::from(Key::Backspace) {
+    if *text == SharedString::from(Key::Backspace) {
         Some("Bcksp")
-    } else if text == SharedString::from(Key::Tab) {
+    } else if *text == SharedString::from(Key::Tab) {
         Some("Tab")
-    } else if text == SharedString::from(Key::Return) {
+    } else if *text == SharedString::from(Key::Return) {
         Some("Return")
-    } else if text == SharedString::from(Key::Escape) {
+    } else if *text == SharedString::from(Key::Escape) {
         Some("Esc")
-    } else if text == SharedString::from(Key::Backtab) {
+    } else if *text == SharedString::from(Key::Backtab) {
         Some("BckTab")
-    } else if text == SharedString::from(Key::Delete) {
+    } else if *text == SharedString::from(Key::Delete) {
         Some("Del")
-    } else if text == SharedString::from(Key::CapsLock) {
+    } else if *text == SharedString::from(Key::CapsLock) {
         Some("CapsLk")
-    } else if text == SharedString::from(Key::UpArrow) {
+    } else if *text == SharedString::from(Key::UpArrow) {
         Some("↑")
-    } else if text == SharedString::from(Key::DownArrow) {
+    } else if *text == SharedString::from(Key::DownArrow) {
         Some("↓")
-    } else if text == SharedString::from(Key::LeftArrow) {
+    } else if *text == SharedString::from(Key::LeftArrow) {
         Some("→")
-    } else if text == SharedString::from(Key::RightArrow) {
+    } else if *text == SharedString::from(Key::RightArrow) {
         Some("←")
-    } else if text == SharedString::from(Key::F1) {
+    } else if *text == SharedString::from(Key::F1) {
         Some("F1")
-    } else if text == SharedString::from(Key::F2) {
+    } else if *text == SharedString::from(Key::F2) {
         Some("F2")
-    } else if text == SharedString::from(Key::F3) {
+    } else if *text == SharedString::from(Key::F3) {
         Some("F3")
-    } else if text == SharedString::from(Key::F4) {
+    } else if *text == SharedString::from(Key::F4) {
         Some("F4")
-    } else if text == SharedString::from(Key::F5) {
+    } else if *text == SharedString::from(Key::F5) {
         Some("F5")
-    } else if text == SharedString::from(Key::F6) {
+    } else if *text == SharedString::from(Key::F6) {
         Some("F6")
-    } else if text == SharedString::from(Key::F7) {
+    } else if *text == SharedString::from(Key::F7) {
         Some("F7")
-    } else if text == SharedString::from(Key::F8) {
+    } else if *text == SharedString::from(Key::F8) {
         Some("F8")
-    } else if text == SharedString::from(Key::F9) {
+    } else if *text == SharedString::from(Key::F9) {
         Some("F9")
-    } else if text == SharedString::from(Key::F10) {
+    } else if *text == SharedString::from(Key::F10) {
         Some("F10")
-    } else if text == SharedString::from(Key::F11) {
+    } else if *text == SharedString::from(Key::F11) {
         Some("F11")
-    } else if text == SharedString::from(Key::F12) {
+    } else if *text == SharedString::from(Key::F12) {
         Some("F12")
-    } else if text == SharedString::from(Key::F13) {
+    } else if *text == SharedString::from(Key::F13) {
         Some("F13")
-    } else if text == SharedString::from(Key::F14) {
+    } else if *text == SharedString::from(Key::F14) {
         Some("F14")
-    } else if text == SharedString::from(Key::F15) {
+    } else if *text == SharedString::from(Key::F15) {
         Some("F15")
-    } else if text == SharedString::from(Key::F16) {
+    } else if *text == SharedString::from(Key::F16) {
         Some("F16")
-    } else if text == SharedString::from(Key::F17) {
+    } else if *text == SharedString::from(Key::F17) {
         Some("F17")
-    } else if text == SharedString::from(Key::F18) {
+    } else if *text == SharedString::from(Key::F18) {
         Some("F18")
-    } else if text == SharedString::from(Key::F19) {
+    } else if *text == SharedString::from(Key::F19) {
         Some("F19")
-    } else if text == SharedString::from(Key::F20) {
+    } else if *text == SharedString::from(Key::F20) {
         Some("F20")
-    } else if text == SharedString::from(Key::F21) {
+    } else if *text == SharedString::from(Key::F21) {
         Some("F21")
-    } else if text == SharedString::from(Key::F22) {
+    } else if *text == SharedString::from(Key::F22) {
         Some("F22")
-    } else if text == SharedString::from(Key::F23) {
+    } else if *text == SharedString::from(Key::F23) {
         Some("F23")
-    } else if text == SharedString::from(Key::F24) {
+    } else if *text == SharedString::from(Key::F24) {
         Some("F24")
-    } else if text == SharedString::from(Key::Insert) {
+    } else if *text == SharedString::from(Key::Insert) {
         Some("Ins")
-    } else if text == SharedString::from(Key::Home) {
+    } else if *text == SharedString::from(Key::Home) {
         Some("Home")
-    } else if text == SharedString::from(Key::End) {
+    } else if *text == SharedString::from(Key::End) {
         Some("End")
-    } else if text == SharedString::from(Key::PageUp) {
+    } else if *text == SharedString::from(Key::PageUp) {
         Some("PgUp")
-    } else if text == SharedString::from(Key::PageDown) {
+    } else if *text == SharedString::from(Key::PageDown) {
         Some("PgDwn")
-    } else if text == SharedString::from(Key::ScrollLock) {
+    } else if *text == SharedString::from(Key::ScrollLock) {
         Some("ScrLk")
-    } else if text == SharedString::from(Key::Pause) {
+    } else if *text == SharedString::from(Key::Pause) {
         Some("Pause")
-    } else if text == SharedString::from(Key::SysReq) {
+    } else if *text == SharedString::from(Key::SysReq) {
         Some("SysReq")
-    } else if text == SharedString::from(Key::Stop) {
+    } else if *text == SharedString::from(Key::Stop) {
         Some("Stop")
-    } else if text == SharedString::from(Key::Menu) {
+    } else if *text == SharedString::from(Key::Menu) {
         Some("Menu")
     } else {
         None

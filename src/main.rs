@@ -930,7 +930,7 @@ fn main() -> Result<()> {
                     text.push_str("Super+");
                 }
 
-                if let Some(non_pr_char) = get_non_print_key_txt(event.text.clone()) {
+                if let Some(non_pr_char) = get_non_print_key_txt(&event.text) {
                     text.push_str(non_pr_char);
                 } else {
                     text.push_str(&event.text.to_uppercase());
