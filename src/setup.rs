@@ -105,3 +105,21 @@ fn create_tray() -> Result<TrayItem> {
         IconSource::Resource("logo-icon"),
     )
 }
+
+pub fn backend() {
+    let backend = {
+        #[cfg(target_os = "macos")]
+        {
+            use i_slint_backend_winit::winit::platform::macos::WindowBuilderExtMacOS;
+
+            let mut backend = i_slint_backend_winit::Backend::new().unwrap();
+            backend.window_builder_hook = Some(Box::new(|builder| builder.with_decorations(false)));
+            backend
+        }
+
+        #[cfg(not(target_os = "macos"))]
+        i_slint_backend_winit::Backend::new().unwrap()
+    };
+
+    slint::platform::set_platform(Box::new(backend)).unwrap();
+}
