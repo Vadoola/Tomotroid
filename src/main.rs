@@ -322,10 +322,6 @@ fn main() -> Result<()> {
         .global::<ConfigCallbacks>()
         .set_configs(ModelRc::from(filt_mod.clone()));
 
-    //if this is being called when the value changes....why is it passing me the old value?
-    //I guess this is being called instead of the Touch Area's callback? So the value isn't updating
-    //until I do it here? But how will that work with the sliders? I can't just invert the value
-    //like I can with the bools.
     tomotroid
         .window
         .global::<Settings>()
@@ -371,28 +367,7 @@ fn main() -> Result<()> {
         .window
         .global::<Settings>()
         .on_int_changed(move |set_type, val| {
-            let set_handle = set_int_handle.upgrade().unwrap();
-            match set_type {
-                IntSettTypes::LongBreak => {
-                    set_handle.global::<Settings>().set_time_long_break(val);
-                }
-                IntSettTypes::ShortBreak => {
-                    set_handle.global::<Settings>().set_time_short_break(val);
-                }
-                IntSettTypes::Work => {
-                    set_handle.global::<Settings>().set_time_work(val);
-                }
-                IntSettTypes::Volume => {
-                    set_handle.global::<Settings>().set_volume(val);
-                    vol_sink.set_volume(val as f32 / 100.0);
-                }
-                IntSettTypes::Rounds => {
-                    set_handle.global::<Settings>().set_work_rounds(val);
-                }
-            }
-
-            //write out settings?...not the most effecient way every change..but for now should be fine
-            set_handle.save_settings();
+            settings::int_changed(&set_int_handle, &vol_sink, set_type, val)
         });
 
     let close_handle = tomotroid.window.as_weak();

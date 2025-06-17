@@ -1,8 +1,9 @@
-use crate::{BoolSettTypes, ConfigData, JsonTheme, Main, Settings};
+use crate::{BoolSettTypes, ConfigData, IntSettTypes, JsonTheme, Main, Settings};
 use core::fmt;
 use directories::ProjectDirs;
 use global_hotkey::hotkey::{Code, HotKey, Modifiers};
 use hex_color::HexColor;
+use rodio::Sink;
 use serde::{Deserialize, Serialize};
 use slint::{platform::Key, Color, ComponentHandle, Model, SharedString, Timer, VecModel, Weak};
 use std::{
@@ -913,4 +914,29 @@ pub fn bool_changed(
     } else {
         //error getting row data
     }
+}
+
+pub fn int_changed(handle: &Weak<Main>, vol_sink: &Rc<Sink>, set_type: IntSettTypes, val: i32) {
+    let handle = handle.upgrade().unwrap();
+    match set_type {
+        IntSettTypes::LongBreak => {
+            handle.global::<Settings>().set_time_long_break(val);
+        }
+        IntSettTypes::ShortBreak => {
+            handle.global::<Settings>().set_time_short_break(val);
+        }
+        IntSettTypes::Work => {
+            handle.global::<Settings>().set_time_work(val);
+        }
+        IntSettTypes::Volume => {
+            handle.global::<Settings>().set_volume(val);
+            vol_sink.set_volume(val as f32 / 100.0);
+        }
+        IntSettTypes::Rounds => {
+            handle.global::<Settings>().set_work_rounds(val);
+        }
+    }
+
+    //write out settings?...not the most effecient way every change..but for now should be fine
+    handle.save_settings();
 }
