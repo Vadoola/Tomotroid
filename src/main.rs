@@ -317,7 +317,6 @@ fn main() -> Result<()> {
     let config_model = tomotroid.config_model.clone();
     let set_handle = tomotroid.window.as_weak();
     let filt_mod = Rc::new(ModelRc::from(tomotroid.config_model.clone()).filter(|cf| cf.enabled));
-    let flt_timer = Timer::default();
     tomotroid
         .window
         .global::<ConfigCallbacks>()
@@ -331,117 +330,7 @@ fn main() -> Result<()> {
         .window
         .global::<Settings>()
         .on_bool_changed(move |set_type, val| {
-            //let filt_mod = filt_mod.clone();
-            let set_handle = set_handle.upgrade().unwrap();
-
-            if let Some(conf_data) = config_model.row_data(set_type.to_usize()) {
-                config_model.set_row_data(
-                    set_type.to_usize(),
-                    ConfigData {
-                        state: !val,
-                        ..conf_data
-                    },
-                );
-
-                if set_type == BoolSettTypes::AlwOnTop {
-                    let conf_modl2 = config_model.clone();
-                    let aot_break = conf_modl2
-                        .row_data(BoolSettTypes::BrkAlwOnTop.to_usize())
-                        .unwrap();
-
-                    if val {
-                        conf_modl2.set_row_data(
-                            BoolSettTypes::BrkAlwOnTop.to_usize(),
-                            ConfigData {
-                                animate_out: true,
-                                ..aot_break
-                            },
-                        );
-                    } else {
-                        conf_modl2.set_row_data(
-                            BoolSettTypes::BrkAlwOnTop.to_usize(),
-                            ConfigData {
-                                enabled: !val,
-                                animate_in: true,
-                                ..aot_break
-                            },
-                        );
-                    }
-
-                    flt_timer.start(
-                        slint::TimerMode::SingleShot,
-                        std::time::Duration::from_millis(350),
-                        move || {
-                            let aot_break = conf_modl2
-                                .row_data(BoolSettTypes::BrkAlwOnTop.to_usize())
-                                .unwrap();
-
-                            if val {
-                                conf_modl2.set_row_data(
-                                    BoolSettTypes::BrkAlwOnTop.to_usize(),
-                                    ConfigData {
-                                        enabled: !val,
-                                        animate_out: false,
-                                        ..aot_break
-                                    },
-                                );
-                            } else {
-                                conf_modl2.set_row_data(
-                                    BoolSettTypes::BrkAlwOnTop.to_usize(),
-                                    ConfigData {
-                                        animate_in: false,
-                                        ..aot_break
-                                    },
-                                );
-                            }
-                        },
-                    );
-                }
-
-                match set_type {
-                    BoolSettTypes::AlwOnTop => {
-                        set_handle.global::<Settings>().set_always_on_top(!val);
-                    }
-                    BoolSettTypes::AutoStrtBreakTim => {
-                        set_handle
-                            .global::<Settings>()
-                            .set_auto_start_break_timer(!val);
-                    }
-                    BoolSettTypes::AutoStrtWrkTim => {
-                        set_handle
-                            .global::<Settings>()
-                            .set_auto_start_work_timer(!val);
-                    }
-                    BoolSettTypes::BrkAlwOnTop => {
-                        set_handle
-                            .global::<Settings>()
-                            .set_break_always_on_top(!val);
-                    }
-                    BoolSettTypes::MinToTray => {
-                        set_handle.global::<Settings>().set_min_to_tray(!val);
-                    }
-                    BoolSettTypes::MinToTryCls => {
-                        set_handle
-                            .global::<Settings>()
-                            .set_min_to_tray_on_close(!val);
-                    }
-                    BoolSettTypes::Notifications => {
-                        set_handle.global::<Settings>().set_notifications(!val);
-                    }
-                    BoolSettTypes::TickSounds => {
-                        set_handle.global::<Settings>().set_tick_sounds(!val);
-                    }
-                    BoolSettTypes::TickSoundsBreak => {
-                        set_handle
-                            .global::<Settings>()
-                            .set_tick_sounds_during_break(!val);
-                    }
-                }
-                //write out settings?...not the most effecient way every change..but for now should be fine
-                set_handle.save_settings();
-            } else {
-                //error getting row data
-            }
+            settings::bool_changed(&set_handle, &config_model, set_type, val);
         });
 
     let ghk_handle = tomotroid.window.as_weak();

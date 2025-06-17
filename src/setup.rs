@@ -1,6 +1,6 @@
 #[cfg(unix)]
-use anyhow::{bail, Result};
-use log::{error, info, warn, LevelFilter};
+use anyhow::Result;
+use log::{error, LevelFilter};
 use std::{
     io::Cursor,
     sync::mpsc::{self, Receiver},

@@ -1,17 +1,19 @@
-use crate::JsonTheme;
+use crate::{BoolSettTypes, ConfigData, JsonTheme, Main, Settings};
 use core::fmt;
 use directories::ProjectDirs;
 use global_hotkey::hotkey::{Code, HotKey, Modifiers};
 use hex_color::HexColor;
 use serde::{Deserialize, Serialize};
-use slint::platform::Key;
-use slint::{Color, SharedString};
-use std::env;
-use std::fs::{File, OpenOptions};
-use std::io::{BufReader, BufWriter};
-use std::path::Path;
-use std::str::FromStr;
-use std::sync::OnceLock;
+use slint::{platform::Key, Color, ComponentHandle, Model, SharedString, Timer, VecModel, Weak};
+use std::{
+    env,
+    fs::{File, OpenOptions},
+    io::{BufReader, BufWriter},
+    path::Path,
+    rc::Rc,
+    str::FromStr,
+    sync::OnceLock,
+};
 use walkdir::WalkDir;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -458,7 +460,6 @@ pub struct JsonSettings {
     }
 }*/
 
-
 //#[derive(Default, Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -800,5 +801,116 @@ pub fn get_non_print_key_txt(text: &SharedString) -> Option<&'static str> {
         Some("Menu")
     } else {
         None
+    }
+}
+
+pub fn bool_changed(
+    handle: &Weak<Main>,
+    model: &Rc<VecModel<ConfigData>>,
+    set_type: BoolSettTypes,
+    val: bool,
+) {
+    let handle = handle.upgrade().unwrap();
+
+    if let Some(conf_data) = model.row_data(set_type.to_usize()) {
+        model.set_row_data(
+            set_type.to_usize(),
+            ConfigData {
+                state: !val,
+                ..conf_data
+            },
+        );
+
+        if set_type == BoolSettTypes::AlwOnTop {
+            let conf_modl2 = model.clone();
+            let aot_break = conf_modl2
+                .row_data(BoolSettTypes::BrkAlwOnTop.to_usize())
+                .unwrap();
+
+            if val {
+                conf_modl2.set_row_data(
+                    BoolSettTypes::BrkAlwOnTop.to_usize(),
+                    ConfigData {
+                        animate_out: true,
+                        ..aot_break
+                    },
+                );
+            } else {
+                conf_modl2.set_row_data(
+                    BoolSettTypes::BrkAlwOnTop.to_usize(),
+                    ConfigData {
+                        enabled: !val,
+                        animate_in: true,
+                        ..aot_break
+                    },
+                );
+            }
+
+            let flt_timer = Timer::default();
+            flt_timer.start(
+                slint::TimerMode::SingleShot,
+                std::time::Duration::from_millis(350),
+                move || {
+                    let aot_break = conf_modl2
+                        .row_data(BoolSettTypes::BrkAlwOnTop.to_usize())
+                        .unwrap();
+
+                    if val {
+                        conf_modl2.set_row_data(
+                            BoolSettTypes::BrkAlwOnTop.to_usize(),
+                            ConfigData {
+                                enabled: !val,
+                                animate_out: false,
+                                ..aot_break
+                            },
+                        );
+                    } else {
+                        conf_modl2.set_row_data(
+                            BoolSettTypes::BrkAlwOnTop.to_usize(),
+                            ConfigData {
+                                animate_in: false,
+                                ..aot_break
+                            },
+                        );
+                    }
+                },
+            );
+        }
+
+        match set_type {
+            BoolSettTypes::AlwOnTop => {
+                handle.global::<Settings>().set_always_on_top(!val);
+            }
+            BoolSettTypes::AutoStrtBreakTim => {
+                handle.global::<Settings>().set_auto_start_break_timer(!val);
+            }
+            BoolSettTypes::AutoStrtWrkTim => {
+                handle.global::<Settings>().set_auto_start_work_timer(!val);
+            }
+            BoolSettTypes::BrkAlwOnTop => {
+                handle.global::<Settings>().set_break_always_on_top(!val);
+            }
+            BoolSettTypes::MinToTray => {
+                handle.global::<Settings>().set_min_to_tray(!val);
+            }
+            BoolSettTypes::MinToTryCls => {
+                handle.global::<Settings>().set_min_to_tray_on_close(!val);
+            }
+            BoolSettTypes::Notifications => {
+                handle.global::<Settings>().set_notifications(!val);
+            }
+            BoolSettTypes::TickSounds => {
+                handle.global::<Settings>().set_tick_sounds(!val);
+            }
+            BoolSettTypes::TickSoundsBreak => {
+                handle
+                    .global::<Settings>()
+                    .set_tick_sounds_during_break(!val);
+            }
+        }
+        //write out settings?...not the most effecient way every change..but for now should be fine
+        handle.save_settings();
+    } else {
+        //error getting row data
     }
 }
