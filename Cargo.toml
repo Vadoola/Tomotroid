@@ -22,14 +22,20 @@ single-instance = "0.3.3"
 global-hotkey = "0.6"
 notify-rust = "4.11"
 rodio = "0.20"
+flexi_logger = "0.30.2"
+log = "0.4.27"
+
 
 
 [target.'cfg(windows)'.dependencies]
 tray-item = "0.10"
+eventlog = "0.3.0"
 
 [target.'cfg(unix)'.dependencies]
 tray-item = { version = "0.10", features = [ "ksni" ] }
 png = "0.17"
+syslog = "7.0.0"
+systemd-journal-logger = "2.2.2"
 
 [build-dependencies]
 slint-build = "1.10.0"

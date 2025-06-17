@@ -5,7 +5,10 @@
 )]
 #![windows_subsystem = "windows"]
 
-use std::io::Cursor;
+mod settings;
+mod setup;
+
+use crate::setup::TrayMsg;
 
 use anyhow::Result;
 use global_hotkey::GlobalHotKeyEvent;
@@ -18,33 +21,21 @@ use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
 use settings::{get_non_print_key_txt, GlobalShortcuts, JsonHotKey, JsonSettings};
 use single_instance::SingleInstance;
 use slint::{
-    platform::Key, Model, ModelRc, PlatformError, SharedString, Timer,
-    TimerMode, VecModel,
+    platform::Key, Model, ModelRc, PlatformError, SharedString, Timer, TimerMode, VecModel,
 };
-use std::{
-    borrow::Borrow,
-    rc::Rc,
-    str::FromStr,
-    sync::mpsc,
-};
-use tray_item::{IconSource, TrayItem};
+use std::io::Cursor;
+use std::{borrow::Borrow, rc::Rc, str::FromStr};
 
-mod settings;
+use log::{error, info, warn};
 
 slint::include_modules!();
 
 pub const LOGO_BYTES: &str = include_str!("../assets/logo.svg");
-//pub const PROG_BYTES: &str = include_str!("../assets/ProgressCircle.svg");
 
 pub const ALERT_LONG_BREAK: &[u8] = include_bytes!("../assets/audio/alert-long-break.ogg");
 pub const ALERT_SHORT_BREAK: &[u8] = include_bytes!("../assets/audio/alert-short-break.ogg");
 pub const ALERT_WORK: &[u8] = include_bytes!("../assets/audio/alert-work.ogg");
 pub const TICK: &[u8] = include_bytes!("../assets/audio/tick.ogg");
-
-enum TrayMsg {
-    MinRes,
-    Quit,
-}
 
 fn color_to_hex_string(color: slint::Color) -> String {
     format!(
@@ -67,20 +58,10 @@ impl Main {
             .set_break_always_on_top(settings.break_always_on_top);
 
         //Global Shortcuts
-        self.global::<Settings>().set_tt_ghk(
-            settings
-                .global_shortcuts
-                .toggle
-                .to_string()
-                .into(),
-        );
-        self.global::<Settings>().set_rst_ghk(
-            settings
-                .global_shortcuts
-                .reset
-                .to_string()
-                .into(),
-        );
+        self.global::<Settings>()
+            .set_tt_ghk(settings.global_shortcuts.toggle.to_string().into());
+        self.global::<Settings>()
+            .set_rst_ghk(settings.global_shortcuts.reset.to_string().into());
         self.global::<Settings>()
             .set_skp_ghk(settings.global_shortcuts.skip.to_string().into());
 
@@ -263,7 +244,7 @@ impl Tomotroid {
                 animate_out: false,
             },
         ]));
-        
+
         //window.global::<ConfigCallbacks>().set_configs(ModelRc::new(config_model.clone().filter(|cf| cf.enabled)));
 
         Self {
@@ -313,55 +294,22 @@ impl BoolSettTypes {
     }
 }
 
+//eventually I want to clean this main up and make it smaller, but for now I'll just
+//surpress this clippy warning
+#[allow(clippy::too_many_lines)]
 fn main() -> Result<()> {
+    setup::logging();
+    info!("Starting up");
+
     let instance = SingleInstance::new("org.vadoola.tomotroid").unwrap();
     if !instance.is_single() {
+        error!("Only one instance of Tomotroid is allowed to run");
         return Err(anyhow::anyhow!(
             "Only one instance of Tomotroid is allowed to run"
         ));
     }
 
-    //TODO: I'm not seeing an obvious way to mimic the Pomotroid behavoir
-    //where it just minimizes or restores by clicking the tray icon
-    //because I don't see any way to capture when the tray icon is clicked
-    //I'll need to dig into this more. For now I'll just add some menu items
-    //to get some basic functionality and test minimzing to the tray etc
-    #[cfg(unix)]
-    let mut tray = {
-        let logo_cursor = Cursor::new(include_bytes!("../assets/icons/logo.png"));
-        let logo_decoder = png::Decoder::new(logo_cursor);
-        let mut logo_reader = logo_decoder.read_info().unwrap();
-        let mut logo_buff = vec![0; logo_reader.output_buffer_size()];
-        logo_reader.next_frame(&mut logo_buff).unwrap();
-
-        let logo_icon = IconSource::Data {
-            data: logo_buff,
-            height: 32,
-            width: 32,
-        };
-        TrayItem::new("Tomotroid\nClick to Restore", logo_icon).unwrap()
-    };
-
-    #[cfg(windows)]
-    let mut tray = TrayItem::new(
-        "Tomotroid\nClick to Restore",
-        IconSource::Resource("logo-icon"),
-    )
-    .unwrap();
-
-    let (tray_tx, tray_rx) = mpsc::sync_channel(1);
-
-    let minres_tx = tray_tx.clone();
-    tray.add_menu_item("Minimize / Restore", move || {
-        minres_tx.send(TrayMsg::MinRes).unwrap();
-    })
-    .unwrap();
-
-    let quit_tx = tray_tx;
-    tray.add_menu_item("Quit", move || {
-        quit_tx.send(TrayMsg::Quit).unwrap();
-    })
-    .unwrap();
+    let tray_rx = setup::tray().unwrap();
 
     let backend = {
         #[cfg(target_os = "macos")]
@@ -384,8 +332,11 @@ fn main() -> Result<()> {
     let set_handle = tomotroid.window.as_weak();
     let filt_mod = Rc::new(ModelRc::from(tomotroid.config_model.clone()).filter(|cf| cf.enabled));
     let flt_timer = Timer::default();
-    tomotroid.window.global::<ConfigCallbacks>().set_configs(ModelRc::from(filt_mod.clone()));
-    
+    tomotroid
+        .window
+        .global::<ConfigCallbacks>()
+        .set_configs(ModelRc::from(filt_mod.clone()));
+
     //if this is being called when the value changes....why is it passing me the old value?
     //I guess this is being called instead of the Touch Area's callback? So the value isn't updating
     //until I do it here? But how will that work with the sliders? I can't just invert the value
@@ -408,42 +359,54 @@ fn main() -> Result<()> {
 
                 if set_type == BoolSettTypes::AlwOnTop {
                     let conf_modl2 = config_model.clone();
-                    let aot_break = conf_modl2.row_data(BoolSettTypes::BrkAlwOnTop.to_usize()).unwrap();
-                    
+                    let aot_break = conf_modl2
+                        .row_data(BoolSettTypes::BrkAlwOnTop.to_usize())
+                        .unwrap();
+
                     if val {
-                        conf_modl2.set_row_data(BoolSettTypes::BrkAlwOnTop.to_usize(),
-                        ConfigData {
-                            animate_out: true,
-                            ..aot_break
-                        });
+                        conf_modl2.set_row_data(
+                            BoolSettTypes::BrkAlwOnTop.to_usize(),
+                            ConfigData {
+                                animate_out: true,
+                                ..aot_break
+                            },
+                        );
                     } else {
-                        conf_modl2.set_row_data(BoolSettTypes::BrkAlwOnTop.to_usize(),
+                        conf_modl2.set_row_data(
+                            BoolSettTypes::BrkAlwOnTop.to_usize(),
                             ConfigData {
                                 enabled: !val,
                                 animate_in: true,
                                 ..aot_break
-                            });
+                            },
+                        );
                     }
-                    
+
                     flt_timer.start(
                         slint::TimerMode::SingleShot,
                         std::time::Duration::from_millis(350),
                         move || {
-                            let aot_break = conf_modl2.row_data(BoolSettTypes::BrkAlwOnTop.to_usize()).unwrap();
-                            
+                            let aot_break = conf_modl2
+                                .row_data(BoolSettTypes::BrkAlwOnTop.to_usize())
+                                .unwrap();
+
                             if val {
-                                conf_modl2.set_row_data(BoolSettTypes::BrkAlwOnTop.to_usize(),
-                                ConfigData {
-                                    enabled: !val,
-                                    animate_out: false,
-                                    ..aot_break
-                                });
+                                conf_modl2.set_row_data(
+                                    BoolSettTypes::BrkAlwOnTop.to_usize(),
+                                    ConfigData {
+                                        enabled: !val,
+                                        animate_out: false,
+                                        ..aot_break
+                                    },
+                                );
                             } else {
-                                conf_modl2.set_row_data(BoolSettTypes::BrkAlwOnTop.to_usize(),
-                                ConfigData {
-                                    animate_in: false,
-                                    ..aot_break
-                                });
+                                conf_modl2.set_row_data(
+                                    BoolSettTypes::BrkAlwOnTop.to_usize(),
+                                    ConfigData {
+                                        animate_in: false,
+                                        ..aot_break
+                                    },
+                                );
                             }
                         },
                     );
