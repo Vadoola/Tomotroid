@@ -30,21 +30,10 @@ use log::{error, info, warn};
 
 slint::include_modules!();
 
-pub const LOGO_BYTES: &str = include_str!("../assets/logo.svg");
-
 pub const ALERT_LONG_BREAK: &[u8] = include_bytes!("../assets/audio/alert-long-break.ogg");
 pub const ALERT_SHORT_BREAK: &[u8] = include_bytes!("../assets/audio/alert-short-break.ogg");
 pub const ALERT_WORK: &[u8] = include_bytes!("../assets/audio/alert-work.ogg");
 pub const TICK: &[u8] = include_bytes!("../assets/audio/tick.ogg");
-
-fn color_to_hex_string(color: slint::Color) -> String {
-    format!(
-        "#{:02X}{:02X}{:02X}",
-        color.red(),
-        color.green(),
-        color.blue()
-    )
-}
 
 impl Main {
     fn set_settings(&self, settings: &JsonSettings) {
@@ -367,7 +356,7 @@ fn main() -> Result<()> {
         .window
         .global::<Settings>()
         .on_int_changed(move |set_type, val| {
-            settings::int_changed(&set_int_handle, &vol_sink, set_type, val)
+            settings::int_changed(&set_int_handle, &vol_sink, set_type, val);
         });
 
     let close_handle = tomotroid.window.as_weak();
@@ -434,73 +423,7 @@ fn main() -> Result<()> {
     tomotroid
         .window
         .global::<ThemeCallbacks>()
-        .on_theme_changed(move |idx, theme| {
-            //how the hell have my changes to enable GHK support broken the ThemeChanged callback?
-            let thm_handle = thm_handle.upgrade().unwrap();
-            thm_handle.global::<Settings>().set_theme(theme.name);
-            thm_handle.save_settings();
-
-            thm_handle.set_logo(
-                slint::Image::load_from_svg_data(
-                    LOGO_BYTES
-                        .replace(
-                            "stroke:#2f384b",
-                            &format!("stroke:{}", color_to_hex_string(theme.background.color())),
-                        )
-                        .replace(
-                            "fill:#ff4e4d",
-                            &format!("fill:{}", color_to_hex_string(theme.focus_round.color())),
-                        )
-                        .replace(
-                            "fill:#992e2e",
-                            &format!(
-                                "fill:{}",
-                                color_to_hex_string(theme.focus_round.color().darker(0.4))
-                            ),
-                        )
-                        .replace(
-                            "fill:#f6f2eb",
-                            &format!("fill:{}", color_to_hex_string(theme.foreground.color())),
-                        )
-                        .replace(
-                            "fill:#05ec8c",
-                            &format!("fill:{}", color_to_hex_string(theme.accent.color())),
-                        )
-                        .as_bytes(),
-                )
-                .unwrap(),
-            );
-
-            thm_handle.global::<Theme>().set_theme_idx(idx);
-            thm_handle
-                .global::<Theme>()
-                .set_long_round(theme.long_round);
-            thm_handle
-                .global::<Theme>()
-                .set_short_round(theme.short_round);
-            thm_handle
-                .global::<Theme>()
-                .set_focus_round(theme.focus_round);
-            thm_handle
-                .global::<Theme>()
-                .set_background(theme.background);
-            thm_handle
-                .global::<Theme>()
-                .set_background_light(theme.background_light);
-            thm_handle
-                .global::<Theme>()
-                .set_background_lightest(theme.background_lightest);
-            thm_handle
-                .global::<Theme>()
-                .set_foreground(theme.foreground);
-            thm_handle
-                .global::<Theme>()
-                .set_foreground_darker(theme.foreground_darker);
-            thm_handle
-                .global::<Theme>()
-                .set_foreground_darkest(theme.foreground_darkest);
-            thm_handle.global::<Theme>().set_accent(theme.accent);
-        });
+        .on_theme_changed(move |idx, theme| settings::theme_changed(&thm_handle, idx, theme));
 
     let timer = Timer::default();
 

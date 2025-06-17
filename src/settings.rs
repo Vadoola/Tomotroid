@@ -1,4 +1,4 @@
-use crate::{BoolSettTypes, ConfigData, IntSettTypes, JsonTheme, Main, Settings};
+use crate::{BoolSettTypes, ConfigData, IntSettTypes, JsonTheme, Main, Settings, Theme};
 use core::fmt;
 use directories::ProjectDirs;
 use global_hotkey::hotkey::{Code, HotKey, Modifiers};
@@ -16,6 +16,8 @@ use std::{
     sync::OnceLock,
 };
 use walkdir::WalkDir;
+
+const LOGO_BYTES: &str = include_str!("../assets/logo.svg");
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GKeyCode(Code);
@@ -939,4 +941,70 @@ pub fn int_changed(handle: &Weak<Main>, vol_sink: &Rc<Sink>, set_type: IntSettTy
 
     //write out settings?...not the most effecient way every change..but for now should be fine
     handle.save_settings();
+}
+
+fn color_to_hex_string(color: slint::Color) -> String {
+    format!(
+        "#{:02X}{:02X}{:02X}",
+        color.red(),
+        color.green(),
+        color.blue()
+    )
+}
+
+pub fn theme_changed(handle: &Weak<Main>, idx: i32, theme: JsonTheme) {
+    let handle = handle.upgrade().unwrap();
+    handle.global::<Settings>().set_theme(theme.name);
+    handle.save_settings();
+
+    handle.set_logo(
+        slint::Image::load_from_svg_data(
+            LOGO_BYTES
+                .replace(
+                    "stroke:#2f384b",
+                    &format!("stroke:{}", color_to_hex_string(theme.background.color())),
+                )
+                .replace(
+                    "fill:#ff4e4d",
+                    &format!("fill:{}", color_to_hex_string(theme.focus_round.color())),
+                )
+                .replace(
+                    "fill:#992e2e",
+                    &format!(
+                        "fill:{}",
+                        color_to_hex_string(theme.focus_round.color().darker(0.4))
+                    ),
+                )
+                .replace(
+                    "fill:#f6f2eb",
+                    &format!("fill:{}", color_to_hex_string(theme.foreground.color())),
+                )
+                .replace(
+                    "fill:#05ec8c",
+                    &format!("fill:{}", color_to_hex_string(theme.accent.color())),
+                )
+                .as_bytes(),
+        )
+        .unwrap(),
+    );
+
+    handle.global::<Theme>().set_theme_idx(idx);
+    handle.global::<Theme>().set_long_round(theme.long_round);
+    handle.global::<Theme>().set_short_round(theme.short_round);
+    handle.global::<Theme>().set_focus_round(theme.focus_round);
+    handle.global::<Theme>().set_background(theme.background);
+    handle
+        .global::<Theme>()
+        .set_background_light(theme.background_light);
+    handle
+        .global::<Theme>()
+        .set_background_lightest(theme.background_lightest);
+    handle.global::<Theme>().set_foreground(theme.foreground);
+    handle
+        .global::<Theme>()
+        .set_foreground_darker(theme.foreground_darker);
+    handle
+        .global::<Theme>()
+        .set_foreground_darkest(theme.foreground_darkest);
+    handle.global::<Theme>().set_accent(theme.accent);
 }
