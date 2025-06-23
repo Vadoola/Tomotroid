@@ -20,6 +20,7 @@ use notify_rust::Notification;
 use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
 use settings::{get_non_print_key_txt, GlobalShortcuts, JsonHotKey, JsonSettings};
 use single_instance::SingleInstance;
+use slint::Weak;
 use slint::{
     platform::Key, Model, ModelRc, PlatformError, SharedString, Timer, TimerMode, VecModel,
 };
@@ -360,31 +361,13 @@ fn main() -> Result<()> {
         });
 
     let close_handle = tomotroid.window.as_weak();
-    tomotroid.window.on_close_window(move || {
-        let close_handle = close_handle.upgrade().unwrap();
-        close_handle.save_settings();
-
-        close_handle.hide().unwrap();
-
-        //After I get the system tray working I'm going to want to hide the window instead of actually close it
-        //if it's set to hide on close
-        //i_slint_backend_winit::WinitWindowAccessor::with_winit_window(min_handle.window(), |win| win.set_visible(false));
-    });
+    tomotroid.window.on_close_window(move || close(&close_handle));
 
     let min_handle = tomotroid.window.as_weak();
-    tomotroid.window.on_minimize_window(move || {
-        let min_handle = min_handle.upgrade().unwrap();
-        min_handle.window().set_minimized(true);
-    });
+    tomotroid.window.on_minimize_window(move || minimize(&min_handle));
 
     let move_handle = tomotroid.window.as_weak();
-    tomotroid.window.on_move_window(move || {
-        let move_handle = move_handle.upgrade().unwrap();
-        i_slint_backend_winit::WinitWindowAccessor::with_winit_window(
-            move_handle.window(),
-            i_slint_backend_winit::winit::window::Window::drag_window,
-        );
-    });
+    tomotroid.window.on_move_window(move || move_win(&move_handle));
 
     let tray_handle = tomotroid.window.as_weak();
     let _tray_rec_thread = std::thread::spawn(move || loop {
@@ -415,9 +398,7 @@ fn main() -> Result<()> {
         }
     });
 
-    tomotroid.window.global::<HLClick>().on_hl_clicked(|url| {
-        open::that(url.as_str()).unwrap();
-    });
+    tomotroid.window.global::<HLClick>().on_hl_clicked(open_hyperlink);
 
     let thm_handle = tomotroid.window.as_weak();
     tomotroid
@@ -689,4 +670,31 @@ fn main() -> Result<()> {
 
     tomotroid.run()?;
     Ok(())
+}
+
+fn close(handle: &Weak<Main>) {
+    let handle = handle.upgrade().unwrap();
+    handle.save_settings();
+    handle.hide().unwrap();
+
+    //After I get the system tray working I'm going to want to hide the window instead of actually close it
+    //if it's set to hide on close
+    //i_slint_backend_winit::WinitWindowAccessor::with_winit_window(min_handle.window(), |win| win.set_visible(false));
+}
+
+fn minimize(handle: &Weak<Main>) {
+    let handle = handle.upgrade().unwrap();
+    handle.window().set_minimized(true);
+}
+
+fn move_win(handle: &Weak<Main>) {
+    let handle = handle.upgrade().unwrap();
+    i_slint_backend_winit::WinitWindowAccessor::with_winit_window(
+        handle.window(),
+        i_slint_backend_winit::winit::window::Window::drag_window,
+    );
+}
+
+fn open_hyperlink(url: SharedString) {
+    open::that(url.as_str()).unwrap();
 }
