@@ -160,80 +160,7 @@ impl Tomotroid {
             .global::<ThemeCallbacks>()
             .set_themes(ModelRc::from(theme_model.clone()));
 
-        let config_model = Rc::new(VecModel::from(vec![
-            ConfigData {
-                name: "Always On Top".into(),
-                state: settings.always_on_top,
-                sett_param: BoolSettTypes::AlwOnTop,
-                enabled: !settings::is_wayland(),
-                animate_in: false,
-                animate_out: false,
-            },
-            ConfigData {
-                name: "Deactivate Always On Top on Breaks".into(),
-                state: settings.break_always_on_top,
-                sett_param: BoolSettTypes::BrkAlwOnTop,
-                enabled: !settings::is_wayland() && settings.always_on_top,
-                animate_in: false,
-                animate_out: false,
-            }, //only shown when "Always On Top" is selected
-            ConfigData {
-                name: "Auto-start Work Timer".into(),
-                state: settings.auto_start_work_timer,
-                sett_param: BoolSettTypes::AutoStrtWrkTim,
-                enabled: true,
-                animate_in: false,
-                animate_out: false,
-            },
-            ConfigData {
-                name: "Auto-start Break Timer".into(),
-                state: settings.auto_start_break_timer,
-                sett_param: BoolSettTypes::AutoStrtBreakTim,
-                enabled: true,
-                animate_in: false,
-                animate_out: false,
-            },
-            ConfigData {
-                name: "Tick Sounds - Work".into(),
-                state: settings.tick_sounds,
-                sett_param: BoolSettTypes::TickSounds,
-                enabled: true,
-                animate_in: false,
-                animate_out: false,
-            },
-            ConfigData {
-                name: "Tick Sounds - Break".into(),
-                state: settings.tick_sounds_during_break,
-                sett_param: BoolSettTypes::TickSoundsBreak,
-                enabled: true,
-                animate_in: false,
-                animate_out: false,
-            },
-            ConfigData {
-                name: "Desktop Notifications".into(),
-                state: settings.notifications,
-                sett_param: BoolSettTypes::Notifications,
-                enabled: true,
-                animate_in: false,
-                animate_out: false,
-            },
-            ConfigData {
-                name: "Minimize to Tray".into(),
-                state: settings.min_to_tray,
-                sett_param: BoolSettTypes::MinToTray,
-                enabled: true,
-                animate_in: false,
-                animate_out: false,
-            },
-            ConfigData {
-                name: "Minimize to Tray on Close".into(),
-                state: settings.min_to_tray_on_close,
-                sett_param: BoolSettTypes::MinToTryCls,
-                enabled: true,
-                animate_in: false,
-                animate_out: false,
-            },
-        ]));
+        let config_model = get_config_model(&settings);
 
         //window.global::<ConfigCallbacks>().set_configs(ModelRc::new(config_model.clone().filter(|cf| cf.enabled)));
 
@@ -361,13 +288,19 @@ fn main() -> Result<()> {
         });
 
     let close_handle = tomotroid.window.as_weak();
-    tomotroid.window.on_close_window(move || close(&close_handle));
+    tomotroid
+        .window
+        .on_close_window(move || close(&close_handle));
 
     let min_handle = tomotroid.window.as_weak();
-    tomotroid.window.on_minimize_window(move || minimize(&min_handle));
+    tomotroid
+        .window
+        .on_minimize_window(move || minimize(&min_handle));
 
     let move_handle = tomotroid.window.as_weak();
-    tomotroid.window.on_move_window(move || move_win(&move_handle));
+    tomotroid
+        .window
+        .on_move_window(move || move_win(&move_handle));
 
     let tray_handle = tomotroid.window.as_weak();
     let _tray_rec_thread = std::thread::spawn(move || loop {
@@ -398,7 +331,10 @@ fn main() -> Result<()> {
         }
     });
 
-    tomotroid.window.global::<HLClick>().on_hl_clicked(open_hyperlink);
+    tomotroid
+        .window
+        .global::<HLClick>()
+        .on_hl_clicked(open_hyperlink);
 
     let thm_handle = tomotroid.window.as_weak();
     tomotroid
@@ -697,4 +633,81 @@ fn move_win(handle: &Weak<Main>) {
 
 fn open_hyperlink(url: SharedString) {
     open::that(url.as_str()).unwrap();
+}
+
+fn get_config_model(settings: &JsonSettings) -> Rc<VecModel<ConfigData>> {
+    Rc::new(VecModel::from(vec![
+        ConfigData {
+            name: "Always On Top".into(),
+            state: settings.always_on_top,
+            sett_param: BoolSettTypes::AlwOnTop,
+            enabled: !settings::is_wayland(),
+            animate_in: false,
+            animate_out: false,
+        },
+        ConfigData {
+            name: "Deactivate Always On Top on Breaks".into(),
+            state: settings.break_always_on_top,
+            sett_param: BoolSettTypes::BrkAlwOnTop,
+            enabled: !settings::is_wayland() && settings.always_on_top,
+            animate_in: false,
+            animate_out: false,
+        }, //only shown when "Always On Top" is selected
+        ConfigData {
+            name: "Auto-start Work Timer".into(),
+            state: settings.auto_start_work_timer,
+            sett_param: BoolSettTypes::AutoStrtWrkTim,
+            enabled: true,
+            animate_in: false,
+            animate_out: false,
+        },
+        ConfigData {
+            name: "Auto-start Break Timer".into(),
+            state: settings.auto_start_break_timer,
+            sett_param: BoolSettTypes::AutoStrtBreakTim,
+            enabled: true,
+            animate_in: false,
+            animate_out: false,
+        },
+        ConfigData {
+            name: "Tick Sounds - Work".into(),
+            state: settings.tick_sounds,
+            sett_param: BoolSettTypes::TickSounds,
+            enabled: true,
+            animate_in: false,
+            animate_out: false,
+        },
+        ConfigData {
+            name: "Tick Sounds - Break".into(),
+            state: settings.tick_sounds_during_break,
+            sett_param: BoolSettTypes::TickSoundsBreak,
+            enabled: true,
+            animate_in: false,
+            animate_out: false,
+        },
+        ConfigData {
+            name: "Desktop Notifications".into(),
+            state: settings.notifications,
+            sett_param: BoolSettTypes::Notifications,
+            enabled: true,
+            animate_in: false,
+            animate_out: false,
+        },
+        ConfigData {
+            name: "Minimize to Tray".into(),
+            state: settings.min_to_tray,
+            sett_param: BoolSettTypes::MinToTray,
+            enabled: true,
+            animate_in: false,
+            animate_out: false,
+        },
+        ConfigData {
+            name: "Minimize to Tray on Close".into(),
+            state: settings.min_to_tray_on_close,
+            sett_param: BoolSettTypes::MinToTryCls,
+            enabled: true,
+            animate_in: false,
+            animate_out: false,
+        },
+    ]))
 }
