@@ -79,7 +79,7 @@ fn create_tray() -> Result<TrayItem> {
     let logo_cursor = Cursor::new(include_bytes!("../assets/icons/logo.png"));
     let logo_decoder = png::Decoder::new(logo_cursor);
     let mut logo_reader = logo_decoder.read_info().unwrap();
-    let mut logo_buff = vec![0; logo_reader.output_buffer_size()];
+    let mut logo_buff = vec![0; logo_reader.output_buffer_size().unwrap_or_default()];
 
     logo_reader.next_frame(&mut logo_buff).map_err(|de| {
         error!("Unable to decode tray icon file: {de}");

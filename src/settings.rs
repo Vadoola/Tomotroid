@@ -37,7 +37,7 @@ impl From<GKeyCode> for Code {
 //So this massive match block to convert to a string is to keep compatibility with the Pomotroid
 //preferences / settings json file. Part of me was tempted to break compatibility, then I thought
 //well maybe break compatibility but allow for importing the Pomotroid file and converting
-//which would still require me manually addjusting the string format of the Code struct instead of
+//which would still require me manually adjusting the string format of the Code struct instead of
 //using the built in version...so I might as well just keep compatibility. Perhaps for a v2 if I add
 //other features I'll strip this and break compatibility. Honestly since there is a lot of overlap
 //the match block isn't even that big, because for the values that overlap I can just fallback
@@ -244,7 +244,7 @@ pub struct JsonThemeTemp {
     colors: ThemeColors,
 }
 
-//I realize implemeting From is more idomatic, but that would require creating a newtype for JsonTheme,
+//I realize implementing From is more idiomatic, but that would require creating a newtype for JsonTheme,
 //due to the orphan rule, and then having to convert that (or maybe deref) that into JsonThemeTemp. I think this is a
 //good and straight forward stop gap, until slint adds support for Serde to more types
 impl Into<JsonTheme> for JsonThemeTemp {
@@ -385,7 +385,7 @@ impl<'de> Deserialize<'de> for JsonHotKey {
     }
 }
 
-//I realize implemeting From is more idomatic, but that would require creating a newtype for HotKey,
+//I realize implementing From is more idiomatic, but that would require creating a newtype for HotKey,
 //due to the orphan rule, and then having to convert that (or maybe deref) that into JsonHotKey.
 //I feel like there is a better way to do this...but for now just to get the GlobalHotkeys up and working
 //I'll put this in.
@@ -413,8 +413,8 @@ impl Into<HotKey> for &JsonHotKey {
     }
 }
 
-//Clippy complains and suggests refactoring so there are fewer bools, but this struct matches pomotroid for
-//compaibility so I'm surpressing the warning. Perhaps in v2 I can consider a restructure.
+//Clippy complains and suggests refactoring so there are fewer bools, but this struct matches Pomotroid for
+//compaibility so I'm suppressing the warning. Perhaps in v2 I can consider a restructure.
 #[allow(clippy::struct_excessive_bools)]
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

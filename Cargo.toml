@@ -8,40 +8,40 @@ license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.97"
-open = "5.3"
+anyhow = "1.0"
+open = "5.4"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-slint = { version = "1.10.0", default-features = false, features = [ "compat-1-2", "std", "accessibility", "backend-winit", "renderer-femtovg", "renderer-software", "serde"] }
-i-slint-backend-winit = "=1.10.0"
+slint = { version = "1.17.1", default-features = false, features = [ "compat-1-2", "std", "accessibility", "backend-winit", "renderer-femtovg", "renderer-software", "serde"] }
+i-slint-backend-winit = "=1.17.1"
 hex_color = { version = "3.0.0", features = [ "serde" ] }
 walkdir = "2.5"
-etcetera = "0.10.0"
+etcetera = "0.11.0"
 directories = "6.0"
 single-instance = "0.3.3"
-global-hotkey = "0.6"
-notify-rust = "4.11"
+global-hotkey = "0.8"
+notify-rust = "4.18"
 rodio = "0.20"
-flexi_logger = "0.30.2"
-log = "0.4.27"
+flexi_logger = "0.31"
+log = "0.4"
 
 
 
 [target.'cfg(windows)'.dependencies]
 tray-item = "0.10"
-eventlog = "0.3.0"
+eventlog = "0.4"
 
 [target.'cfg(unix)'.dependencies]
 tray-item = { version = "0.10", features = [ "ksni" ] }
-png = "0.17"
-syslog = "7.0.0"
-systemd-journal-logger = "2.2.2"
+png = "0.18"
+syslog = "7.0"
+systemd-journal-logger = "2.2"
 
 [build-dependencies]
-slint-build = "1.10.0"
+slint-build = "1.17.1"
 
 [target.'cfg(windows)'.build-dependencies]
-windres = "0.2.2"
+windres = "0.2"
 #https://github.com/tauri-apps/winrt-notification for notifications on Windows?
 
 [lints.clippy]
