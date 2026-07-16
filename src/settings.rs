@@ -354,7 +354,7 @@ impl std::str::FromStr for JsonHotKey {
                     "Shift" => mods.set(Modifiers::SHIFT, true),
                     "Super" => mods.set(Modifiers::META, true),
                     _ => panic!("No Other modifier keys currently supported"),
-                };
+                }
             } else {
                 return Ok(JsonHotKey {
                     modifiers: mods,

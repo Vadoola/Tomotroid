@@ -186,8 +186,8 @@ impl Tomotroid {
         let skip = ghk_manager.register(*skip).map_or(None, |()| Some(*skip));
 
         let audio_stream = DeviceSinkBuilder::open_default_sink().unwrap();
-        let audio_player = Rc::new(Player::connect_new(&audio_stream.mixer()));
-        
+        let audio_player = Rc::new(Player::connect_new(audio_stream.mixer()));
+
         audio_player.set_volume(settings.volume as f32 / 100.0);
 
         let window = Main::new().unwrap();
@@ -404,7 +404,7 @@ fn main() -> Result<()> {
                 timer_handle.set_running(true);
                 timer.start(
                     TimerMode::Repeated,
-                    std::time::Duration::from_millis(1000),
+                    std::time::Duration::from_secs(1),
                     move || {
                         let tmrstrt_handle = tmrstrt_handle.unwrap();
 

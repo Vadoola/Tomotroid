@@ -13,7 +13,7 @@ export component BorderlessWindow inherits Window {
     in property <string> parent;
     out property<bool> menu-open <=> menu-btn.toggled;
 
-    callback close();
+    callback close-win();
     callback minimize();
     callback move();
     callback menu-toggled();
@@ -178,7 +178,7 @@ export component BorderlessWindow inherits Window {
                     width: parent.height * 0.75;
                     height: parent.height * 0.75;
                     closeBtn-ta := TouchArea {
-                        clicked => { root.close() }
+                        clicked => { root.close_win() }
                     }
                     Image {
                         source: @image-url("../assets/icons/close.svg");
