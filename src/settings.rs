@@ -3,7 +3,7 @@ use core::fmt;
 use directories::ProjectDirs;
 use global_hotkey::hotkey::{Code, HotKey, Modifiers};
 use hex_color::HexColor;
-use rodio::Sink;
+use rodio::Player;
 use serde::{Deserialize, Serialize};
 use slint::{platform::Key, Color, ComponentHandle, Model, SharedString, Timer, VecModel, Weak};
 use std::{
@@ -918,7 +918,7 @@ pub fn bool_changed(
     }
 }
 
-pub fn int_changed(handle: &Weak<Main>, vol_sink: &Rc<Sink>, set_type: IntSettTypes, val: i32) {
+pub fn int_changed(handle: &Weak<Main>, vol_sink: &Rc<Player>, set_type: IntSettTypes, val: i32) {
     let handle = handle.upgrade().unwrap();
     match set_type {
         IntSettTypes::LongBreak => {

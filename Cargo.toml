@@ -21,7 +21,7 @@ directories = "6.0"
 single-instance = "0.3.3"
 global-hotkey = "0.8"
 notify-rust = "4.18"
-rodio = "0.20"
+rodio = "0.22"
 flexi_logger = "0.31"
 log = "0.4"
 
@@ -43,6 +43,3 @@ slint-build = "1.17.1"
 [target.'cfg(windows)'.build-dependencies]
 windres = "0.2"
 #https://github.com/tauri-apps/winrt-notification for notifications on Windows?
-
-[lints.clippy]
-#unwrap_used = "deny"

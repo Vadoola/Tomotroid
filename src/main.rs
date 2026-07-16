@@ -55,7 +55,7 @@ use global_hotkey::{
     GlobalHotKeyManager,
 };
 use notify_rust::Notification;
-use rodio::{Decoder, OutputStream, OutputStreamHandle, Sink};
+use rodio::{Decoder, DeviceSinkBuilder, MixerDeviceSink, Player};
 use settings::{get_non_print_key_txt, GlobalShortcuts, JsonHotKey, JsonSettings};
 use single_instance::SingleInstance;
 use slint::Weak;
@@ -164,9 +164,8 @@ struct Tomotroid {
     skip: Option<HotKey>,
     toggle: Option<HotKey>,
     ghk_manager: GlobalHotKeyManager,
-    audio_stream: OutputStream,
-    audio_handle: OutputStreamHandle,
-    audio_sink: Rc<Sink>,
+    audio_stream: MixerDeviceSink,
+    audio_player: Rc<Player>,
     config_model: Rc<VecModel<ConfigData>>,
 }
 
@@ -186,9 +185,10 @@ impl Tomotroid {
         let reset = ghk_manager.register(*reset).map_or(None, |()| Some(*reset));
         let skip = ghk_manager.register(*skip).map_or(None, |()| Some(*skip));
 
-        let (audio_stream, audio_handle) = OutputStream::try_default().unwrap();
-        let audio_sink = Rc::new(Sink::try_new(&audio_handle).unwrap());
-        audio_sink.set_volume(settings.volume as f32 / 100.0);
+        let audio_stream = DeviceSinkBuilder::open_default_sink().unwrap();
+        let audio_player = Rc::new(Player::connect_new(&audio_stream.mixer()));
+        
+        audio_player.set_volume(settings.volume as f32 / 100.0);
 
         let window = Main::new().unwrap();
         window.set_settings(&settings);
@@ -210,8 +210,7 @@ impl Tomotroid {
             toggle,
             ghk_manager,
             audio_stream,
-            audio_handle,
-            audio_sink,
+            audio_player,
             config_model,
         }
     }
@@ -316,7 +315,7 @@ fn main() -> Result<()> {
         std::thread::sleep(std::time::Duration::from_millis(500));
     });
 
-    let vol_sink = tomotroid.audio_sink.clone();
+    let vol_sink = tomotroid.audio_player.clone();
     let set_int_handle = tomotroid.window.as_weak();
     tomotroid
         .window
@@ -393,7 +392,7 @@ fn main() -> Result<()> {
     //sound logic in and working. There is probably a better way to handle this even
     //before Slint adds support for line caps in paths, but I'll come back to it.
     let mut tick_count = 0u32;
-    let tick_sink = tomotroid.audio_sink.clone();
+    let tick_sink = tomotroid.audio_player.clone();
     let timer_handle = tomotroid.window.as_weak();
     tomotroid.window.on_action_timer(move |action| {
         //Notification::new().summary("Performing an Action").show().unwrap();
@@ -450,7 +449,7 @@ fn main() -> Result<()> {
         }
     });
 
-    let tmr_change_sink = tomotroid.audio_sink.clone();
+    let tmr_change_sink = tomotroid.audio_player.clone();
     let chg_tmr_handle = tomotroid.window.as_weak();
     tomotroid.window.on_change_timer(move || {
         let chg_tmr_handle = chg_tmr_handle.upgrade().unwrap();
